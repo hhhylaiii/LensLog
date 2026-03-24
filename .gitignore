@@ -29,7 +29,7 @@ desktop.ini
 .settings/
 
 # ===========================
-# Node.js / Frontend
+# Node.js / Frontend / Mobile
 # ===========================
 node_modules/
 npm-debug.log*
@@ -48,6 +48,16 @@ build/
 .parcel-cache/
 .turbo/
 *.tsbuildinfo
+
+# Expo / React Native
+.expo/
+mobile/.expo/
+mobile/ios/
+mobile/android/
+*.jks
+*.p8
+*.mobileprovision
+expo-env.d.ts
 
 # ===========================
 # Python / Backend

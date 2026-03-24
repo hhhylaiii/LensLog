@@ -4,6 +4,13 @@
 
 打造一個專屬攝影玩家的數位基地。整合「**私房景點地圖**」、「**器材數位防潮箱**」以及「**個人拍攝習慣視覺化**」三大核心，讓不管是拍風景、街貓，還是人像棚拍的使用者，都能輕鬆記錄與分享。
 
+> **平台策略：Web + App 雙平台，完全獨立可分開展示**
+> - **Web**（React + Vite）：功能完整的響應式網頁，適合桌機與平板使用
+> - **App**（Expo + React Native）：原生 iOS / Android App，整合手機相機與系統通知
+> - **Shared**（`@lenslog/shared`）：平台無關的共用模組，包含 TypeScript 型別、API client factory、Zustand store、Zod schema 與 React Query hooks；Web 和 App 各自建立自己的 API 實例，token 儲存則透過 Storage Adapter Pattern 抽換（Web 用 `localStorage`，App 用 `expo-secure-store`）
+>
+> **Web 與 App 完全獨立**：`docker-compose up` 只啟動後端與 Web 前端（PostgreSQL、Redis、FastAPI、React），不需要 Node.js 或 Expo。App 以 `npx expo start` 單獨啟動，透過 `EXPO_PUBLIC_API_URL` 指向後端，不影響 Web 的任何運作。兩者可分開開發、分開展示。
+
 ---
 
 ## 一、團隊分工（共 7 人）
@@ -74,13 +81,15 @@
 ### 整體架構圖
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        使用者瀏覽器                          │
-│              React.js + TypeScript (Vite)                   │
-│        Leaflet.js / Google Maps  │  D3.js Charts            │
-└──────────────────────┬──────────────────────────────────────┘
-                       │ HTTPS / REST API
-                       ▼
+┌──────────────────────────┐   ┌──────────────────────────────┐
+│      🌐 Web 用戶端        │   │      📱 App 用戶端             │
+│  React.js + TypeScript   │   │  Expo + React Native          │
+│  (Vite, Leaflet, D3.js)  │   │  (react-native-maps, Victory) │
+└────────────┬─────────────┘   └──────────────┬───────────────┘
+             │                                │
+             └──────────┬─────────────────────┘
+                        │ HTTPS / REST API
+                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      Nginx（反向代理）                        │
 │              SSL 終止  │  靜態資源服務  │  負載均衡           │
@@ -91,7 +100,7 @@
 │   FastAPI Application│        │   Celery Worker（非同步） │
 │   (Gunicorn + Uvicorn│        │   - EXIF 解析            │
 │   4 workers)         │        │   - 照片縮圖生成          │
-│                      │        │   - Email 通知            │
+│                      │        │   - Email / Push 通知     │
 │   /api/v1/           │        │   - 統計資料預計算         │
 │   ├── auth           │        └──────────┬───────────────┘
 │   ├── photos         │                   │
@@ -110,6 +119,7 @@
 │                     雲端儲存 / 外部服務                    │
 │   AWS S3（原圖 + 縮圖）  │  CloudFront CDN（圖片加速）    │
 │   Open-Meteo API（天氣） │  Sunrise-Sunset API（日落）    │
+│   Expo Push Notification Service（App 推播通知）           │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -136,7 +146,7 @@
 
 ## 四、技術選型詳細說明
 
-### 前端（Frontend）
+### 前端 Web（Frontend Web）
 
 | 項目 | 技術選型 | 說明 |
 |------|----------|------|
@@ -150,6 +160,21 @@
 | **HTTP 請求** | Axios + React Query | React Query 負責快取、loading/error 狀態管理 |
 | **照片上傳** | react-dropzone | 拖曳上傳介面，支援多檔上傳與進度條 |
 | **表單驗證** | React Hook Form + Zod | 型別安全的表單驗證 |
+
+### 前端 App（Frontend Mobile）
+
+| 項目 | 技術選型 | 說明 |
+|------|----------|------|
+| **語言 / 框架** | Expo + React Native + TypeScript | 一份程式碼同時建置 iOS / Android 原生 App |
+| **路由** | Expo Router (File-based) | 類 Next.js 的檔案路由，支援 Deep Linking |
+| **狀態管理** | Zustand | **與 Web 共用**，無縫共享認證與快取狀態 |
+| **HTTP 請求** | Axios + React Query | **與 Web 共用**同一套 API 封裝模組 |
+| **地圖整合** | react-native-maps | 原生地圖元件，整合 Google Maps / Apple Maps |
+| **資料視覺化** | Victory Native | React Native 相容的圖表庫，取代 D3.js |
+| **相機 / 照片** | expo-image-picker + expo-camera | 直接呼叫手機相機拍攝，並讀取 EXIF metadata |
+| **推播通知** | Expo Push Notifications | 器材保養提醒直接推播到手機 |
+| **表單驗證** | React Hook Form + Zod | **與 Web 共用**同一套 schema 驗證 |
+| **UI 元件庫** | NativeWind (Tailwind for RN) | 與 Web 風格一致的設計語言 |
 
 ### 後端（Backend）
 
@@ -335,25 +360,74 @@ CREATE TABLE gear (
 
 ```
 lenslog/
-├── frontend/                    # React + TypeScript
+├── shared/                      # @lenslog/shared — 平台無關共用模組（npm workspaces 套件）
 │   ├── src/
-│   │   ├── components/          # 可重用 UI 元件
-│   │   │   ├── Map/
-│   │   │   ├── PhotoUpload/
-│   │   │   └── Charts/
-│   │   ├── pages/               # 頁面元件
-│   │   │   ├── MapExplore.tsx
-│   │   │   ├── GearVault.tsx
-│   │   │   └── Dashboard.tsx
-│   │   ├── hooks/               # 自定義 React Hooks
-│   │   ├── stores/              # Zustand 全域狀態
-│   │   ├── api/                 # Axios API 呼叫封裝
-│   │   └── types/               # TypeScript 型別定義
+│   │   ├── api/
+│   │   │   ├── client.ts        # API client factory（各平台傳入自己的 token getter/setter）
+│   │   │   └── services.ts      # 各資源的 API 方法（photos、locations、gear、stats）
+│   │   ├── stores/
+│   │   │   └── authStore.ts     # Zustand auth store（Storage Adapter Pattern，平台注入儲存實作）
+│   │   ├── types/
+│   │   │   └── index.ts         # TypeScript 型別定義（對應後端 Pydantic schema）
+│   │   ├── schemas/
+│   │   │   └── index.ts         # Zod 驗證 schema（表單與 API 回應驗證）
+│   │   ├── hooks/               # React Query hooks（接受 api 物件為參數，Web / App 通用）
+│   │   │   ├── usePhotos.ts
+│   │   │   ├── useLocations.ts
+│   │   │   ├── useGear.ts
+│   │   │   └── useStats.ts
+│   │   └── index.ts             # 統一 re-export 入口
+│   ├── tsconfig.json
+│   └── package.json             # name: "@lenslog/shared"
+│
+├── frontend/                    # Web — React + TypeScript (Vite)
+│   ├── src/
+│   │   ├── api/
+│   │   │   └── index.ts         # 建立 Web 專用 API 實例（注入 localStorage token 操作）
+│   │   ├── stores/
+│   │   │   └── authStore.ts     # 初始化 Zustand store（注入 localStorage adapter）
+│   │   ├── types/
+│   │   │   └── index.ts         # Web 專用型別（若有需要，大多重新 export @lenslog/shared）
+│   │   ├── components/          # Web 專用 UI 元件
+│   │   │   ├── Map/             # Leaflet 地圖元件
+│   │   │   ├── PhotoUpload/     # react-dropzone 上傳元件
+│   │   │   └── Charts/          # D3.js 圖表元件
+│   │   └── pages/               # 頁面元件
+│   │       ├── MapExplore.tsx
+│   │       ├── GearVault.tsx
+│   │       └── Dashboard.tsx
 │   ├── public/
-│   ├── index.html
+│   ├── vite.config.ts           # 設定 @shared 路徑別名指向 shared/src
+│   ├── tsconfig.json
 │   └── package.json
 │
-├── backend/                     # Python FastAPI
+├── mobile/                      # App — Expo + React Native（獨立啟動，不進 Docker）
+│   ├── app/                     # Expo Router 頁面（File-based routing）
+│   │   ├── (tabs)/
+│   │   │   ├── _layout.tsx
+│   │   │   ├── map.tsx          # 地圖探索（react-native-maps）
+│   │   │   ├── gear.tsx         # 數位器材庫
+│   │   │   └── stats.tsx        # 拍攝儀表板（Victory Native）
+│   │   ├── auth/
+│   │   │   ├── _layout.tsx
+│   │   │   ├── login.tsx
+│   │   │   └── register.tsx
+│   │   └── _layout.tsx
+│   ├── components/              # App 專用原生 UI 元件
+│   │   ├── CameraCapture/       # expo-camera 相機元件
+│   │   └── NativeMap/           # react-native-maps 封裝
+│   ├── src/
+│   │   ├── api/
+│   │   │   └── index.ts         # 建立 App 專用 API 實例（注入 expo-secure-store token 操作）
+│   │   └── store/
+│   │       ├── authStore.ts     # 初始化 Zustand store（注入 SecureStore adapter）
+│   │       └── authStorage.ts   # expo-secure-store 封裝
+│   ├── app.json                 # Expo 設定
+│   ├── babel.config.js          # 設定 @shared 路徑別名（babel-plugin-module-resolver）
+│   ├── tsconfig.json
+│   └── package.json
+│
+├── backend/                     # Python FastAPI（Web / App 共用後端）
 │   ├── app/
 │   │   ├── api/
 │   │   │   └── v1/
@@ -381,8 +455,11 @@ lenslog/
 │   ├── requirements.txt
 │   └── Dockerfile
 │
-├── docker-compose.yml           # 本地開發環境
-├── docker-compose.prod.yml      # 生產環境
+├── nginx/
+│   └── nginx.conf               # 生產環境 Nginx 反向代理設定（SSL 終止、靜態資源、API 代理）
+│
+├── docker-compose.yml           # 本地開發：PostgreSQL + Redis + FastAPI + React（不含 mobile）
+├── docker-compose.prod.yml      # 生產環境：frontend build + Nginx + 後端服務
 └── .github/
     └── workflows/
         └── ci.yml               # GitHub Actions CI/CD
@@ -394,30 +471,62 @@ lenslog/
 
 ### 前置需求
 
-- Docker & Docker Compose
-- Node.js 20+
-- Python 3.11+
+- Docker & Docker Compose（Web 開發必要）
+- Node.js 20+（`shared/` 安裝與 App 開發必要）
+- Python 3.11+（後端本機開發用；Docker 已包含）
+- iOS 模擬器（Xcode）或 Android 模擬器（Android Studio），或直接使用 Expo Go App（App 開發用）
 
-### 快速啟動
+> **Web 與 App 完全獨立**：只想跑 Web 只需要 Docker；只想跑 App 只需要 Node.js 與後端 URL。兩者不互相依賴。
+
+### 快速啟動（Web）
 
 ```bash
 # 1. Clone 專案
 git clone https://github.com/your-org/lenslog.git
 cd lenslog
 
-# 2. 複製環境變數範本
+# 2. 安裝 shared 套件（frontend 透過路徑別名 @shared 參照此目錄）
+cd shared && npm install && cd ..
+
+# 3. 複製環境變數範本
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 
-# 3. 啟動所有服務（PostgreSQL + PostGIS、Redis、後端、前端）
+# 4. 啟動所有服務（PostgreSQL + PostGIS、Redis、FastAPI、React Vite）
+#    Mobile 服務不在 docker-compose.yml 內，不會被啟動
 docker-compose up -d
 
-# 4. 執行資料庫 migration
+# 5. 執行資料庫 migration
 docker-compose exec backend alembic upgrade head
 
-# 5. 開啟瀏覽器
+# 6. 開啟瀏覽器
 # 前端：http://localhost:5173
 # API 文件：http://localhost:8000/docs
+```
+
+### 快速啟動（App）
+
+App 在 Docker 之外獨立運行，只需後端 URL 可連線即可（本機開發時後端由 `docker-compose up` 提供）。
+
+```bash
+# 1. 安裝 shared 套件（若尚未執行）
+cd shared && npm install && cd ..
+
+# 2. 進入 mobile 目錄並安裝依賴
+cd mobile
+npm install
+
+# 3. 複製環境變數並設定後端位址
+cp .env.example .env
+# 編輯 .env，設定：
+# EXPO_PUBLIC_API_URL=http://<你的區網IP>:8000/api/v1
+# （注意：模擬器 / 實機需使用區網 IP，不能用 localhost）
+
+# 4. 啟動 Expo 開發伺服器
+npx expo start
+
+# 掃描 QR Code 用 Expo Go 在手機上測試
+# 或按 i 開啟 iOS 模擬器 / a 開啟 Android 模擬器
 ```
 
 ### 環境變數（backend/.env）

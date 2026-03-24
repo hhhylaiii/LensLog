@@ -1,0 +1,71 @@
+{
+  "expo": {
+    "name": "LensLog",
+    "slug": "lenslog",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.lenslog.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "LensLog 需要相機權限以拍攝照片",
+        "NSPhotoLibraryUsageDescription": "LensLog 需要相片庫權限以選取照片",
+        "NSLocationWhenInUseUsageDescription": "LensLog 需要位置權限以標記拍攝地點"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "app.lenslog.mobile",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "LensLog 需要相機權限以拍攝照片"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "LensLog 需要相片庫權限以選取照片"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0f172a"
+        }
+      ]
+    ],
+    "scheme": "lenslog",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
