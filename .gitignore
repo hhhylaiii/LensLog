@@ -117,3 +117,5 @@ media/
 *.cert
 *.p12
 secrets/
+
+.omc/

@@ -83,6 +83,8 @@ services:
     working_dir: /app/frontend
     ports:
       - "5173:5173"
+    environment:
+      VITE_API_TARGET: http://lenslog_backend:8000
     volumes:
       # Mount the entire repo root so the @shared alias resolves.
       # frontend/ and shared/ are siblings on the same volume.

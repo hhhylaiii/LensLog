@@ -471,35 +471,67 @@ lenslog/
 
 ### 前置需求
 
-- Docker & Docker Compose（Web 開發必要）
-- Node.js 20+（`shared/` 安裝與 App 開發必要）
-- Python 3.11+（後端本機開發用；Docker 已包含）
-- iOS 模擬器（Xcode）或 Android 模擬器（Android Studio），或直接使用 Expo Go App（App 開發用）
+- Docker（啟動 PostgreSQL + Redis 必要）
+- Node.js 20+（前端與 `shared/` 套件必要）
+- Python 3.11+（後端本機開發）
+- [uv](https://github.com/astral-sh/uv)（Python 套件管理，`pip install uv` 或 `curl -LsSf https://astral.sh/uv/install.sh | sh`）
+- iOS 模擬器（Xcode）或 Android 模擬器（Android Studio），或 Expo Go App（App 開發用）
 
-> **Web 與 App 完全獨立**：只想跑 Web 只需要 Docker；只想跑 App 只需要 Node.js 與後端 URL。兩者不互相依賴。
+> **Web 與 App 完全獨立**：只想跑 Web 只需要 Docker + Node.js + Python；只想跑 App 只需要 Node.js 與後端 URL。兩者不互相依賴。
 
-### 快速啟動（Web）
+### 快速啟動（本機開發，推薦）
+
+Docker 只用來跑 PostgreSQL 和 Redis，後端與前端在本機直接執行，方便 debug 與快速迭代。
 
 ```bash
 # 1. Clone 專案
 git clone https://github.com/your-org/lenslog.git
 cd lenslog
 
-# 2. 安裝 shared 套件（frontend 透過路徑別名 @shared 參照此目錄）
-cd shared && npm install && cd ..
+# 2. 啟動資料庫與 Redis（只需 Docker 跑 DB/Redis）
+docker compose up -d db redis
 
-# 3. 複製環境變數範本
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+# 3. 後端：建立虛擬環境並安裝套件
+cd backend
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+# 或使用 uv（更快）：uv venv && uv pip install -r requirements.txt
 
-# 4. 啟動所有服務（PostgreSQL + PostGIS、Redis、FastAPI、React Vite）
-#    Mobile 服務不在 docker-compose.yml 內，不會被啟動
-docker-compose up -d
+# 4. 後端：設定環境變數
+cp .env.example .env
+# .env 預設值已設定好，直接使用即可（DATABASE_URL 指向 localhost:5432）
 
 # 5. 執行資料庫 migration
-docker-compose exec backend alembic upgrade head
+.venv/bin/alembic upgrade head
 
-# 6. 開啟瀏覽器
+# 6. 啟動後端 API server
+.venv/bin/uvicorn app.main:app --reload
+# API：http://localhost:8000
+# Swagger 文件：http://localhost:8000/docs
+
+# --- 開新終端機視窗 ---
+
+# 7. 前端：安裝套件並啟動
+cd ../frontend
+npm install
+npm run dev
+# 前端：http://localhost:5173
+```
+
+> **注意事項**
+> - `docker compose`（有空格）為新版指令，舊版 `docker-compose` 已棄用
+> - `bcrypt` 已在 `requirements.txt` 鎖定 4.0.1，直接安裝即可，無需手動指定版本
+
+### 快速啟動（全 Docker，僅供參考）
+
+```bash
+# 啟動所有服務（PostgreSQL + PostGIS、Redis、FastAPI、React Vite）
+docker compose up -d
+
+# 執行資料庫 migration
+docker compose exec backend alembic upgrade head
+
+# 開啟瀏覽器
 # 前端：http://localhost:5173
 # API 文件：http://localhost:8000/docs
 ```

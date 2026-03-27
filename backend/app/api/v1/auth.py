@@ -12,6 +12,7 @@ from app.core.security import (
 )
 from app.models.models import User
 from app.schemas import UserRegister, UserLogin, TokenResponse, UserResponse
+from app.api.deps import get_current_active_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -58,3 +59,14 @@ async def refresh(refresh_token: str):
     access_token = create_access_token({"sub": user_id})
     new_refresh_token = create_refresh_token({"sub": user_id})
     return TokenResponse(access_token=access_token, refresh_token=new_refresh_token)
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(current_user: User = Depends(get_current_active_user)):
+    # Stateless JWT — client discards tokens; we just acknowledge
+    return {"detail": "Successfully logged out"}
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user: User = Depends(get_current_active_user)):
+    return current_user

@@ -119,6 +119,32 @@ class GearResponse(BaseModel):
         from_attributes = True
 
 
+# ─── Update Schemas ───────────────────────────────────────────────────────────
+
+class PhotoUpdate(BaseModel):
+    caption: Optional[str] = None
+    is_public: Optional[bool] = None
+    location_id: Optional[uuid.UUID] = None
+
+
+class LocationUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=200)
+    description: Optional[str] = None
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+
+
+class GearUpdate(BaseModel):
+    type: Optional[str] = Field(None, pattern="^(body|lens|flash|tripod|filter|memory_card)$")
+    brand: Optional[str] = None
+    model: Optional[str] = Field(None, max_length=200)
+    serial_number: Optional[str] = None
+    purchase_date: Optional[date] = None
+    notes: Optional[str] = None
+    maintenance_interval_days: Optional[int] = Field(None, ge=1)
+    last_maintained: Optional[date] = None
+
+
 # ─── Stats Schemas ────────────────────────────────────────────────────────────
 
 class FocalLengthStat(BaseModel):
