@@ -8,6 +8,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import MapExplore from './pages/MapExplore'
 import GearVault from './pages/GearVault'
+import Admin from './pages/Admin'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -33,6 +34,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/" element={<Dashboard />} />
             <Route path="/map" element={<MapExplore />} />
             <Route path="/gear" element={<GearVault />} />
+            <Route path="/admin" element={<Admin />} />
           </Route>
 
           {/* Default redirect */}

@@ -522,6 +522,27 @@ npm run dev
 > - `docker compose`（有空格）為新版指令，舊版 `docker-compose` 已棄用
 > - `bcrypt` 已在 `requirements.txt` 鎖定 4.0.1，直接安裝即可，無需手動指定版本
 
+### 管理員帳號設定
+
+首次啟動後，需手動將特定帳號設為管理員：
+
+```bash
+# 將指定 email 設為管理員
+docker exec lenslog_db psql -U postgres -d lenslog \
+  -c "UPDATE users SET is_admin=true WHERE email='你的email@example.com';"
+```
+
+管理員登入後，側邊欄會出現 **Admin** 連結，可進入 `/admin` 頁面：
+- 查看所有註冊用戶
+- 刪除帳號
+- 切換其他用戶的管理員權限
+
+> 查看所有用戶：
+> ```bash
+> docker exec lenslog_db psql -U postgres -d lenslog \
+>   -c "SELECT username, email, is_admin, created_at FROM users ORDER BY created_at DESC;"
+> ```
+
 ### 快速啟動（全 Docker，僅供參考）
 
 ```bash

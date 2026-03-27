@@ -30,6 +30,7 @@ class UserResponse(BaseModel):
     email: str
     avatar_url: Optional[str]
     bio: Optional[str]
+    is_admin: bool = False
     created_at: datetime
 
     class Config:

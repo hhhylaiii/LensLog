@@ -7,6 +7,7 @@ interface User {
   id: string
   username: string
   email: string
+  is_admin: boolean
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -115,6 +116,8 @@ const NAV_ITEMS = [
   { to: '/gear', label: 'Gear Vault', icon: '⬡', end: false },
 ]
 
+const ADMIN_NAV_ITEM = { to: '/admin', label: 'Admin', icon: '⚙', end: false }
+
 const Layout: React.FC = () => {
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
@@ -159,6 +162,19 @@ const Layout: React.FC = () => {
               {label}
             </NavLink>
           ))}
+          {user?.is_admin && (
+            <NavLink
+              to={ADMIN_NAV_ITEM.to}
+              end={ADMIN_NAV_ITEM.end}
+              style={({ isActive }) => ({
+                ...styles.navLink,
+                ...(isActive ? styles.navLinkActive : {}),
+              })}
+            >
+              <span>{ADMIN_NAV_ITEM.icon}</span>
+              {ADMIN_NAV_ITEM.label}
+            </NavLink>
+          )}
         </nav>
 
         <div style={styles.footer}>
