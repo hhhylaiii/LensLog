@@ -1,10 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:  # 只能手動觸發，push 不會自動執行
 
 jobs:
   # --------------------------------------------------------
