@@ -1,0 +1,3 @@
+flowchart LR
+    Login["POST /login"] -->|"驗證密碼 → 發放JWT"| JWT["Token Pair\n(Access + Refresh)"]
+    Refresh["POST /refresh"] -->|"換發 Token"| JWT

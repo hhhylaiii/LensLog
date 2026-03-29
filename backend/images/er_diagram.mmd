@@ -1,0 +1,43 @@
+erDiagram
+    User {
+        UUID id PK
+        string password_hash
+        bool is_active
+        bool is_admin
+    }
+    Location {
+        UUID id PK
+        UUID user_id FK
+        string name
+        float latitude
+        float longitude
+    }
+    LocationTag {
+        UUID location_id FK
+        string tag
+    }
+    Photo {
+        UUID id PK
+        UUID user_id FK
+        UUID location_id FK
+        string s3_key
+        bool is_public
+    }
+    ExifData {
+        UUID photo_id FK
+        float focal_length
+        float aperture
+    }
+    Gear {
+        UUID id PK
+        UUID user_id FK
+        string type
+        string brand
+    }
+
+    User ||--o{ Photo : "擁有"
+    User ||--o{ Location : "建立"
+    User ||--o{ Gear : "擁有"
+    Location ||--o{ LocationTag : "附帶"
+    Location ||--o{ Photo : "被標記於"
+    Photo ||--o| ExifData : "附帶"

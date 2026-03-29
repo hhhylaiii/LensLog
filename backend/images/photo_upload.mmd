@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant C as Client
+    participant API as FastAPI
+    participant DB as PostgreSQL
+    participant S3 as AWS S3
+
+    C->>API: 1. POST /presign filename=1.jpg(帶 Token)
+    API-->>C: { presigned_url, s3_key }
+    C->>S3: 2. PUT 圖片內容 (直傳 S3)
+    S3-->>C: 200 OK
+    C->>API: 3. POST /photos { s3_key, caption }
+    API->>DB: 寫入 photos Table
+    API-->>C: Photo Created
