@@ -67,7 +67,7 @@ async def refresh(refresh_token: str):
 @router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(
     token: str = Depends(oauth2_scheme),
-    refresh_token: str = Body(...),
+    refresh_token: str = Body(..., embed=True),
     redis: aioredis.Redis = Depends(get_redis),
     current_user: User = Depends(get_current_active_user),
 ):
