@@ -1,7 +1,11 @@
 name: CI
 
 on:
-  workflow_dispatch:  # 只能手動觸發，push 不會自動執行
+  push:
+    branches: [main, develop, "feature/**", "feat/**"]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
 
 jobs:
   # --------------------------------------------------------
@@ -71,6 +75,8 @@ jobs:
 
   # --------------------------------------------------------
   # 2. Shared package — types, API, stores, schemas, hooks
+  #    Uses `npm install` (not `npm ci`) because @tanstack/react-query
+  #    is a devDependency added after the last lock-file commit.
   # --------------------------------------------------------
   shared-typecheck:
     name: Shared Package (TypeScript)
@@ -83,13 +89,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
-          cache-dependency-path: shared/package-lock.json
 
       - name: Install dependencies
         run: |
           cd shared
-          npm ci
+          npm install
 
       - name: Type check
         run: |
@@ -117,7 +121,7 @@ jobs:
       - name: Install shared dependencies
         run: |
           cd shared
-          npm ci
+          npm install
 
       - name: Install frontend dependencies
         run: |
@@ -136,6 +140,7 @@ jobs:
 
   # --------------------------------------------------------
   # 4. Mobile app — Expo + React Native
+  #    Uses `npm install` (not `npm ci`) — no lock file committed.
   # --------------------------------------------------------
   mobile-lint:
     name: Mobile App (TypeScript)
@@ -149,18 +154,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
 
       - name: Install shared dependencies
         run: |
           cd shared
-          npm ci
+          npm install
 
       - name: Install mobile dependencies
         run: |
           cd mobile
-          npm ci
+          npm install --legacy-peer-deps
 
       - name: Lint
         run: |
