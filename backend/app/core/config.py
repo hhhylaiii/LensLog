@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     AWS_REGION: str = "ap-northeast-1"
     S3_BUCKET_NAME: str = "lenslog-photos"
 
+    # S3-compatible storage (MinIO for dev, R2/S3 for prod)
+    S3_ENDPOINT_URL: str = ""  # e.g. http://minio:9000 for MinIO
+    S3_PUBLIC_URL: str = ""    # e.g. http://localhost:9000/lenslog-dev for MinIO
+
     # Redis
     REDIS_URL: str = "redis://redis:6379/0"
 

@@ -112,6 +112,7 @@ const styles: Record<string, React.CSSProperties> = {
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: '◈', end: true },
+  { to: '/upload', label: 'Upload', icon: '⊕', end: false },
   { to: '/map', label: 'Map', icon: '◎', end: false },
   { to: '/gear', label: 'Gear Vault', icon: '⬡', end: false },
 ]
