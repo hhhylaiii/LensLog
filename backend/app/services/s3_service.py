@@ -1,6 +1,7 @@
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
+from urllib.parse import urlparse, urlunparse
 
 from app.core.config import settings
 
@@ -27,6 +28,16 @@ def generate_presigned_url(s3_key: str, expiration: int = 3600) -> str:
         Params={"Bucket": settings.S3_BUCKET_NAME, "Key": s3_key},
         ExpiresIn=expiration,
     )
+    # When S3_ENDPOINT_URL is an internal hostname (e.g. minio:9000 inside Docker),
+    # boto3 embeds that host into the presigned URL. Rewrite it to the public-facing
+    # host from S3_PUBLIC_URL so the browser can actually reach it.
+    if settings.S3_ENDPOINT_URL and settings.S3_PUBLIC_URL:
+        internal = urlparse(settings.S3_ENDPOINT_URL)
+        public = urlparse(settings.S3_PUBLIC_URL)
+        internal_base = urlunparse((internal.scheme, internal.netloc, "", "", "", ""))
+        public_base = urlunparse((public.scheme, public.netloc, "", "", "", ""))
+        if internal_base != public_base:
+            url = url.replace(internal_base, public_base, 1)
     return url
 
 

@@ -6,18 +6,29 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.models.models import Photo, User
 from app.schemas import PhotoCreate, PhotoUpdate, PhotoResponse, PresignResponse
-from app.services.s3_service import generate_presigned_url
+from app.services.s3_service import generate_presigned_url, get_object_url
 from app.api.deps import get_current_active_user
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 
 
+def _with_url(photo: Photo) -> PhotoResponse:
+    data = PhotoResponse.model_validate(photo)
+    data.url = get_object_url(photo.s3_key)
+    return data
+
+
 @router.get("", response_model=list[PhotoResponse])
-async def list_photos(skip: int = 0, limit: int = 20, db: AsyncSession = Depends(get_db)):
+async def list_photos(
+    skip: int = 0,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
     result = await db.execute(
-        select(Photo).where(Photo.is_public).offset(skip).limit(limit)
+        select(Photo).where(Photo.user_id == current_user.id).offset(skip).limit(limit)
     )
-    return result.scalars().all()
+    return [_with_url(p) for p in result.scalars().all()]
 
 
 @router.post("/presign", response_model=PresignResponse)
@@ -39,7 +50,7 @@ async def create_photo(
     photo = Photo(**data.model_dump(), user_id=current_user.id)
     db.add(photo)
     await db.flush()
-    return photo
+    return _with_url(photo)
 
 
 @router.get("/{photo_id}", response_model=PhotoResponse)
@@ -48,7 +59,7 @@ async def get_photo(photo_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     photo = result.scalar_one_or_none()
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
-    return photo
+    return _with_url(photo)
 
 
 @router.patch("/{photo_id}", response_model=PhotoResponse)
@@ -67,7 +78,7 @@ async def update_photo(
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(photo, field, value)
     await db.flush()
-    return photo
+    return _with_url(photo)
 
 
 @router.delete("/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
