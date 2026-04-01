@@ -62,7 +62,7 @@ jobs:
       - name: Type check with mypy
         run: |
           cd backend
-          mypy app --ignore-missing-imports --explicit-package-bases
+          mypy app
 
       - name: Run tests
         env:
