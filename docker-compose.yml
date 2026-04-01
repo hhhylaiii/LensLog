@@ -42,6 +42,38 @@ services:
       timeout: 3s
       retries: 5
 
+  minio:
+    image: minio/minio
+    container_name: lenslog_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio_init:
+    image: minio/mc
+    container_name: lenslog_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: >
+      -c "
+        mc alias set local http://minio:9000 minioadmin minioadmin &&
+        mc mb --ignore-existing local/lenslog-dev &&
+        mc anonymous set download local/lenslog-dev
+      "
+
   backend:
     build: ./backend
     container_name: lenslog_backend
@@ -53,12 +85,15 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/lenslog
       REDIS_URL: redis://redis:6379/0
       DEBUG: "True"
+      S3_ENDPOINT_URL: http://minio:9000
     volumes:
       - ./backend:/app
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -70,6 +105,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/lenslog
       REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT_URL: http://minio:9000
     volumes:
       - ./backend:/app
     depends_on:
@@ -102,5 +138,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  minio_data:
   frontend_node_modules:
   shared_node_modules:

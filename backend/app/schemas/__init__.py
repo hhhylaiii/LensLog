@@ -53,6 +53,7 @@ class PhotoResponse(BaseModel):
     location_id: Optional[uuid.UUID]
     s3_key: str
     thumb_key: Optional[str]
+    url: Optional[str] = None
     caption: Optional[str]
     is_public: bool
     taken_at: Optional[datetime]

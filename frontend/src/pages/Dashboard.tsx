@@ -8,6 +8,7 @@ interface Photo {
   id: string
   caption?: string
   s3_key: string
+  url?: string
   created_at: string
   is_public: boolean
 }
@@ -294,7 +295,11 @@ const Dashboard: React.FC = () => {
         <div style={s.photosGrid}>
           {recentPhotos.map((p) => (
             <div key={p.id} style={s.photoCard}>
-              <div style={s.photoThumb}>◈</div>
+              <div style={s.photoThumb}>
+                {p.url
+                  ? <img src={p.url} alt={p.caption || 'photo'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : '◈'}
+              </div>
               <div style={s.photoCaption}>{p.caption || 'Untitled'}</div>
             </div>
           ))}
