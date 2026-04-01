@@ -1,6 +1,4 @@
 import io
-from typing import Optional
-
 import piexif
 from PIL import Image
 
@@ -18,7 +16,6 @@ def extract_exif(image_bytes: bytes) -> dict:
 
         ifd0 = exif_dict.get("0th", {})
         exif_ifd = exif_dict.get("Exif", {})
-        gps_ifd = exif_dict.get("GPS", {})
 
         # 相機資訊
         if piexif.ImageIFD.Make in ifd0:

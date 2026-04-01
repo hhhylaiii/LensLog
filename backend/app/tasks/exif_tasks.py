@@ -1,4 +1,3 @@
-import uuid
 from celery import Celery
 from app.core.config import settings
 
@@ -9,7 +8,6 @@ celery_app = Celery("lenslog", broker=settings.REDIS_URL, backend=settings.REDIS
 def process_exif_task(photo_id: str, s3_key: str):
     """從 S3 下載照片並解析 EXIF，存回資料庫"""
     import boto3
-    import asyncio
     from app.services.exif_service import extract_exif
 
     s3 = boto3.client("s3")

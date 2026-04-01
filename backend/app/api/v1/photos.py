@@ -15,7 +15,7 @@ router = APIRouter(prefix="/photos", tags=["photos"])
 @router.get("", response_model=list[PhotoResponse])
 async def list_photos(skip: int = 0, limit: int = 20, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Photo).where(Photo.is_public == True).offset(skip).limit(limit)
+        select(Photo).where(Photo.is_public).offset(skip).limit(limit)
     )
     return result.scalars().all()
 
