@@ -62,7 +62,7 @@ jobs:
       - name: Type check with mypy
         run: |
           cd backend
-          mypy app --ignore-missing-imports
+          mypy app --ignore-missing-imports --explicit-package-bases
 
       - name: Run tests
         env:
@@ -75,8 +75,6 @@ jobs:
 
   # --------------------------------------------------------
   # 2. Shared package — types, API, stores, schemas, hooks
-  #    Uses `npm install` (not `npm ci`) because @tanstack/react-query
-  #    is a devDependency added after the last lock-file commit.
   # --------------------------------------------------------
   shared-typecheck:
     name: Shared Package (TypeScript)
@@ -93,7 +91,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd shared
-          npm install
+          npm ci
 
       - name: Type check
         run: |
@@ -121,7 +119,7 @@ jobs:
       - name: Install shared dependencies
         run: |
           cd shared
-          npm install
+          npm ci
 
       - name: Install frontend dependencies
         run: |

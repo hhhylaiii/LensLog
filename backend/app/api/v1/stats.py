@@ -22,7 +22,7 @@ async def focal_length_stats(
         .group_by(ExifData.focal_length)
         .order_by(func.count().desc())
     )
-    return [FocalLengthStat(focal_length=r.focal_length, count=r.count) for r in result]
+    return [FocalLengthStat(focal_length=r.focal_length, count=r._mapping["count"]) for r in result]
 
 
 @router.get("/me/aperture", response_model=list[ApertureStat])
@@ -37,7 +37,7 @@ async def aperture_stats(
         .group_by(ExifData.aperture)
         .order_by(func.count().desc())
     )
-    return [ApertureStat(aperture=r.aperture, count=r.count) for r in result]
+    return [ApertureStat(aperture=r.aperture, count=r._mapping["count"]) for r in result]
 
 
 @router.get("/me/monthly", response_model=list[MonthlyStat])
@@ -54,4 +54,4 @@ async def monthly_stats(
         .group_by("month")
         .order_by("month")
     )
-    return [MonthlyStat(month=r.month, count=r.count) for r in result]
+    return [MonthlyStat(month=r.month, count=r._mapping["count"]) for r in result]

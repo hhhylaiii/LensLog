@@ -4,7 +4,7 @@ from app.core.config import settings
 
 async def get_weather(lat: float, lng: float) -> dict:
     """從 Open-Meteo API 取得即時天氣"""
-    params = {
+    params: dict[str, str | float] = {
         "latitude": lat,
         "longitude": lng,
         "current": "temperature_2m,weather_code,wind_speed_10m",
@@ -19,7 +19,7 @@ async def get_weather(lat: float, lng: float) -> dict:
 
 async def get_sunrise_sunset(lat: float, lng: float, date: str | None = None) -> dict:
     """從 Sunrise-Sunset API 取得日出日落時間"""
-    params = {"lat": lat, "lng": lng, "formatted": 0}
+    params: dict[str, str | int | float] = {"lat": lat, "lng": lng, "formatted": 0}
     if date:
         params["date"] = date
     async with httpx.AsyncClient() as client:
