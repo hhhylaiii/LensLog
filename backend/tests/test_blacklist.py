@@ -54,8 +54,6 @@ async def test_logout_blacklists_both_tokens():
 @pytest.mark.asyncio
 async def test_logout_sets_ttl_equal_to_remaining_lifetime():
     """Redis TTL should be <= token's remaining lifetime."""
-    import time
-
     mock_redis = AsyncMock()
     mock_redis.exists = AsyncMock(return_value=0)
     mock_redis.set = AsyncMock()
