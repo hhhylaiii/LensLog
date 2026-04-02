@@ -1,9 +1,12 @@
+from unittest.mock import AsyncMock
+
 import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from app.main import app
 from app.core.database import Base, get_db
+from app.core.redis import get_redis
 
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:password@localhost:5432/lenslog_test"
 
@@ -35,7 +38,12 @@ async def client(db_session: AsyncSession):
             await db_session.rollback()
             raise
 
+    mock_redis = AsyncMock()
+    mock_redis.exists = AsyncMock(return_value=0)
+    mock_redis.set = AsyncMock()
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_redis] = lambda: mock_redis
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac

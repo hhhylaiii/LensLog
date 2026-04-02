@@ -1,11 +1,13 @@
 import uuid
 
+import redis.asyncio as aioredis
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.redis import get_redis
 from app.core.security import decode_token
 from app.models.models import User
 
@@ -15,6 +17,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
+    redis: aioredis.Redis = Depends(get_redis),
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -23,6 +26,9 @@ async def get_current_user(
     )
     payload = decode_token(token)
     if not payload or payload.get("type") != "access":
+        raise credentials_exception
+    jti = payload.get("jti")
+    if jti and await redis.exists(f"blacklist:{jti}"):
         raise credentials_exception
     user_id: str | None = payload.get("sub")
     if not user_id:

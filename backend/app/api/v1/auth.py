@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import time
+
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import redis.asyncio as aioredis
 
 from app.core.database import get_db
 from app.core.security import (
@@ -12,8 +15,8 @@ from app.core.security import (
 )
 from app.models.models import User
 from app.schemas import UserRegister, UserLogin, TokenResponse, UserResponse
-from app.api.deps import get_current_active_user
-
+from app.api.deps import get_current_active_user, oauth2_scheme
+from app.core.redis import get_redis
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -62,8 +65,21 @@ async def refresh(refresh_token: str):
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-async def logout(current_user: User = Depends(get_current_active_user)):
-    # Stateless JWT — client discards tokens; we just acknowledge
+async def logout(
+    token: str = Depends(oauth2_scheme),
+    refresh_token: str = Body(..., embed=True),
+    redis: aioredis.Redis = Depends(get_redis),
+    current_user: User = Depends(get_current_active_user),
+):
+    for t in [token, refresh_token]:
+        payload = decode_token(t)
+        if payload:
+            jti = payload.get("jti")
+            exp = payload.get("exp")
+            if jti and exp:
+                remaining = int(exp) - int(time.time())
+                if remaining > 0:
+                    await redis.set(f"blacklist:{jti}", "1", ex=remaining)
     return {"detail": "Successfully logged out"}
 
 

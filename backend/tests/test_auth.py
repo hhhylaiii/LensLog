@@ -88,9 +88,11 @@ async def test_refresh_success(client: AsyncClient):
 async def test_logout_success(client: AsyncClient):
     tokens = await register_and_login(client, "testuser6", "test6@example.com", "password123")
     access_token = tokens["access_token"]
+    refresh_token = tokens["refresh_token"]
 
     response = await client.post(
         LOGOUT_URL,
+        json={"refresh_token": refresh_token},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
