@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import React, { useState, useEffect, useRef } from 'react'
+import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
+import 'leaflet.markercluster'
 import api from '../lib/api'
 
 // Fix Leaflet default marker icons in bundled apps
@@ -184,6 +187,35 @@ const MapController: React.FC<MapControllerProps> = ({ target }) => {
   return null
 }
 
+// ─── ClusterLayer — renders all locations as a clustered marker group ─────────
+
+interface ClusterLayerProps {
+  locations: Location[]
+}
+
+const ClusterLayer: React.FC<ClusterLayerProps> = ({ locations }) => {
+  const map = useMap()
+  const clusterRef = useRef<any>(null)
+
+  useEffect(() => {
+    const group = (L as any).markerClusterGroup({ chunkedLoading: true })
+    clusterRef.current = group
+
+    locations.forEach((loc) => {
+      const marker = L.marker([loc.latitude, loc.longitude])
+      marker.bindPopup(
+        `<strong>${loc.name}</strong>${loc.description ? `<br/><span style="font-size:12px">${loc.description}</span>` : ''}`,
+      )
+      group.addLayer(marker)
+    })
+
+    map.addLayer(group)
+    return () => { map.removeLayer(group) }
+  }, [locations, map])
+
+  return null
+}
+
 // ─── AddLocationModal ─────────────────────────────────────────────────────────
 
 interface AddLocationModalProps {
@@ -344,14 +376,7 @@ const MapExplore: React.FC = () => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
           <MapController target={target} />
-          {locations.map((loc) => (
-            <Marker key={loc.id} position={[loc.latitude, loc.longitude]}>
-              <Popup>
-                <strong>{loc.name}</strong>
-                {loc.description && <><br />{loc.description}</>}
-              </Popup>
-            </Marker>
-          ))}
+          <ClusterLayer locations={locations} />
         </MapContainer>
       </div>
 
