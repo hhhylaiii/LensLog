@@ -1,8 +1,10 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from geoalchemy2.elements import WKTElement
+from geoalchemy2.functions import ST_DWithin, ST_Distance, ST_MakePoint
+from geoalchemy2.types import Geography
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import cast, select
 
 from app.core.database import get_db
 from app.models.models import Location, LocationTag, User
@@ -16,11 +18,20 @@ router = APIRouter(prefix="/locations", tags=["locations"])
 async def list_locations(
     lat: float | None = Query(None),
     lng: float | None = Query(None),
-    radius: float | None = Query(None, description="Radius in km"),
+    radius: float = Query(10000, description="Radius in meters"),
     db: AsyncSession = Depends(get_db),
 ):
-    # TODO: implement PostGIS ST_DWithin geo filtering
-    result = await db.execute(select(Location).limit(50))
+    if lat is not None and lng is not None:
+        point = cast(ST_MakePoint(lng, lat), Geography(srid=4326))
+        geom_geo = cast(Location.geom, Geography(srid=4326))
+        stmt = (
+            select(Location)
+            .where(ST_DWithin(geom_geo, point, radius))
+            .order_by(ST_Distance(geom_geo, point))
+        )
+    else:
+        stmt = select(Location).limit(50)
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 
