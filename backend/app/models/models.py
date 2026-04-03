@@ -3,7 +3,6 @@ from datetime import datetime, date
 from typing import Any
 
 from geoalchemy2 import Geometry
-from geoalchemy2.shape import from_shape
 from sqlalchemy import (
     UUID, Boolean, Date, DateTime, ForeignKey,
     Integer, Numeric, String, Text, func,
