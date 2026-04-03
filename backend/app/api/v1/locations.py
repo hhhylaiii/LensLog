@@ -1,5 +1,6 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from geoalchemy2.elements import WKTElement
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -36,6 +37,7 @@ async def create_location(
         latitude=data.latitude,
         longitude=data.longitude,
     )
+    location.geom = WKTElement(f"POINT({data.longitude} {data.latitude})", srid=4326)
     db.add(location)
     await db.flush()
 
