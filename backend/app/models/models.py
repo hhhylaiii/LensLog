@@ -1,6 +1,9 @@
 import uuid
 from datetime import datetime, date
+from typing import Any
 
+from geoalchemy2 import Geometry
+from geoalchemy2.shape import from_shape
 from sqlalchemy import (
     UUID, Boolean, Date, DateTime, ForeignKey,
     Integer, Numeric, String, Text, func,
@@ -37,6 +40,7 @@ class Location(Base):
     description: Mapped[str | None] = mapped_column(Text)
     latitude: Mapped[float] = mapped_column(Numeric(10, 7), nullable=False)
     longitude: Mapped[float] = mapped_column(Numeric(10, 7), nullable=False)
+    geom: Mapped[Any | None] = mapped_column(Geometry("POINT", srid=4326), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     user: Mapped["User"] = relationship("User", back_populates="locations")
