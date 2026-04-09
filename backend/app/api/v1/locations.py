@@ -1,4 +1,9 @@
+import asyncio
+import json
 import uuid
+from datetime import datetime, timedelta
+
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.functions import ST_DWithin, ST_Distance, ST_MakePoint
@@ -7,11 +12,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import cast, select
 
 from app.core.database import get_db
+from app.core.redis import get_redis
 from app.models.models import Location, LocationTag, User
-from app.schemas import LocationCreate, LocationUpdate, LocationResponse
+from app.schemas import LocationCreate, LocationUpdate, LocationResponse, WeatherResponse
+from app.services.weather_service import get_weather, get_sunrise_sunset
 from app.api.deps import get_current_active_user
 
 router = APIRouter(prefix="/locations", tags=["locations"])
+
+WEATHER_CACHE_TTL = 60 * 30  # 30 分鐘
 
 
 @router.get("", response_model=list[LocationResponse])
@@ -65,6 +74,65 @@ async def get_location(location_id: uuid.UUID, db: AsyncSession = Depends(get_db
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
     return location
+
+
+@router.get("/{location_id}/weather", response_model=WeatherResponse)
+async def get_location_weather(
+    location_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    redis: aioredis.Redis = Depends(get_redis),
+    current_user: User = Depends(get_current_active_user),
+):
+    # 1. 查 Redis 快取
+    cache_key = f"weather:{location_id}"
+    cached = await redis.get(cache_key)
+    if cached:
+        return json.loads(cached)
+
+    # 2. 查 DB 取得座標
+    result = await db.execute(select(Location).where(Location.id == location_id))
+    location = result.scalar_one_or_none()
+    if not location:
+        raise HTTPException(status_code=404, detail="Location not found")
+
+    lat = float(location.latitude)
+    lng = float(location.longitude)
+
+    # 3. 並行呼叫兩個外部 API
+    weather_data, sun_data = await asyncio.gather(
+        get_weather(lat, lng),
+        get_sunrise_sunset(lat, lng),
+        return_exceptions=True,
+    )
+
+    if isinstance(weather_data, Exception):
+        raise HTTPException(status_code=502, detail="Weather service unavailable")
+    if isinstance(sun_data, Exception):
+        raise HTTPException(status_code=502, detail="Sunrise-sunset service unavailable")
+
+    # 4. 將 UTC 日出日落轉為本地時間（利用 Open-Meteo 回傳的 utc_offset_seconds）
+    utc_offset_seconds: int = weather_data.get("utc_offset_seconds", 0)
+
+    def to_local_hhmm(utc_iso: str) -> str:
+        try:
+            dt = datetime.fromisoformat(utc_iso)
+            local_dt = dt + timedelta(seconds=utc_offset_seconds)
+            return local_dt.strftime("%H:%M")
+        except Exception:
+            return ""
+
+    response = WeatherResponse(
+        temperature=weather_data.get("temperature_2m", 0.0),
+        precipitation=weather_data.get("precipitation", 0.0),
+        windspeed=weather_data.get("wind_speed_10m", 0.0),
+        sunrise=to_local_hhmm(sun_data.get("sunrise", "")),
+        sunset=to_local_hhmm(sun_data.get("sunset", "")),
+    )
+
+    # 5. 寫入 Redis 快取
+    await redis.set(cache_key, response.model_dump_json(), ex=WEATHER_CACHE_TTL)
+
+    return response
 
 
 @router.patch("/{location_id}", response_model=LocationResponse)

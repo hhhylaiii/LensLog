@@ -7,14 +7,17 @@ async def get_weather(lat: float, lng: float) -> dict:
     params: dict[str, str | float] = {
         "latitude": lat,
         "longitude": lng,
-        "current": "temperature_2m,weather_code,wind_speed_10m",
+        "current": "temperature_2m,precipitation,weather_code,wind_speed_10m",
         "timezone": "auto",
     }
     async with httpx.AsyncClient() as client:
         resp = await client.get(f"{settings.OPENMETEO_BASE_URL}/forecast", params=params, timeout=10)
         resp.raise_for_status()
         data = resp.json()
-        return data.get("current", {})
+        current = data.get("current", {})
+        # 將頂層的 utc_offset_seconds 合入 current，供呼叫端做本地時區轉換
+        current["utc_offset_seconds"] = data.get("utc_offset_seconds", 0)
+        return current
 
 
 async def get_sunrise_sunset(lat: float, lng: float, date: str | None = None) -> dict:

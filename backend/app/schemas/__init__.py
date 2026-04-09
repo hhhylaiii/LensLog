@@ -168,3 +168,13 @@ class ISOStat(BaseModel):
 class MonthlyStat(BaseModel):
     month: str
     count: int
+
+
+# ─── Weather Schemas ──────────────────────────────────────────────────────────
+
+class WeatherResponse(BaseModel):
+    temperature: float
+    precipitation: float
+    windspeed: float
+    sunrise: str  # 本地時間 HH:MM
+    sunset: str   # 本地時間 HH:MM
