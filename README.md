@@ -502,7 +502,9 @@ cp .env.example .env
 # .env 預設值已設定好，直接使用即可（DATABASE_URL 指向 localhost:5432）
 
 # 5. 執行資料庫 migration
-.venv/bin/alembic upgrade head
+docker compose exec backend alembic upgrade head   
+
+# 容器內，db 可解析
 
 # 6. 啟動後端 API server
 .venv/bin/uvicorn app.main:app --reload
