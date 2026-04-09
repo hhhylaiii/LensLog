@@ -1,3 +1,4 @@
+
 # LensLog - 攝影走讀與器材管理社群平台
 
 ## 核心概念
@@ -471,58 +472,28 @@ lenslog/
 
 ### 前置需求
 
-- Docker（啟動 PostgreSQL + Redis 必要）
-- Node.js 20+（前端與 `shared/` 套件必要）
-- Python 3.11+（後端本機開發）
-- [uv](https://github.com/astral-sh/uv)（Python 套件管理，`pip install uv` 或 `curl -LsSf https://astral.sh/uv/install.sh | sh`）
-- iOS 模擬器（Xcode）或 Android 模擬器（Android Studio），或 Expo Go App（App 開發用）
+- **Docker**（必要）— 包含所有服務，不需額外安裝 Node.js 或 Python
 
-> **Web 與 App 完全獨立**：只想跑 Web 只需要 Docker + Node.js + Python；只想跑 App 只需要 Node.js 與後端 URL。兩者不互相依賴。
+> **Web 與 App 完全獨立**：`docker-compose up` 只啟動後端與 Web 前端；App 以 `npx expo start` 單獨啟動。
 
-### 快速啟動（本機開發，推薦）
+### 快速啟動（全 Docker，推薦）
 
-Docker 只用來跑 PostgreSQL 和 Redis，後端與前端在本機直接執行，方便 debug 與快速迭代。
+不需建立 `.env` 檔案，不需手動執行 migration，clone 完直接啟動。
 
 ```bash
 # 1. Clone 專案
 git clone https://github.com/your-org/lenslog.git
 cd lenslog
 
-# 2. 啟動資料庫與 Redis（只需 Docker 跑 DB/Redis）
-docker compose up -d db redis
+# 2. 啟動所有服務（DB migration 會自動執行）
+docker compose up
 
-# 3. 後端：建立虛擬環境並安裝套件
-cd backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-# 或使用 uv（更快）：uv venv && uv pip install -r requirements.txt
-
-# 4. 後端：設定環境變數
-cp .env.example .env
-# .env 預設值已設定好，直接使用即可（DATABASE_URL 指向 localhost:5432）
-
-# 5. 執行資料庫 migration
-docker compose exec backend alembic upgrade head   
-
-# 容器內，db 可解析
-
-# 6. 啟動後端 API server
-.venv/bin/uvicorn app.main:app --reload
-# API：http://localhost:8000
-# Swagger 文件：http://localhost:8000/docs
-
-# --- 開新終端機視窗 ---
-
-# 7. 前端：安裝套件並啟動
-cd ../frontend
-npm install
-npm run dev
+# 開啟瀏覽器
 # 前端：http://localhost:5173
+# API 文件：http://localhost:8000/docs
 ```
 
-> **注意事項**
-> - `docker compose`（有空格）為新版指令，舊版 `docker-compose` 已棄用
-> - `bcrypt` 已在 `requirements.txt` 鎖定 4.0.1，直接安裝即可，無需手動指定版本
+> **注意**：首次啟動會下載 Docker image 並執行 `npm install`，需要幾分鐘。後續啟動因有 cache 會快很多。
 
 ### 管理員帳號設定
 
@@ -545,18 +516,31 @@ docker exec lenslog_db psql -U postgres -d lenslog \
 >   -c "SELECT username, email, is_admin, created_at FROM users ORDER BY created_at DESC;"
 > ```
 
-### 快速啟動（全 Docker，僅供參考）
+### 本機開發（不使用 Docker，選用）
+
+適合需要直接 debug 後端或前端的開發者。前置需求：Node.js 20+、Python 3.11+。
 
 ```bash
-# 啟動所有服務（PostgreSQL + PostGIS、Redis、FastAPI、React Vite）
-docker compose up -d
+# 1. 啟動資料庫與 Redis（仍需 Docker）
+docker compose up -d db redis minio minio_init
 
-# 執行資料庫 migration
-docker compose exec backend alembic upgrade head
+# 2. 後端
+cd backend
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env          # 預設值已設定好（localhost URLs）
+.venv/bin/alembic upgrade head
+.venv/bin/uvicorn app.main:app --reload
+# API：http://localhost:8000
 
-# 開啟瀏覽器
+# --- 開新終端機視窗 ---
+
+# 3. 前端
+cd ../shared && npm install
+cd ../frontend && npm install
+npm run dev
 # 前端：http://localhost:5173
-# API 文件：http://localhost:8000/docs
+
 ```
 
 ### 快速啟動（App）

@@ -1,15 +1,16 @@
 # LensLog — Local Development
 #
-# Starts: PostgreSQL + PostGIS, Redis, FastAPI backend, Celery worker, React web frontend.
+# Starts: PostgreSQL + PostGIS, Redis, MinIO, FastAPI backend, Celery worker, React web frontend.
 #
 # The mobile app (Expo) is NOT included here — it runs locally via:
 #   cd mobile && npx expo start
 #
-# Quick start:
-#   docker-compose up -d
-#   docker-compose exec backend alembic upgrade head
+# Quick start (no .env file needed):
+#   docker-compose up
 #   open http://localhost:5173   # web
 #   open http://localhost:8000/docs  # API docs
+#
+# DB migrations run automatically on backend startup.
 
 services:
   db:
@@ -71,7 +72,9 @@ services:
       -c "
         mc alias set local http://minio:9000 minioadmin minioadmin &&
         mc mb --ignore-existing local/lenslog-dev &&
-        mc anonymous set download local/lenslog-dev
+        mc anonymous set download local/lenslog-dev &&
+        printf '{\"CORSRules\":[{\"AllowedOrigins\":[\"*\"],\"AllowedMethods\":[\"GET\",\"PUT\",\"POST\",\"DELETE\",\"HEAD\"],\"AllowedHeaders\":[\"*\"],\"ExposeHeaders\":[\"ETag\"],\"MaxAgeSeconds\":3600}]}' > /tmp/cors.json &&
+        mc cors set local/lenslog-dev /tmp/cors.json
       "
 
   backend:
@@ -79,13 +82,24 @@ services:
     container_name: lenslog_backend
     ports:
       - "8000:8000"
-    env_file:
-      - ./backend/.env
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/lenslog
       REDIS_URL: redis://redis:6379/0
       DEBUG: "True"
+      SECRET_KEY: dev-secret-key-change-in-production
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+      REFRESH_TOKEN_EXPIRE_DAYS: "7"
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: ap-northeast-1
+      S3_BUCKET_NAME: lenslog-dev
       S3_ENDPOINT_URL: http://minio:9000
+      # S3_PUBLIC_URL must use localhost so the browser can reach MinIO directly
+      S3_PUBLIC_URL: http://localhost:9000/lenslog-dev
+      FRONTEND_URL: http://localhost:5173
+      OPENMETEO_BASE_URL: https://api.open-meteo.com/v1
+      SUNRISE_SUNSET_API_URL: https://api.sunrise-sunset.org/json
     volumes:
       - ./backend:/app
     depends_on:
@@ -95,17 +109,28 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
 
   celery_worker:
     build: ./backend
     container_name: lenslog_celery
-    env_file:
-      - ./backend/.env
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/lenslog
       REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: dev-secret-key-change-in-production
+      ALGORITHM: HS256
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: ap-northeast-1
+      S3_BUCKET_NAME: lenslog-dev
       S3_ENDPOINT_URL: http://minio:9000
+      S3_PUBLIC_URL: http://localhost:9000/lenslog-dev
+      OPENMETEO_BASE_URL: https://api.open-meteo.com/v1
+      SUNRISE_SUNSET_API_URL: https://api.sunrise-sunset.org/json
     volumes:
       - ./backend:/app
     depends_on:
@@ -120,7 +145,8 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_TARGET: http://lenslog_backend:8000
+      # Uses Docker service name (not container_name) for reliability
+      VITE_API_TARGET: http://backend:8000
     volumes:
       # Mount the entire repo root so the @shared alias resolves.
       # frontend/ and shared/ are siblings on the same volume.

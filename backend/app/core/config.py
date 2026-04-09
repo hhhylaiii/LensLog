@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     OPENMETEO_BASE_URL: str = "https://api.open-meteo.com/v1"
     SUNRISE_SUNSET_API_URL: str = "https://api.sunrise-sunset.org/json"
 
+    # Frontend / CORS
+    FRONTEND_URL: str = "http://localhost:5173"
+    CORS_ORIGINS: str = ""  # comma-separated extra allowed origins
+
     # Email
     MAIL_USERNAME: str = ""
     MAIL_PASSWORD: str = ""

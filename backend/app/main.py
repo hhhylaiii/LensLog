@@ -25,9 +25,16 @@ def create_app() -> FastAPI:
     )
 
     # CORS
+    origins = [settings.FRONTEND_URL]
+    if settings.CORS_ORIGINS:
+        origins.extend([o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()])
+    if settings.DEBUG:
+        for dev_origin in ["http://localhost:5173", "http://localhost:3000"]:
+            if dev_origin not in origins:
+                origins.append(dev_origin)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://localhost:3000"],
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
