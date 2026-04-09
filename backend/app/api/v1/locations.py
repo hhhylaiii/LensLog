@@ -1,7 +1,8 @@
 import asyncio
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -110,14 +111,13 @@ async def get_location_weather(
     if isinstance(sun_data, Exception):
         raise HTTPException(status_code=502, detail="Sunrise-sunset service unavailable")
 
-    # 4. 將 UTC 日出日落轉為本地時間（利用 Open-Meteo 回傳的 utc_offset_seconds）
-    utc_offset_seconds: int = weather_data.get("utc_offset_seconds", 0)
+    # 4. 將 UTC 日出日落轉為台灣本地時間（Asia/Taipei，UTC+8）
+    _TAIWAN_TZ = ZoneInfo("Asia/Taipei")
 
     def to_local_hhmm(utc_iso: str) -> str:
         try:
             dt = datetime.fromisoformat(utc_iso)
-            local_dt = dt + timedelta(seconds=utc_offset_seconds)
-            return local_dt.strftime("%H:%M")
+            return dt.astimezone(_TAIWAN_TZ).strftime("%H:%M")
         except Exception:
             return ""
 
