@@ -27,7 +27,8 @@ async def get_weather(lat: float, lng: float) -> dict:
         "format": "JSON",
         "limit": "1000",
     }
-    async with httpx.AsyncClient() as client:
+    # CWA 憑證缺少 Subject Key Identifier，需關閉 SSL 驗證
+    async with httpx.AsyncClient(verify=False) as client:
         resp = await client.get(_CWA_STATION_URL, params=params, timeout=15)
         resp.raise_for_status()
         data = resp.json()
