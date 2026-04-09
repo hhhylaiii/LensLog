@@ -11,6 +11,7 @@ from geoalchemy2.functions import ST_DWithin, ST_Distance, ST_MakePoint
 from geoalchemy2.types import Geography
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import cast, select
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.redis import get_redis
@@ -36,11 +37,12 @@ async def list_locations(
         geom_geo = cast(Location.geom, Geography(srid=4326))
         stmt = (
             select(Location)
+            .options(selectinload(Location.tags))
             .where(ST_DWithin(geom_geo, point, radius))
             .order_by(ST_Distance(geom_geo, point))
         )
     else:
-        stmt = select(Location).limit(50)
+        stmt = select(Location).options(selectinload(Location.tags)).limit(50)
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -64,13 +66,20 @@ async def create_location(
 
     for tag_str in data.tags:
         db.add(LocationTag(location_id=location.id, tag=tag_str))
+    await db.flush()
 
-    return location
+    # 重新查詢以 eager load tags
+    result = await db.execute(
+        select(Location).options(selectinload(Location.tags)).where(Location.id == location.id)
+    )
+    return result.scalar_one()
 
 
 @router.get("/{location_id}", response_model=LocationResponse)
 async def get_location(location_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Location).where(Location.id == location_id))
+    result = await db.execute(
+        select(Location).options(selectinload(Location.tags)).where(Location.id == location_id)
+    )
     location = result.scalar_one_or_none()
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
@@ -142,7 +151,9 @@ async def update_location(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    result = await db.execute(select(Location).where(Location.id == location_id))
+    result = await db.execute(
+        select(Location).options(selectinload(Location.tags)).where(Location.id == location_id)
+    )
     location = result.scalar_one_or_none()
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
