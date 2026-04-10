@@ -40,6 +40,7 @@ async def client(db_session: AsyncSession):
 
     mock_redis = AsyncMock()
     mock_redis.exists = AsyncMock(return_value=0)
+    mock_redis.get = AsyncMock(return_value=None)
     mock_redis.set = AsyncMock()
 
     app.dependency_overrides[get_db] = override_get_db
