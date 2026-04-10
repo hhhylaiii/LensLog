@@ -14,7 +14,7 @@ _INVALID_SENTINEL = -99.0
 logger = logging.getLogger(__name__)
 
 
-# H-5：明確定義回傳型別，方便靜態分析與 IDE 補全
+# 明確定義回傳型別，方便靜態分析與 IDE 補全
 class WeatherData(TypedDict, total=False):
     temperature_2m: float
     precipitation: float
@@ -33,7 +33,7 @@ def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
 
 async def get_weather(lat: float, lng: float) -> WeatherData:
     """從 CWA 自動氣象站取得最近測站的即時天氣"""
-    # H-1：CWA 開放資料平台規格要求 Authorization 以 query string 傳送
+    # CWA 開放資料平台規格要求 Authorization 以 query string 傳送
     # 官方文件：https://opendata.cwa.gov.tw/dist/opendata-swagger.html
     # 這是 CWA 的設計，無法改為 HTTP Header（會回傳 401），勿修改此行為。
     # 請在 reverse proxy 層設定遮蔽含 Authorization= 的 query string。
@@ -71,7 +71,7 @@ async def get_weather(lat: float, lng: float) -> WeatherData:
         # 過濾掉天氣欄位全為無效值的測站
         elements = station.get("WeatherElement", {})
         temp = elements.get("AirTemperature")
-        # H-6：CWA 偶爾回傳非數字字串（如 "N/A"），需捕捉 ValueError
+        # CWA 偶爾回傳非數字字串（如 "N/A"），需捕捉 ValueError
         try:
             temp_f = float(temp) if temp is not None else None
         except (TypeError, ValueError):
