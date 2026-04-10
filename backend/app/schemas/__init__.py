@@ -183,5 +183,5 @@ class WeatherResponse(BaseModel):
     temperature: float
     precipitation: float
     windspeed: float
-    sunrise: str  # 本地時間 HH:MM
-    sunset: str   # 本地時間 HH:MM
+    sunrise: Optional[str] = None  # 本地時間 HH:MM，解析失敗時為 null
+    sunset: Optional[str] = None   # 本地時間 HH:MM，解析失敗時為 null

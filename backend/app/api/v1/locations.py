@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -23,6 +24,8 @@ from app.api.deps import get_current_active_user
 router = APIRouter(prefix="/locations", tags=["locations"])
 
 WEATHER_CACHE_TTL = 60 * 30  # 30 分鐘
+_TAIWAN_TZ = ZoneInfo("Asia/Taipei")  # 模組頂層常數，只建立一次（H-4）
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=list[LocationResponse])
@@ -104,6 +107,9 @@ async def get_location_weather(
     location = result.scalar_one_or_none()
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
+    # H-2：防止 IDOR，只有 owner 可查詢自己的景點天氣
+    if location.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
 
     lat = float(location.latitude)
     lng = float(location.longitude)
@@ -121,14 +127,13 @@ async def get_location_weather(
         raise HTTPException(status_code=502, detail="Sunrise-sunset service unavailable")
 
     # 4. 將 UTC 日出日落轉為台灣本地時間（Asia/Taipei，UTC+8）
-    _TAIWAN_TZ = ZoneInfo("Asia/Taipei")
-
-    def to_local_hhmm(utc_iso: str) -> str:
+    def to_local_hhmm(utc_iso: str) -> str | None:  # H-3：回傳 Optional[str]
         try:
             dt = datetime.fromisoformat(utc_iso)
             return dt.astimezone(_TAIWAN_TZ).strftime("%H:%M")
-        except Exception:
-            return ""
+        except Exception as exc:
+            logger.warning("Failed to parse datetime %r: %s", utc_iso, exc)
+            return None
 
     response = WeatherResponse(
         temperature=weather_data.get("temperature_2m", 0.0),
