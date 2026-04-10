@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 async def list_locations(
     lat: float | None = Query(None),
     lng: float | None = Query(None),
-    radius: float = Query(10000, description="Radius in meters"),
+    radius: float = Query(10000, ge=1, le=100000, description="Radius in meters (1–100,000)"),
     db: AsyncSession = Depends(get_db),
 ):
     if lat is not None and lng is not None:
@@ -96,20 +96,19 @@ async def get_location_weather(
     redis: aioredis.Redis = Depends(get_redis),
     current_user: User = Depends(get_current_active_user),
 ):
-    # 1. 查 Redis 快取
-    cache_key = f"weather:{location_id}"
-    cached = await redis.get(cache_key)
-    if cached:
-        return json.loads(cached)
-
-    # 2. 查 DB 取得座標
+    # 1. 查 DB 驗證存在與授權（必須在快取之前，避免快取繞過 403）
     result = await db.execute(select(Location).where(Location.id == location_id))
     location = result.scalar_one_or_none()
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
-    # 防止 IDOR，只有 owner 可查詢自己的景點天氣
     if location.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    # 2. 授權通過後才讀 Redis 快取
+    cache_key = f"weather:{location_id}"
+    cached = await redis.get(cache_key)
+    if cached:
+        return json.loads(cached)
 
     lat = float(location.latitude)
     lng = float(location.longitude)
@@ -164,8 +163,16 @@ async def update_location(
         raise HTTPException(status_code=404, detail="Location not found")
     if location.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    for field, value in data.model_dump(exclude_unset=True).items():
+    updated_fields = data.model_dump(exclude_unset=True)
+    for field, value in updated_fields.items():
         setattr(location, field, value)
+
+    # H-A：lat/lng 更新後同步重算 PostGIS geom，確保地理查詢正確
+    if "latitude" in updated_fields or "longitude" in updated_fields:
+        location.geom = WKTElement(
+            f"POINT({float(location.longitude)} {float(location.latitude)})", srid=4326
+        )
+
     await db.flush()
     return location
 
