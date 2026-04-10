@@ -10,7 +10,7 @@ GET /locations/{id}/weather endpoint 整合測試
 - 502：外部 API 失敗
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 from httpx import AsyncClient
