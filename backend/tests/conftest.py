@@ -1,3 +1,4 @@
+import os
 from unittest.mock import AsyncMock
 
 import pytest
@@ -8,12 +9,17 @@ from app.main import app
 from app.core.database import Base, get_db
 from app.core.redis import get_redis
 
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:password@localhost:5432/lenslog_test"
+def get_test_database_url() -> str:
+    return (
+        os.getenv("TEST_DATABASE_URL")
+        or os.getenv("DATABASE_URL")
+        or "postgresql+asyncpg://postgres:password@localhost:5432/lenslog_test"
+    )
 
 
 @pytest.fixture(scope="function")
 async def db_session():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    engine = create_async_engine(get_test_database_url(), echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
