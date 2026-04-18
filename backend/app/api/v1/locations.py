@@ -5,6 +5,7 @@ from geoalchemy2.functions import ST_DWithin, ST_Distance, ST_MakePoint
 from geoalchemy2.types import Geography
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import cast, select
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.models.models import Location, LocationTag, User
@@ -55,7 +56,13 @@ async def create_location(
     for tag_str in data.tags:
         db.add(LocationTag(location_id=location.id, tag=tag_str))
 
-    return location
+    await db.flush()
+    result = await db.execute(
+        select(Location)
+        .where(Location.id == location.id)
+        .options(selectinload(Location.tags))
+    )
+    return result.scalar_one()
 
 
 @router.get("/{location_id}", response_model=LocationResponse)

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, date
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # ─── Auth Schemas ────────────────────────────────────────────────────────────
@@ -87,6 +87,13 @@ class LocationResponse(BaseModel):
     longitude: float
     tags: list[str] = []
     created_at: datetime
+
+    @field_validator('tags', mode='before')
+    @classmethod
+    def extract_tags(cls, v: list) -> list[str]:
+        if v and not isinstance(v[0], str):
+            return [item.tag for item in v]
+        return v
 
     class Config:
         from_attributes = True
