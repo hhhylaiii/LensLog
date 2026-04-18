@@ -90,8 +90,8 @@ class LocationResponse(BaseModel):
 
     @field_validator("tags", mode="before")
     @classmethod
-    def extract_tag_strings(cls, v: list) -> list[str]:
-        if v and hasattr(v[0], "tag"):
+    def extract_tags(cls, v: list) -> list[str]:
+        if v and not isinstance(v[0], str):
             return [item.tag for item in v]
         return v
 
