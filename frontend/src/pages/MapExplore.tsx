@@ -95,6 +95,32 @@ const s: Record<string, React.CSSProperties> = {
   locationDesc: { fontSize: '12px', color: '#666', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   locationCoords: { fontSize: '11px', color: '#444', marginTop: '4px' },
   mapArea: { flex: 1 },
+  sidebarTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '12px',
+  },
+  toggleBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: '#888',
+    cursor: 'pointer',
+    fontSize: '16px',
+    padding: '4px 6px',
+    borderRadius: '6px',
+    lineHeight: 1,
+  },
+  sidebarCollapsed: {
+    width: '40px',
+    flexShrink: 0,
+    background: '#13131a',
+    borderRight: '1px solid #2a2a38',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingTop: '12px',
+  },
   // Modal
   overlay: {
     position: 'fixed',
@@ -272,6 +298,7 @@ const MapExplore: React.FC = () => {
   const [search, setSearch] = useState('')
   const [target, setTarget] = useState<[number, number] | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const { data: locations = [] } = useQuery<Location[]>({
@@ -290,47 +317,60 @@ const MapExplore: React.FC = () => {
   return (
     <div style={s.page}>
       {/* Left sidebar */}
-      <div style={s.sidebar}>
-        <div style={s.sidebarHeader}>
-          <div style={s.sidebarTitle}>Locations</div>
-          <input
-            style={s.searchInput}
-            placeholder="Search locations…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button style={s.addBtn} onClick={() => setShowModal(true)}>
-            + Add Location
+      {sidebarCollapsed ? (
+        <div style={s.sidebarCollapsed}>
+          <button style={s.toggleBtn} onClick={() => setSidebarCollapsed(false)} title="Expand sidebar">
+            ▶
           </button>
         </div>
-
-        <div style={s.locationList}>
-          {filtered.length === 0 ? (
-            <div style={s.emptyList}>
-              {search ? 'No matching locations.' : 'No locations yet.'}
+      ) : (
+        <div style={s.sidebar}>
+          <div style={s.sidebarHeader}>
+            <div style={s.sidebarTitleRow}>
+              <div style={s.sidebarTitle}>Locations</div>
+              <button style={s.toggleBtn} onClick={() => setSidebarCollapsed(true)} title="Collapse sidebar">
+                ◀
+              </button>
             </div>
-          ) : (
-            filtered.map((loc) => (
-              <div
-                key={loc.id}
-                style={{
-                  ...s.locationItem,
-                  background: hoveredId === loc.id ? '#1e1e2e' : 'transparent',
-                }}
-                onClick={() => handleSelectLocation(loc)}
-                onMouseEnter={() => setHoveredId(loc.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                <div style={s.locationName}>{loc.name}</div>
-                {loc.description && <div style={s.locationDesc}>{loc.description}</div>}
-                <div style={s.locationCoords}>
-                  {Number(loc.latitude).toFixed(4)}, {Number(loc.longitude).toFixed(4)}
-                </div>
+            <input
+              style={s.searchInput}
+              placeholder="Search locations…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button style={s.addBtn} onClick={() => setShowModal(true)}>
+              + Add Location
+            </button>
+          </div>
+
+          <div style={s.locationList}>
+            {filtered.length === 0 ? (
+              <div style={s.emptyList}>
+                {search ? 'No matching locations.' : 'No locations yet.'}
               </div>
-            ))
-          )}
+            ) : (
+              filtered.map((loc) => (
+                <div
+                  key={loc.id}
+                  style={{
+                    ...s.locationItem,
+                    background: hoveredId === loc.id ? '#1e1e2e' : 'transparent',
+                  }}
+                  onClick={() => handleSelectLocation(loc)}
+                  onMouseEnter={() => setHoveredId(loc.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  <div style={s.locationName}>{loc.name}</div>
+                  {loc.description && <div style={s.locationDesc}>{loc.description}</div>}
+                  <div style={s.locationCoords}>
+                    {Number(loc.latitude).toFixed(4)}, {Number(loc.longitude).toFixed(4)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Map */}
       <div style={s.mapArea}>
