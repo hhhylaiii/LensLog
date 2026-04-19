@@ -29,9 +29,10 @@ async def list_locations(
             select(Location)
             .where(ST_DWithin(geom_geo, point, radius))
             .order_by(ST_Distance(geom_geo, point))
+            .options(selectinload(Location.tags))
         )
     else:
-        stmt = select(Location).limit(50)
+        stmt = select(Location).limit(50).options(selectinload(Location.tags))
     result = await db.execute(stmt)
     return result.scalars().all()
 
