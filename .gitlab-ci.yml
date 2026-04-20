@@ -1,0 +1,98 @@
+stages:
+  - test
+  - lint
+
+default:
+  interruptible: true
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+backend-test:
+  stage: test
+  needs: []
+  image: python:3.11
+  services:
+    - name: postgis/postgis:14-3.3
+      alias: postgres
+    - name: redis:7-alpine
+      alias: redis
+  variables:
+    POSTGRES_DB: lenslog_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: password
+    DATABASE_URL: postgresql+asyncpg://postgres:password@postgres:5432/lenslog_test
+    REDIS_URL: redis://redis:6379/0
+    SECRET_KEY: test-secret-key
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: pip-$CI_COMMIT_REF_SLUG
+    paths:
+      - .cache/pip
+  before_script:
+    - python --version
+    - pip install -r backend/requirements.txt
+  script:
+    - cd backend
+    - ruff check .
+    - mypy app
+    - pytest tests/ -v --tb=short
+
+shared-typecheck:
+  stage: test
+  needs: []
+  image: node:20
+  cache:
+    key:
+      files:
+        - shared/package-lock.json
+    paths:
+      - shared/node_modules/
+  before_script:
+    - cd shared
+    - npm ci
+  script:
+    - npm run typecheck
+
+frontend-lint:
+  stage: lint
+  image: node:20
+  needs:
+    - shared-typecheck
+  cache:
+    key:
+      files:
+        - shared/package-lock.json
+        - frontend/package-lock.json
+    paths:
+      - shared/node_modules/
+      - frontend/node_modules/
+  before_script:
+    - cd shared
+    - npm ci
+    - cd ../frontend
+    - npm ci
+  script:
+    - npm run lint
+    - npm run typecheck
+
+mobile-lint:
+  stage: lint
+  image: node:20
+  needs:
+    - shared-typecheck
+  cache:
+    key: mobile-$CI_COMMIT_REF_SLUG
+    paths:
+      - shared/node_modules/
+      - mobile/node_modules/
+  before_script:
+    - cd shared
+    - npm install
+    - cd ../mobile
+    - npm install --legacy-peer-deps
+  script:
+    - npm run lint
+    - npm run typecheck
