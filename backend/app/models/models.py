@@ -5,11 +5,19 @@ from typing import Any
 from geoalchemy2 import Geometry
 from sqlalchemy import (
     UUID, Boolean, Date, DateTime, ForeignKey,
-    Integer, Numeric, String, Text, func,
+    Integer, Numeric, String, Text, func, text,
 )
+from sqlalchemy import event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+
+@event.listens_for(Base.metadata, "before_create")
+def _ensure_postgis_extension(target, connection, **kwargs):
+    """Ensure PostGIS types exist before creating tables that use geometry."""
+    if connection.dialect.name == "postgresql":
+        connection.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
 
 
 class User(Base):
