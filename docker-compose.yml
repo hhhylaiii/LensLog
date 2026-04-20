@@ -90,13 +90,12 @@ services:
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: "30"
       REFRESH_TOKEN_EXPIRE_DAYS: "7"
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-      AWS_REGION: ap-northeast-1
-      S3_BUCKET_NAME: lenslog-dev
-      S3_ENDPOINT_URL: http://minio:9000
-      # S3_PUBLIC_URL must use localhost so the browser can reach MinIO directly
-      S3_PUBLIC_URL: http://localhost:9000/lenslog-dev
+      STORAGE_ENDPOINT_URL: http://minio:9000
+      STORAGE_PUBLIC_URL: http://localhost:9000
+      STORAGE_ACCESS_KEY: minioadmin
+      STORAGE_SECRET_KEY: minioadmin
+      STORAGE_BUCKET_NAME: lenslog-dev
+      STORAGE_REGION: us-east-1
       FRONTEND_URL: http://localhost:5173
       OPENMETEO_BASE_URL: https://api.open-meteo.com/v1
       SUNRISE_SUNSET_API_URL: https://api.sunrise-sunset.org/json
@@ -123,12 +122,14 @@ services:
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: dev-secret-key-change-in-production
       ALGORITHM: HS256
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-      AWS_REGION: ap-northeast-1
-      S3_BUCKET_NAME: lenslog-dev
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_PUBLIC_URL: http://localhost:9000/lenslog-dev
+      #Celery Worker的環境變數修改
+      STORAGE_ENDPOINT_URL: http://minio:9000
+      STORAGE_PUBLIC_URL: http://localhost:9000
+      STORAGE_ACCESS_KEY: minioadmin
+      STORAGE_SECRET_KEY: minioadmin
+      STORAGE_BUCKET_NAME: lenslog-dev
+      STORAGE_REGION: us-east-1
+      #
       OPENMETEO_BASE_URL: https://api.open-meteo.com/v1
       SUNRISE_SUNSET_API_URL: https://api.sunrise-sunset.org/json
     volumes:
