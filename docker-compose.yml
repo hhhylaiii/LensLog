@@ -134,6 +134,8 @@ services:
       S3_PUBLIC_URL: http://localhost:9000/lenslog-dev
       OPENMETEO_BASE_URL: https://api.open-meteo.com/v1
       SUNRISE_SUNSET_API_URL: https://api.sunrise-sunset.org/json
+      CWA_BASE_URL: https://opendata.cwa.gov.tw/api/v1/rest/datastore
+      CWA_API_KEY: ${CWA_API_KEY:-}
     volumes:
       - ./backend:/app
     depends_on:

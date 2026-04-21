@@ -3,6 +3,7 @@ GET /locations/{id}/weather endpoint integration tests
 
 Test scope:
 - Success: forecast list returned with correct fields
+- Cache hit: returns cached response with correct format
 - Cache hit respects auth (no 403 bypass)
 - 403: querying another user's location
 - 404: location not found
@@ -13,6 +14,7 @@ Test scope:
 - Field types: pop is int, wind_speed is str, start_time has timezone
 """
 
+import json
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -235,3 +237,54 @@ async def test_forecast_field_types(client: AsyncClient):
     assert isinstance(period["weather_description"], str)
     assert len(period["weather_description"]) > 0
     assert "+08:00" in period["start_time"]
+
+
+@pytest.mark.asyncio
+async def test_get_weather_cache_hit_returns_correct_response(client: AsyncClient):
+    """Cache hit path: cached JSON is returned with correct structure and fields."""
+    token = await register_and_login(client, "user_w7", "w7@test.com", "password123")
+    location_id = await create_location(client, token)
+
+    cached_payload = {
+        "township": "信義區",
+        "county": "臺北市",
+        "forecasts": [
+            {
+                "start_time": "2026-04-21T12:00:00+08:00",
+                "end_time": "2026-04-22T00:00:00+08:00",
+                "temp_max": 28,
+                "temp_min": 22,
+                "pop": 30,
+                "wind_speed": "3級",
+                "weather_description": "多雲時晴",
+            }
+        ],
+        "sunrise": "05:35",
+        "sunset": "18:14",
+    }
+
+    from app.core.redis import get_redis
+    from app.main import app
+
+    mock_redis = AsyncMock()
+    mock_redis.exists = AsyncMock(return_value=0)
+    mock_redis.get = AsyncMock(return_value=json.dumps(cached_payload))
+
+    app.dependency_overrides[get_redis] = lambda: mock_redis
+
+    resp = await client.get(
+        f"{LOCATIONS_URL}/{location_id}/weather",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["township"] == "信義區"
+    assert data["county"] == "臺北市"
+    assert len(data["forecasts"]) == 1
+    assert data["forecasts"][0]["temp_max"] == 28
+    assert data["forecasts"][0]["wind_speed"] == "3級"
+    assert data["sunrise"] == "05:35"
+    assert data["sunset"] == "18:14"

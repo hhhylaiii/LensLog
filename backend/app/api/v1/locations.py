@@ -24,7 +24,6 @@ from app.api.deps import get_current_active_user
 
 router = APIRouter(prefix="/locations", tags=["locations"])
 
-WEATHER_CACHE_TTL = 60 * 30  # retained for backward compatibility
 FORECAST_CACHE_TTL = 60 * 60 * 2  # 2 hours — CWA forecast updates every 6h
 _TAIWAN_TZ = ZoneInfo("Asia/Taipei")
 logger = logging.getLogger(__name__)
@@ -119,19 +118,19 @@ async def get_location_weather(
     lat = float(location.latitude)
     lng = float(location.longitude)
 
-    # 2. Resolve administrative district (required for F-D0047-093 query)
+    # 2. Check Redis cache after auth
+    cache_key = f"weather:{location_id}"
+    cached = await redis.get(cache_key)
+    if cached:
+        return json.loads(cached)
+
+    # 3. Resolve administrative district (required for F-D0047-091 query)
     township = await _get_township(lat, lng, db)
     if not township:
         raise HTTPException(
             status_code=422,
             detail="Location coordinates not within any known administrative district",
         )
-
-    # 3. Check Redis cache after auth
-    cache_key = f"weather:{location_id}"
-    cached = await redis.get(cache_key)
-    if cached:
-        return json.loads(cached)
 
     # 4. Fetch forecast + sunrise/sunset in parallel
     forecast_data, sun_data = await asyncio.gather(
