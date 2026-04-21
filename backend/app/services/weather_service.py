@@ -1,110 +1,100 @@
 import logging
-import math
-from typing import TypedDict
+from typing import Any
 
 import httpx
 from app.core.config import settings
 
-# CWA 自動氣象站觀測資料 endpoint
-_CWA_STATION_URL = f"{settings.CWA_BASE_URL}/O-A0003-001"
-
-# 無效資料的 sentinel 值（CWA 以 -99 表示缺測）
-_INVALID_SENTINEL = -99.0
+# F-D0047-091 is the REST API ID for 1-week township forecast
+_CWA_FORECAST_URL = f"{settings.CWA_BASE_URL}/F-D0047-091"
 
 logger = logging.getLogger(__name__)
 
-
-# 明確定義回傳型別，方便靜態分析與 IDE 補全
-class WeatherData(TypedDict, total=False):
-    temperature_2m: float
-    precipitation: float
-    wind_speed_10m: float
+_FORECAST_ELEMENTS = "最高溫度,最低溫度,12小時降雨機率,風速,天氣現象"
+_MAX_PERIODS = 2  # covers 24 hours at 12-hour intervals
 
 
-def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
-    """計算兩點之間的球面距離（公里）"""
-    r = 6371.0
-    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dlambda = math.radians(lng2 - lng1)
-    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
-    return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+def _safe_int(raw: str, default: int = 0) -> int:
+    """Parse a CWA value string to int, returning default on empty or invalid input."""
+    s = raw.strip()
+    if not s:
+        return default
+    try:
+        return int(float(s))
+    except (ValueError, TypeError):
+        return default
 
 
-async def get_weather(lat: float, lng: float) -> WeatherData:
-    """從 CWA 自動氣象站取得最近測站的即時天氣"""
-    # CWA 開放資料平台規格要求 Authorization 以 query string 傳送
-    # 官方文件：https://opendata.cwa.gov.tw/dist/opendata-swagger.html
-    # 這是 CWA 的設計，無法改為 HTTP Header（會回傳 401），勿修改此行為。
-    # 請在 reverse proxy 層設定遮蔽含 Authorization= 的 query string。
+def _extract_element_times(elements: list[dict], element_name: str) -> list[dict]:
+    for el in elements:
+        if el.get("ElementName") == element_name:
+            return el.get("Time", [])[:_MAX_PERIODS]
+    return []
+
+
+def _build_periods(elements: list[dict]) -> list[dict[str, Any]]:
+    """Parse F-D0047-091 WeatherElement list into ForecastPeriod dicts."""
+    max_t_times = _extract_element_times(elements, "最高溫度")
+    min_t_times = _extract_element_times(elements, "最低溫度")
+    pop_times = _extract_element_times(elements, "12小時降雨機率")
+    ws_times = _extract_element_times(elements, "風速")
+    wx_times = _extract_element_times(elements, "天氣現象")
+
+    periods = []
+    count = min(len(max_t_times), len(min_t_times), len(pop_times), len(ws_times), len(wx_times))
+    for i in range(count):
+        def _val(times: list[dict], key: str, idx: int = i) -> str:
+            ev = times[idx].get("ElementValue", [{}])
+            return str(ev[0].get(key, "")) if ev else ""
+
+        ws_val = _val(ws_times, "BeaufortScale")
+        wind_speed_desc = f"{ws_val}級" if ws_val and ws_val.isdigit() else ws_val
+
+        periods.append({
+            "start_time": max_t_times[i].get("StartTime", ""),
+            "end_time": max_t_times[i].get("EndTime", ""),
+            "temp_max": _safe_int(_val(max_t_times, "MaxTemperature")),
+            "temp_min": _safe_int(_val(min_t_times, "MinTemperature")),
+            "pop": _safe_int(_val(pop_times, "ProbabilityOfPrecipitation")),
+            "wind_speed": wind_speed_desc,
+            "weather_description": _val(wx_times, "Weather"),
+        })
+    return periods
+
+
+async def get_weather_forecast(county_name: str) -> list[dict[str, Any]]:
+    """Call CWA F-D0047-091 and return up to 2 forecast periods for the county."""
     params = {
         "Authorization": settings.CWA_API_KEY,
         "format": "JSON",
-        "limit": "1000",
+        "elementName": _FORECAST_ELEMENTS,
     }
-    logger.debug("Fetching CWA weather data for (lat=%s, lng=%s)", lat, lng)
-    # CWA 憑證缺少 Subject Key Identifier，需關閉 SSL 驗證
+    logger.debug("Fetching CWA forecast for county=%s", county_name)
+    # CWA certificates lack Subject Key Identifier; SSL verification must be disabled.
     async with httpx.AsyncClient(verify=False) as client:
-        resp = await client.get(_CWA_STATION_URL, params=params, timeout=15)
+        resp = await client.get(_CWA_FORECAST_URL, params=params, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 
-    stations = data.get("records", {}).get("Station", [])
-    if not stations:
-        return {}
+    all_locations = (
+        data.get("records", {})
+        .get("Locations", [{}])[0]
+        .get("Location", [])
+    )
+    # F-D0047-091 locationName query param does not filter — match county in Python
+    location = next(
+        (loc for loc in all_locations if loc.get("LocationName") == county_name),
+        None,
+    )
+    if not location:
+        logger.warning("No forecast location data for county=%s", county_name)
+        return []
 
-    best_station = None
-    best_dist = float("inf")
-
-    for station in stations:
-        # 取 WGS84 座標
-        coords = station.get("GeoInfo", {}).get("Coordinates", [])
-        wgs84 = next((c for c in coords if c.get("CoordinateName") == "WGS84"), None)
-        if not wgs84:
-            continue
-
-        s_lat = wgs84.get("StationLatitude")
-        s_lng = wgs84.get("StationLongitude")
-        if s_lat is None or s_lng is None:
-            continue
-
-        # 過濾掉天氣欄位全為無效值的測站
-        elements = station.get("WeatherElement", {})
-        temp = elements.get("AirTemperature")
-        # CWA 偶爾回傳非數字字串（如 "N/A"），需捕捉 ValueError
-        try:
-            temp_f = float(temp) if temp is not None else None
-        except (TypeError, ValueError):
-            temp_f = None
-        if temp_f is None or temp_f <= _INVALID_SENTINEL:
-            continue
-
-        dist = _haversine_km(lat, lng, float(s_lat), float(s_lng))
-        if dist < best_dist:
-            best_dist = dist
-            best_station = station
-
-    if not best_station:
-        return {}
-
-    elements = best_station.get("WeatherElement", {})
-
-    def _safe(val, fallback: float = 0.0) -> float:
-        try:
-            f = float(val)
-            return fallback if f <= _INVALID_SENTINEL else f
-        except (TypeError, ValueError):
-            return fallback
-
-    return {
-        "temperature_2m": _safe(elements.get("AirTemperature")),
-        "precipitation": _safe(elements.get("Now", {}).get("Precipitation")),
-        "wind_speed_10m": _safe(elements.get("WindSpeed")),
-    }
+    elements = location.get("WeatherElement", [])
+    return _build_periods(elements)
 
 
 async def get_sunrise_sunset(lat: float, lng: float, date: str | None = None) -> dict:
-    """從 Sunrise-Sunset API 取得日出日落時間"""
+    """Fetch sunrise and sunset times from the Sunrise-Sunset API."""
     params: dict[str, str | int | float] = {"lat": lat, "lng": lng, "formatted": 0}
     if date:
         params["date"] = date

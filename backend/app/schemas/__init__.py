@@ -179,9 +179,19 @@ class MonthlyStat(BaseModel):
 
 # ─── Weather Schemas ──────────────────────────────────────────────────────────
 
-class WeatherResponse(BaseModel):
-    temperature: float
-    precipitation: float
-    windspeed: float
-    sunrise: Optional[str] = None  # 本地時間 HH:MM，解析失敗時為 null
-    sunset: Optional[str] = None   # 本地時間 HH:MM，解析失敗時為 null
+class ForecastPeriod(BaseModel):
+    start_time: str = Field(..., description="ISO 8601 with +08:00 timezone")
+    end_time: str = Field(..., description="ISO 8601 with +08:00 timezone")
+    temp_max: int = Field(..., description="Forecast high temperature in °C")
+    temp_min: int = Field(..., description="Forecast low temperature in °C")
+    pop: int = Field(..., description="Precipitation probability 0–100%")
+    wind_speed: str = Field(..., description="Beaufort scale description (e.g. '3級')")
+    weather_description: str = Field(..., description="Weather condition description (e.g. '多雲時晴')")
+
+
+class WeatherForecastResponse(BaseModel):
+    township: str = Field(..., description="鄉鎮市區名稱 (matches CWA locationName)")
+    county: str = Field(..., description="縣市名稱")
+    forecasts: list[ForecastPeriod] = Field(..., description="1–2 forecast periods covering the next 24 hours")
+    sunrise: Optional[str] = None
+    sunset: Optional[str] = None

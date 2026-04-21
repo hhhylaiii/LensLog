@@ -94,6 +94,15 @@ class ExifData(Base):
     photo: Mapped["Photo"] = relationship("Photo", back_populates="exif")
 
 
+class Township(Base):
+    __tablename__ = "townships"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(30), nullable=False)
+    county: Mapped[str] = mapped_column(String(30), nullable=False)
+    geom: Mapped[Any] = mapped_column(Geometry("MULTIPOLYGON", srid=4326), nullable=False)
+
+
 class Gear(Base):
     __tablename__ = "gear"
 

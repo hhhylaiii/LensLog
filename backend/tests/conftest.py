@@ -1,20 +1,26 @@
+import os
 from unittest.mock import AsyncMock
 
 import pytest
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from app.main import app
 from app.core.database import Base, get_db
 from app.core.redis import get_redis
 
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:password@localhost:5432/lenslog_test"
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "postgresql+asyncpg://postgres:password@db:5432/lenslog_test",
+)
 
 
 @pytest.fixture(scope="function")
 async def db_session():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
         await conn.run_sync(Base.metadata.create_all)
 
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

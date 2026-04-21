@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.functions import ST_DWithin, ST_Distance, ST_MakePoint
+from geoalchemy2.functions import ST_DWithin, ST_Distance, ST_Intersects, ST_MakePoint, ST_SetSRID
 from geoalchemy2.types import Geography
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import cast, select
@@ -16,16 +16,28 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.redis import get_redis
-from app.models.models import Location, LocationTag, User
-from app.schemas import LocationCreate, LocationUpdate, LocationResponse, WeatherResponse
-from app.services.weather_service import get_weather, get_sunrise_sunset
+
+from app.models.models import Location, LocationTag, Township, User
+from app.schemas import LocationCreate, LocationUpdate, LocationResponse, WeatherForecastResponse, ForecastPeriod
+from app.services.weather_service import get_weather_forecast, get_sunrise_sunset
 from app.api.deps import get_current_active_user
 
 router = APIRouter(prefix="/locations", tags=["locations"])
 
-WEATHER_CACHE_TTL = 60 * 30  # 30 分鐘
-_TAIWAN_TZ = ZoneInfo("Asia/Taipei")  # 模組頂層常數，只建立一次
+WEATHER_CACHE_TTL = 60 * 30  # retained for backward compatibility
+FORECAST_CACHE_TTL = 60 * 60 * 2  # 2 hours — CWA forecast updates every 6h
+_TAIWAN_TZ = ZoneInfo("Asia/Taipei")
 logger = logging.getLogger(__name__)
+
+
+async def _get_township(lat: float, lng: float, db: AsyncSession) -> Township | None:
+    """Return the Township whose boundary contains the given coordinates, or None."""
+    result = await db.execute(
+        select(Township).where(
+            ST_Intersects(Township.geom, ST_SetSRID(ST_MakePoint(lng, lat), 4326))
+        ).limit(1)
+    )
+    return result.scalar_one_or_none()
 
 
 @router.get("", response_model=list[LocationResponse])
@@ -89,14 +101,14 @@ async def get_location(location_id: uuid.UUID, db: AsyncSession = Depends(get_db
     return location
 
 
-@router.get("/{location_id}/weather", response_model=WeatherResponse)
+@router.get("/{location_id}/weather", response_model=WeatherForecastResponse)
 async def get_location_weather(
     location_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     redis: aioredis.Redis = Depends(get_redis),
     current_user: User = Depends(get_current_active_user),
 ):
-    # 1. 查 DB 驗證存在與授權（必須在快取之前，避免快取繞過 403）
+    # 1. Auth check before cache — prevents cache-bypass 403
     result = await db.execute(select(Location).where(Location.id == location_id))
     location = result.scalar_one_or_none()
     if not location:
@@ -104,29 +116,36 @@ async def get_location_weather(
     if location.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    # 2. 授權通過後才讀 Redis 快取
+    lat = float(location.latitude)
+    lng = float(location.longitude)
+
+    # 2. Resolve administrative district (required for F-D0047-093 query)
+    township = await _get_township(lat, lng, db)
+    if not township:
+        raise HTTPException(
+            status_code=422,
+            detail="Location coordinates not within any known administrative district",
+        )
+
+    # 3. Check Redis cache after auth
     cache_key = f"weather:{location_id}"
     cached = await redis.get(cache_key)
     if cached:
         return json.loads(cached)
 
-    lat = float(location.latitude)
-    lng = float(location.longitude)
-
-    # 3. 並行呼叫兩個外部 API
-    weather_data, sun_data = await asyncio.gather(
-        get_weather(lat, lng),
+    # 4. Fetch forecast + sunrise/sunset in parallel
+    forecast_data, sun_data = await asyncio.gather(
+        get_weather_forecast(township.county),
         get_sunrise_sunset(lat, lng),
         return_exceptions=True,
     )
 
-    if isinstance(weather_data, Exception):
+    if isinstance(forecast_data, Exception):
         raise HTTPException(status_code=502, detail="Weather service unavailable")
     if isinstance(sun_data, Exception):
         raise HTTPException(status_code=502, detail="Sunrise-sunset service unavailable")
 
-    # 4. 將 UTC 日出日落轉為台灣本地時間（Asia/Taipei，UTC+8）
-    def to_local_hhmm(utc_iso: str) -> str | None:  # 回傳 Optional[str]
+    def to_local_hhmm(utc_iso: str) -> str | None:
         try:
             dt = datetime.fromisoformat(utc_iso)
             return dt.astimezone(_TAIWAN_TZ).strftime("%H:%M")
@@ -134,16 +153,17 @@ async def get_location_weather(
             logger.warning("Failed to parse datetime %r: %s", utc_iso, exc)
             return None
 
-    response = WeatherResponse(
-        temperature=weather_data.get("temperature_2m", 0.0),
-        precipitation=weather_data.get("precipitation", 0.0),
-        windspeed=weather_data.get("wind_speed_10m", 0.0),
+    response = WeatherForecastResponse(
+        township=township.name,
+        county=township.county,
+        forecasts=[ForecastPeriod(**p) for p in forecast_data],
         sunrise=to_local_hhmm(sun_data.get("sunrise", "")),
         sunset=to_local_hhmm(sun_data.get("sunset", "")),
     )
 
-    # 5. 寫入 Redis 快取
-    await redis.set(cache_key, response.model_dump_json(), ex=WEATHER_CACHE_TTL)
+    # 5. Cache with 2-hour TTL only when forecast data is non-empty
+    if response.forecasts:
+        await redis.set(cache_key, response.model_dump_json(), ex=FORECAST_CACHE_TTL)
 
     return response
 
