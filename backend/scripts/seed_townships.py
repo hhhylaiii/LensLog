@@ -49,6 +49,13 @@ def seed(truncate: bool = False) -> None:
         sys.exit(1)
 
     with Session(engine) as session:
+        table_exists = session.execute(
+            text("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'townships')")
+        ).scalar()
+        if not table_exists:
+            print("[seed] townships table not found — skipping (run 'alembic upgrade head' first).")
+            return
+
         if truncate:
             session.execute(text("DELETE FROM townships"))
             print("[seed] Existing rows deleted.")
