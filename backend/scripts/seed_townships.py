@@ -48,11 +48,17 @@ def seed(truncate: bool = False) -> None:
         print("[seed] ERROR: GeoJSON contains no features.")
         sys.exit(1)
 
-    print(f"[seed] Inserting {len(features)} townships...")
     with Session(engine) as session:
         if truncate:
             session.execute(text("DELETE FROM townships"))
             print("[seed] Existing rows deleted.")
+        else:
+            count = session.execute(text("SELECT COUNT(*) FROM townships")).scalar()
+            if count > 0:
+                print(f"[seed] Already seeded ({count} rows). Skipping. Use --truncate to re-seed.")
+                return
+
+        print(f"[seed] Inserting {len(features)} townships...")
 
         for feature in features:
             props = feature.get("properties", {})
