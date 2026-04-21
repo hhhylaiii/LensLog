@@ -90,7 +90,7 @@ Week 11-12  整合測試 + 部署 + Demo 準備
 - [ ] **景點 CRUD API**（`/api/v1/locations`）
   - `GET /locations?lat=&lng=&radius=&tags=`（PostGIS `ST_DWithin` 地理篩選）
   - `POST /locations`、`PATCH /locations/{id}`、`DELETE /locations/{id}`
-  - `GET /locations/{id}/weather`（串接 Open-Meteo + Sunrise-Sunset API，Redis 快取 TTL 30 分鐘）
+  - `GET /locations/{id}/weather`（串接 CWA F-D0047-091 鄉鎮天氣預報 + Sunrise-Sunset API，Redis 快取 TTL 2 小時）
 - [ ] **照片 metadata API**（`/api/v1/photos`）
   - `POST /photos`（接收 S3 key + caption + location_id + metadata）
   - `GET /photos/{id}`（含 EXIF join）
@@ -103,7 +103,7 @@ Week 11-12  整合測試 + 部署 + Demo 準備
 
 - [ ] 設計景點 `geom` 欄位的 PostGIS 查詢優化（`EXPLAIN ANALYZE` 確認使用 GIST index）
 - [ ] 實作 viewport 篩選邏輯（`ST_MakeEnvelope`），避免回傳視窗外景點
-- [ ] 串接 Open-Meteo API（溫度、降雨、風速）+ Sunrise-Sunset API（日出日落時間）
+- [x] 串接 CWA F-D0047-091 API（7 天鄉鎮天氣預報：溫度、降雨機率、風速）+ Sunrise-Sunset API（日出日落時間）
 - [ ] 實作 Marker Clustering 建議邏輯（提供前端聚合所需的資料格式）
 
 ### 前端工程師（Week 5–6）
@@ -117,7 +117,7 @@ Week 11-12  整合測試 + 部署 + Demo 準備
 
 ### 交付驗收（Week 6 結束）
 - [ ] 可在地圖上新增景點、查看景點清單、依標籤過濾
-- [ ] 點擊景點顯示即時天氣與日落時間
+- [ ] 點擊景點顯示 7 天天氣預報與日出日落時間
 - [ ] Marker 數量 > 50 時自動 Clustering
 
 ---

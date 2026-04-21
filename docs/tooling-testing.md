@@ -99,7 +99,7 @@ asyncio_mode = "auto"   # 自動識別 async 測試，不需要逐個加 @pytest
 
 httpx 在此專案中有兩個用途：
 1. **測試用途**（backend/tests）：搭配 `AsyncClient(app=app)` 做 in-process 測試，不需要啟動真實伺服器
-2. **生產用途**（`backend/app/services/weather_service.py`）：作為非同步 HTTP 客戶端呼叫外部 API（Open-Meteo、Sunrise-Sunset）
+2. **生產用途**（`backend/app/services/weather_service.py`）：作為非同步 HTTP 客戶端呼叫外部 API（CWA F-D0047-091 鄉鎮天氣預報、Sunrise-Sunset）
 
 ## 相關資源
 

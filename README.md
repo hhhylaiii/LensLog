@@ -38,7 +38,7 @@
 
 - 地點標記支援自訂標籤與分類過濾
 - 顯示該地點所有攝影師作品縮圖（含 EXIF 資訊）
-- 整合即時天氣與日落時間（Open-Meteo / Sunrise-Sunset API）
+- 整合 7 天天氣預報與日落時間（CWA F-D0047-091 / Sunrise-Sunset API）
 - 地理搜尋：「找我附近 5 公里內的拍攝景點」（PostGIS ST_DWithin）
 - Marker Clustering：地圖縮放時自動聚合附近景點
 
@@ -119,7 +119,7 @@
 ┌──────────────────────────────────────────────────────────┐
 │                     雲端儲存 / 外部服務                    │
 │   AWS S3（原圖 + 縮圖）  │  CloudFront CDN（圖片加速）    │
-│   Open-Meteo API（天氣） │  Sunrise-Sunset API（日落）    │
+│   CWA F-D0047-091（天氣預報）│  Sunrise-Sunset API（日落）   │
 │   Expo Push Notification Service（App 推播通知）           │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -332,7 +332,7 @@ CREATE TABLE gear (
 | GET | `/locations/{id}` | 取得景點詳情（含照片、天氣）|
 | PATCH | `/locations/{id}` | 更新景點資訊 |
 | DELETE | `/locations/{id}` | 刪除景點 |
-| GET | `/locations/{id}/weather` | 取得景點即時天氣與日落時間 |
+| GET | `/locations/{id}/weather` | 取得景點 7 天天氣預報與日出日落時間 |
 
 ### 器材（Gear）
 
@@ -589,7 +589,9 @@ S3_BUCKET_NAME=lenslog-photos
 REDIS_URL=redis://redis:6379/0
 
 # 外部 API
-OPENMETEO_BASE_URL=https://api.open-meteo.com/v1
+CWA_BASE_URL=https://opendata.cwa.gov.tw/api/v1/rest/datastore
+CWA_API_KEY=your-cwa-api-key
+SUNRISE_SUNSET_API_URL=https://api.sunrise-sunset.org/json
 ```
 
 ---
@@ -610,7 +612,7 @@ OPENMETEO_BASE_URL=https://api.open-meteo.com/v1
 - [ ] **前端：** 照片上傳元件（react-dropzone，直傳 S3）
 - [ ] **後端：** 照片 metadata API、Celery EXIF 解析任務
 - [ ] **後端：** 景點 CRUD API、PostGIS 地理搜尋（半徑篩選）
-- [ ] **後端：** 天氣 / 日落 API 串接與快取（Redis，TTL 30 分鐘）
+- [x] **後端：** 天氣 / 日落 API 串接與快取（CWA F-D0047-091 7 天預報，Redis TTL 2 小時）
 
 ### 第 8–10 週：器材庫與 D3.js 視覺化
 
@@ -636,7 +638,7 @@ OPENMETEO_BASE_URL=https://api.open-meteo.com/v1
 | 地圖同時載入上千個 Marker | 前端 Marker Clustering + 後端 viewport 範圍篩選（只回傳畫面內景點）|
 | 照片上傳佔用 API server 資源 | 前端直傳 S3 Presigned URL，後端只接收 metadata |
 | EXIF 解析、縮圖生成耗時 | Celery Worker 非同步處理，上傳後立即回應，背景完成解析 |
-| 熱門景點重複查詢天氣 API | Redis 快取天氣結果（TTL 30 分鐘）|
+| 熱門景點重複查詢天氣 API | Redis 快取天氣預報結果（TTL 2 小時）|
 | 統計圖表每次即時計算 | 後端定時預計算統計結果存 Redis，前端直接讀取快取 |
 
 ---
