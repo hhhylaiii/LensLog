@@ -64,7 +64,7 @@ def _build_periods(elements: list[dict]) -> list[dict[str, Any]]:
 
 
 async def get_weather_forecast(county_name: str) -> list[dict[str, Any]]:
-    """Call CWA F-D0047-091 and return up to 2 forecast periods for the county."""
+    """Call CWA F-D0047-091 and return up to _MAX_PERIODS forecast periods (~7 days) for the county."""
     params = {
         "Authorization": settings.CWA_API_KEY,
         "format": "JSON",

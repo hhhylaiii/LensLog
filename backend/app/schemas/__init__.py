@@ -192,6 +192,6 @@ class ForecastPeriod(BaseModel):
 class WeatherForecastResponse(BaseModel):
     township: str = Field(..., description="鄉鎮市區名稱 (matches CWA locationName)")
     county: str = Field(..., description="縣市名稱")
-    forecasts: list[ForecastPeriod] = Field(..., description="1–2 forecast periods covering the next 24 hours")
+    forecasts: list[ForecastPeriod] = Field(..., description="Up to 14 forecast periods (~7 days) at 12-hour intervals")
     sunrise: Optional[str] = None
     sunset: Optional[str] = None
