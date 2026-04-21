@@ -10,7 +10,9 @@ _CWA_FORECAST_URL = f"{settings.CWA_BASE_URL}/F-D0047-091"
 logger = logging.getLogger(__name__)
 
 _FORECAST_ELEMENTS = "最高溫度,最低溫度,12小時降雨機率,風速,天氣現象"
-_MAX_PERIODS = 2  # covers 24 hours at 12-hour intervals
+# Controls how many 12-hour forecast periods to return (max 14 = ~7 days).
+# 2 = 24h, 4 = 2 days, 8 = 4 days, 14 = 7 days
+_MAX_PERIODS = 14
 
 
 def _safe_int(raw: str, default: int = 0) -> int:
