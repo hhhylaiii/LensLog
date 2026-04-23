@@ -82,7 +82,6 @@ async def create_location(
         db.add(LocationTag(location_id=location.id, tag=tag_str))
     await db.flush()
 
-    # 重新查詢以 eager load tags
     result = await db.execute(
         select(Location).options(selectinload(Location.tags)).where(Location.id == location.id)
     )
