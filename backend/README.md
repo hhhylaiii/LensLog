@@ -204,7 +204,7 @@ backend/
 - Generates presigned upload URLs, uploads/downloads objects, and builds public object URLs.
 
 `app/services/s3_service.py`
-- Legacy S3 helpers kept for backward compatibility; new code should use `storage_service.py`.
+- Legacy compatibility shim kept for backward compatibility; new code should use `storage_service.py`.
 
 `app/services/exif_service.py`
 - EXIF parsing and photo metadata extraction logic.
