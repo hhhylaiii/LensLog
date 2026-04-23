@@ -31,6 +31,7 @@ interface Location {
   longitude: number
   user_id: string
   created_at: string
+  tags: string[]
 }
 
 interface LocationForm {
@@ -330,18 +331,43 @@ const MapExplore: React.FC = () => {
   const [showModal, setShowModal] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
-
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [nearbyLoading, setNearbyLoading] = useState(false)
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
     queryFn: () => api.get('/locations').then((r) => r.data),
   })
-
-  const filtered = locations.filter((l) =>
-    l.name.toLowerCase().includes(search.toLowerCase()),
-  )
+  const allTags = Array.from(new Set(locations.flatMap((l) => l.tags)))
+  const filtered = locations.filter((l) => {
+    const matchesSearch = l.name.toLowerCase().includes(search.toLowerCase())
+    const matchesTag = selectedTag ? l.tags.includes(selectedTag) : true
+    return matchesSearch && matchesTag
+  })
 
   const handleSelectLocation = (loc: Location) => {
     setTarget([loc.latitude, loc.longitude])
+  }
+
+  const handleNearby = () => {
+    if (!navigator.geolocation) return alert('瀏覽器不支援定位')
+    setNearbyLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        setTarget([latitude, longitude])
+        queryClient.fetchQuery({
+          queryKey: ['locations', latitude, longitude],
+          queryFn: () =>
+            api.get('/locations', { params: { lat: latitude, lng: longitude, radius: 5000 } })
+               .then((r) => r.data),
+        })
+        setNearbyLoading(false)
+      },
+      () => {
+        alert('無法取得位置')
+        setNearbyLoading(false)
+      }
+    )
   }
 
   return (
@@ -351,6 +377,39 @@ const MapExplore: React.FC = () => {
         <div style={s.sidebarCollapsed}>
           <button style={s.toggleBtn} onClick={() => setSidebarCollapsed(false)} title="Expand sidebar">
             ▶
+          </button>
+
+          {/* 標籤過濾 */}
+          {allTags.length > 0 && (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px', marginTop: '10px' }}>
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    border: '1px solid',
+                    cursor: 'pointer',
+                    background: selectedTag === tag ? '#6366f1' : 'transparent',
+                    color: selectedTag === tag ? '#fff' : '#aaa',
+                    borderColor: selectedTag === tag ? '#6366f1' : '#2a2a38',
+                  }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 附近搜尋按鈕 */}
+          <button
+            style={{ ...s.addBtn, background: '#1e1e2e', color: '#aaa', marginTop: '8px' }}
+            onClick={handleNearby}
+            disabled={nearbyLoading}
+          >
+            {nearbyLoading ? '定位中…' : '📍 找我附近 5 公里'}
           </button>
         </div>
       ) : (
