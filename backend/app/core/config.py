@@ -30,7 +30,8 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
 
     # External APIs
-    OPENMETEO_BASE_URL: str = "https://api.open-meteo.com/v1"
+    CWA_API_KEY: str = ""
+    CWA_BASE_URL: str = "https://opendata.cwa.gov.tw/api/v1/rest/datastore"
     SUNRISE_SUNSET_API_URL: str = "https://api.sunrise-sunset.org/json"
 
     # Frontend / CORS

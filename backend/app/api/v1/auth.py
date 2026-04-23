@@ -1,6 +1,7 @@
 import time
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import redis.asyncio as aioredis
@@ -15,8 +16,10 @@ from app.core.security import (
 )
 from app.models.models import User
 from app.schemas import UserRegister, UserLogin, TokenResponse, UserResponse
-from app.api.deps import get_current_active_user, oauth2_scheme
+from app.api.deps import get_current_active_user
 from app.core.redis import get_redis
+
+_bearer_scheme = HTTPBearer()
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -66,12 +69,12 @@ async def refresh(refresh_token: str):
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
     refresh_token: str = Body(..., embed=True),
     redis: aioredis.Redis = Depends(get_redis),
     current_user: User = Depends(get_current_active_user),
 ):
-    for t in [token, refresh_token]:
+    for t in [credentials.credentials, refresh_token]:
         payload = decode_token(t)
         if payload:
             jti = payload.get("jti")

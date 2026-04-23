@@ -14,7 +14,7 @@ httpx>=0.27.0
 - **Pillow**：Python 的圖片處理函式庫，用於解析圖片格式、產生縮圖。
 - **piexif**：EXIF 元資料讀取函式庫，從 JPEG 圖片中提取相機設定資訊。
 - **boto3**：AWS SDK for Python，用於操作 S3 儲存服務（產生 Presigned URL、刪除物件）。
-- **httpx**：非同步 HTTP 客戶端，用於呼叫外部 API（Open-Meteo 天氣、Sunrise-Sunset）。
+- **httpx**：非同步 HTTP 客戶端，用於呼叫外部 API（CWA F-D0047-091 天氣預報、Sunrise-Sunset）。
 
 ## 照片上傳流程（Presigned URL 模式）
 
@@ -94,8 +94,8 @@ def generate_thumbnail_task(s3_key: str, thumb_key: str, max_size: int = 800):
 位於 `backend/app/services/weather_service.py`，為拍攝景點提供天氣資訊：
 
 ```python
-# Open-Meteo：取得即時溫度、天氣代碼、風速
-async def get_weather(lat: float, lng: float) -> dict: ...
+# CWA F-D0047-091：取得鄉鎮 7 天天氣預報（溫度、降雨機率、風速）
+async def get_weather_forecast(county_name: str) -> list[dict]: ...
 
 # Sunrise-Sunset API：取得日出日落時間
 async def get_sunrise_sunset(lat: float, lng: float, date: str = None) -> dict: ...
@@ -116,5 +116,5 @@ async def get_sunrise_sunset(lat: float, lng: float, date: str = None) -> dict: 
 - [piexif 文件](https://piexif.readthedocs.io/)
 - [boto3 S3 文件](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html)
 - [Presigned URLs 說明](https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html)
-- [Open-Meteo API](https://open-meteo.com/)
+- [CWA 開放資料平臺](https://opendata.cwa.gov.tw)
 - [Sunrise-Sunset API](https://sunrise-sunset.org/api)

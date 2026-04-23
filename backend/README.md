@@ -51,12 +51,19 @@ backend/
 │   └── versions/
 │       ├── 001_initial.py
 │       ├── 002_add_is_admin.py
-│       └── 003_add_locations_geom.py
+│       ├── 003_add_locations_geom.py
+│       └── 004_add_townships_table.py
+├── data/
+│   └── taiwan_townships.geojson
+├── scripts/
+│   └── seed_townships.py
 ├── tests/
 │   ├── conftest.py
 │   ├── test_auth.py
 │   ├── test_blacklist.py
-│   └── test_main.py
+│   ├── test_main.py
+│   ├── test_weather.py
+│   └── test_weather_service.py
 └── images/
     ├── auth_endpoints.mmd
     ├── auth_endpoints.png
@@ -136,7 +143,7 @@ backend/
 
 `app/api/v1/locations.py`
 - Location endpoints.
-- Location CRUD and nearby search with coordinates.
+- Location CRUD, nearby search with coordinates, and `GET /locations/{id}/weather` for 7-day forecast.
 
 `app/api/v1/gear.py`
 - Gear endpoints.
@@ -175,7 +182,7 @@ backend/
 - Defines database tables and relationships.
 
 `app/models/models.py`
-- Main model definitions such as `User`, `Photo`, `Location`, `Gear`, and related records.
+- Main model definitions such as `User`, `Photo`, `Location`, `Gear`, `Township`, and related records.
 
 `app/schemas/`
 - Pydantic schemas.
@@ -196,7 +203,7 @@ backend/
 - EXIF parsing and photo metadata extraction logic.
 
 `app/services/weather_service.py`
-- Weather-related integration or transformation logic.
+- CWA F-D0047-091 township forecast integration (7-day, up to 14 periods) and sunrise-sunset API calls.
 
 ### Task Layer
 
@@ -224,6 +231,25 @@ backend/
 `alembic/versions/`
 - Versioned migration scripts.
 - Each file represents one database schema change.
+- `004_add_townships_table.py` — adds `townships` table with PostGIS `MULTIPOLYGON` geometry for reverse geocoding.
+
+## Data Folder
+
+`data/`
+- Static seed data files bundled with the backend.
+
+`data/taiwan_townships.geojson`
+- NLSC 鄉鎮市區界線 GeoJSON (368 features). Used by `scripts/seed_townships.py` to populate the `townships` table.
+
+## Scripts Folder
+
+`scripts/`
+- One-off or startup utility scripts.
+
+`scripts/seed_townships.py`
+- Seeds the `townships` table from `data/taiwan_townships.geojson`.
+- Idempotent: skips if rows already exist. Use `--truncate` to re-seed.
+- Run automatically on backend startup via `docker-compose.yml`.
 
 ## Test Folder
 
@@ -241,6 +267,12 @@ backend/
 
 `tests/test_blacklist.py`
 - Token blacklist behavior tests.
+
+`tests/test_weather.py`
+- Integration tests for `GET /locations/{id}/weather` (success, 403, 404, 401, 422, 502, cache hit, field types).
+
+`tests/test_weather_service.py`
+- Unit tests for `weather_service.py` helpers (`_safe_int`, `_extract_element_times`, `_build_periods`, `get_weather_forecast`). All HTTP calls mocked.
 
 ## Images Folder
 

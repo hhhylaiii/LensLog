@@ -21,7 +21,7 @@
 
 | 服務 | 用途 | 免費額度 |
 |------|------|---------|
-| **Open-Meteo** | 即時天氣 | 完全免費，無需 API Key |
+| **CWA F-D0047-091** | 7 天鄉鎮天氣預報 | 完全免費，需申請 API Key（opendata.cwa.gov.tw） |
 | **Sunrise-Sunset API** | 日落時間 | 完全免費 |
 | **Leaflet.js + OpenStreetMap** | 地圖底圖與套件 | 開源免費 |
 | **UptimeRobot** | 可用性監控 | 免費方案支援 50 個監控 |

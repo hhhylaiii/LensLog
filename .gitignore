@@ -3,6 +3,9 @@
 # ===========================
 .claude/
 .gemini/
+.specify/
+CLAUDE.md
+specs/
 
 # ===========================
 # Local Notes

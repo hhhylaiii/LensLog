@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from app.main import app
@@ -21,6 +22,7 @@ def get_test_database_url() -> str:
 async def db_session():
     engine = create_async_engine(get_test_database_url(), echo=False)
     async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
         await conn.run_sync(Base.metadata.create_all)
 
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -46,6 +48,7 @@ async def client(db_session: AsyncSession):
 
     mock_redis = AsyncMock()
     mock_redis.exists = AsyncMock(return_value=0)
+    mock_redis.get = AsyncMock(return_value=None)
     mock_redis.set = AsyncMock()
 
     app.dependency_overrides[get_db] = override_get_db

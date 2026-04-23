@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, date
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # ─── Auth Schemas ────────────────────────────────────────────────────────────
@@ -88,6 +88,13 @@ class LocationResponse(BaseModel):
     tags: list[str] = []
     created_at: datetime
 
+    @field_validator("tags", mode="before")
+    @classmethod
+    def extract_tag_strings(cls, v: list) -> list[str]:
+        if v and hasattr(v[0], "tag"):
+            return [item.tag for item in v]
+        return v
+
     class Config:
         from_attributes = True
 
@@ -168,3 +175,23 @@ class ISOStat(BaseModel):
 class MonthlyStat(BaseModel):
     month: str
     count: int
+
+
+# ─── Weather Schemas ──────────────────────────────────────────────────────────
+
+class ForecastPeriod(BaseModel):
+    start_time: str = Field(..., description="ISO 8601 with +08:00 timezone")
+    end_time: str = Field(..., description="ISO 8601 with +08:00 timezone")
+    temp_max: int = Field(..., description="Forecast high temperature in °C")
+    temp_min: int = Field(..., description="Forecast low temperature in °C")
+    pop: int = Field(..., description="Precipitation probability 0–100%")
+    wind_speed: str = Field(..., description="Beaufort scale description (e.g. '3級')")
+    weather_description: str = Field(..., description="Weather condition description (e.g. '多雲時晴')")
+
+
+class WeatherForecastResponse(BaseModel):
+    township: str = Field(..., description="鄉鎮市區名稱 (matches CWA locationName)")
+    county: str = Field(..., description="縣市名稱")
+    forecasts: list[ForecastPeriod] = Field(..., description="Up to 14 forecast periods (~7 days) at 12-hour intervals")
+    sunrise: Optional[str] = None
+    sunset: Optional[str] = None
