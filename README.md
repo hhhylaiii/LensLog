@@ -7,7 +7,7 @@
 
 ## Usage
 
-please download the home.html, web.html and open with liveserver or clip to open 
+please download the home.html, web.html and open with liveserver or clip it to open 
 
 
 ## Sprint 1
@@ -16,4 +16,4 @@ please download the home.html, web.html and open with liveserver or clip to open
 2. 器材庫
 3. 上傳照片
 4. 個人首頁
-5. 網頁首頁(```web.html```)
+5. 網頁首頁(```home.html```)
