@@ -29,7 +29,7 @@ FastAPI 是 LensLog 的核心後端框架，負責處理所有 HTTP API 請求�
 | Router 模組 | 前綴 | 功能 |
 |---|---|---|
 | `app/api/v1/auth.py` | `/api/v1/auth` | 使用者登入、註冊、token 刷新 |
-| `app/api/v1/photos.py` | `/api/v1/photos` | 照片 CRUD、S3 presign |
+| `app/api/v1/photos.py` | `/api/v1/photos` | 照片 CRUD、storage presign（MinIO/R2/S3） |
 | `app/api/v1/locations.py` | `/api/v1/locations` | 拍攝景點管理 |
 | `app/api/v1/gear.py` | `/api/v1/gear` | 攝影器材管理 |
 | `app/api/v1/stats.py` | `/api/v1/stats` | 個人拍攝統計資料 |
@@ -71,7 +71,7 @@ gunicorn app.main:app -k uvicorn.workers.UvicornWorker --workers 4
 | `DATABASE_URL` | `postgresql+asyncpg://...` | 非同步 DB 連線字串 |
 | `SECRET_KEY` | `change-me-in-production` | JWT 簽署金鑰（**生產必須更換**） |
 | `REDIS_URL` | `redis://redis:6379/0` | Celery broker / backend |
-| `S3_BUCKET_NAME` | `lenslog-photos` | 照片儲存 S3 bucket |
+| `STORAGE_BUCKET_NAME` | `lenslog-dev` | 照片儲存 bucket（MinIO / R2 / S3） |
 
 ## 相關資源
 

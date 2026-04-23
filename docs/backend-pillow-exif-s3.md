@@ -1,4 +1,4 @@
-# Pillow、piexif 與 AWS S3 (boto3)
+# Pillow、piexif 與 S3-compatible Storage (boto3)
 
 ## 版本
 
@@ -13,7 +13,7 @@ httpx>=0.27.0
 
 - **Pillow**：Python 的圖片處理函式庫，用於解析圖片格式、產生縮圖。
 - **piexif**：EXIF 元資料讀取函式庫，從 JPEG 圖片中提取相機設定資訊。
-- **boto3**：AWS SDK for Python，用於操作 S3 儲存服務（產生 Presigned URL、刪除物件）。
+- **boto3**：AWS SDK for Python，用於操作 S3-compatible 儲存服務（MinIO / Cloudflare R2 / AWS S3）。
 - **httpx**：非同步 HTTP 客戶端，用於呼叫外部 API（CWA F-D0047-091 天氣預報、Sunrise-Sunset）。
 
 ## 照片上傳流程（Presigned URL 模式）
@@ -22,10 +22,10 @@ LensLog 採用「前端直傳 S3」的架構，後端不需要中轉圖片資料
 
 ```
 1. 前端請求 presigned URL
-   GET/POST /api/v1/photos/presign?filename=IMG_001.jpg
-   → 後端產生 S3 presigned PUT URL（有效期 1 小時）
+   GET/POST /api/v1/photos/presign?filename=IMG_001.jpg&content_type=image/jpeg
+   → 後端產生 presigned PUT URL（有效期 1 小時）
 
-2. 前端直接 PUT 圖片到 S3
+2. 前端直接 PUT 圖片到 storage
    PUT https://lenslog-photos.s3.ap-northeast-1.amazonaws.com/photos/{uuid}/IMG_001.jpg
 
 3. 前端通知後端照片已上傳
@@ -33,24 +33,21 @@ LensLog 採用「前端直傳 S3」的架構，後端不需要中轉圖片資料
    body: { s3_key, caption, location_id, is_public }
 
 4. 後端派發 Celery 任務
-   - process_exif_task(photo_id, s3_key)   → 解析 EXIF
-   - generate_thumbnail_task(s3_key, thumb_key) → 產生縮圖
+   - process_exif_task(photo_id, object_key)   → 解析 EXIF
+   - generate_thumbnail_task(object_key, thumb_key, max_size) → 產生縮圖
 ```
 
-## S3 服務（`backend/app/services/s3_service.py`）
+## Storage 服務（`backend/app/services/storage_service.py`）
 
 ```python
 # 產生 Presigned URL（前端直傳用）
-def generate_presigned_url(s3_key: str, expiration: int = 3600) -> str:
-    return s3_client.generate_presigned_url(
-        "put_object",
-        Params={"Bucket": settings.S3_BUCKET_NAME, "Key": s3_key},
-        ExpiresIn=expiration,
-    )
+def generate_presigned_url(key: str, expiration: int = 3600, content_type: str | None = None) -> str:
+    # Params 會把 ContentType 納入簽名，避免瀏覽器 PUT 時 header 不一致導致 403
+    ...
 
-# 取得物件的公開 URL（或 CloudFront URL）
-def get_object_url(s3_key: str) -> str:
-    return f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+# 取得物件的公開 URL（本機 MinIO / R2 / AWS S3）
+def get_object_url(key: str) -> str:
+    ...
 ```
 
 S3 Key 命名規則：`photos/{uuid}/{filename}`
@@ -105,10 +102,12 @@ async def get_sunrise_sunset(lat: float, lng: float, date: str = None) -> dict: 
 
 | 變數 | 說明 |
 |---|---|
-| `AWS_ACCESS_KEY_ID` | AWS 存取金鑰 ID |
-| `AWS_SECRET_ACCESS_KEY` | AWS 秘密存取金鑰 |
-| `AWS_REGION` | S3 bucket 所在區域（預設 `ap-northeast-1`，東京） |
-| `S3_BUCKET_NAME` | S3 bucket 名稱（預設 `lenslog-photos`） |
+| `STORAGE_ENDPOINT_URL` | S3-compatible endpoint（空字串 = AWS S3；MinIO/R2 需填） |
+| `STORAGE_PUBLIC_URL` | 對瀏覽器可達的公開網址（MinIO 本機通常是 `http://localhost:9000`） |
+| `STORAGE_ACCESS_KEY` | Access key |
+| `STORAGE_SECRET_KEY` | Secret key |
+| `STORAGE_BUCKET_NAME` | Bucket 名稱 |
+| `STORAGE_REGION` | Region（AWS S3 會用到；MinIO/R2 多半不嚴格） |
 
 ## 相關資源
 

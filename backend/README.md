@@ -40,6 +40,7 @@ backend/
 │   │   └── __init__.py
 │   ├── services/
 │   │   ├── exif_service.py
+│   │   ├── storage_service.py
 │   │   ├── s3_service.py
 │   │   └── weather_service.py
 │   └── tasks/
@@ -61,7 +62,9 @@ backend/
 │   ├── conftest.py
 │   ├── test_auth.py
 │   ├── test_blacklist.py
+│   ├── test_exif.py
 │   ├── test_main.py
+│   ├── test_storage.py
 │   ├── test_weather.py
 │   └── test_weather_service.py
 └── images/
@@ -139,7 +142,7 @@ backend/
 
 `app/api/v1/photos.py`
 - Photo endpoints.
-- Photo listing, record creation, single-photo lookup, update, delete, and S3 presign flow.
+- Photo listing, record creation, single-photo lookup, update, delete, and storage presign flow (MinIO/R2/S3).
 
 `app/api/v1/locations.py`
 - Location endpoints.
@@ -196,8 +199,12 @@ backend/
 `app/services/`
 - Service modules for reusable non-route logic and external integrations.
 
+`app/services/storage_service.py`
+- S3-compatible storage helpers (MinIO / Cloudflare R2 / AWS S3).
+- Generates presigned upload URLs, uploads/downloads objects, and builds public object URLs.
+
 `app/services/s3_service.py`
-- S3-related helpers such as presigned upload URL generation and object URL building.
+- Legacy S3 helpers kept for backward compatibility; new code should use `storage_service.py`.
 
 `app/services/exif_service.py`
 - EXIF parsing and photo metadata extraction logic.

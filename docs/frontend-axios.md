@@ -80,8 +80,8 @@ const apiClient = createApiClient({
 export function createPhotosService(client: AxiosInstance) {
   return {
     list: (params?) => client.get<Photo[]>('/photos', { params }).then(r => r.data),
-    presign: (filename: string) =>
-      client.post<PresignResponse>('/photos/presign', null, { params: { filename } }).then(r => r.data),
+    presign: (filename: string, content_type: string) =>
+      client.post<PresignResponse>('/photos/presign', null, { params: { filename, content_type } }).then(r => r.data),
     create: (data: PhotoCreate) =>
       client.post<Photo>('/photos', data).then(r => r.data),
     delete: (id: string) => client.delete(`/photos/${id}`),
@@ -118,7 +118,7 @@ const gear = await api.gear.list()
 
 ```typescript
 // 取得 presigned URL
-const { presigned_url, s3_key } = await api.photos.presign(file.name)
+const { presigned_url, s3_key } = await api.photos.presign(file.name, file.type)
 
 // 直接上傳至 S3（使用原始 axios，不帶 JWT header）
 await axios.put(presigned_url, file, {
