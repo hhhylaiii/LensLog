@@ -59,7 +59,6 @@ def process_exif_task(self, photo_id: str, object_key: str):
     }
 
     with _db_session() as db:
-        db: Session = db
         photo = db.get(Photo, photo_uuid)
         if photo is None:
             return {"status": "skipped", "reason": "photo_not_found", "photo_id": photo_id}
@@ -89,7 +88,6 @@ def generate_thumbnail_task(self, object_key: str, thumb_key: str, max_size: int
 
     if max_size == 800:
         with _db_session() as db:
-            db: Session = db
             photo = db.execute(select(Photo).where(Photo.s3_key == object_key)).scalar_one_or_none()
             if photo:
                 photo.thumb_key = thumb_key

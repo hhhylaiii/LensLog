@@ -30,9 +30,9 @@ def extract_exif(image_bytes: bytes) -> Dict[str, Any]:
     - width/height: 原始解析度
     """
     try:
-        img = Image.open(io.BytesIO(image_bytes))
+        img: Image.Image = Image.open(io.BytesIO(image_bytes))
         # 取得解析度 (必備基礎資訊)
-        result = {"width": img.size[0], "height": img.size[1]}
+        result: Dict[str, Any] = {"width": img.size[0], "height": img.size[1]}
         
         # 提取原始 EXIF 區塊
         exif_raw = img.info.get("exif", b"")
@@ -99,7 +99,7 @@ def get_resized_image(image_bytes: bytes, max_size: int) -> bytes:
     """
     縮圖工具函式：保持比例縮放並回傳 JPEG bytes。
     """
-    img = Image.open(io.BytesIO(image_bytes))
+    img: Image.Image = Image.open(io.BytesIO(image_bytes))
     # 統一轉成 RGB 以相容 JPEG 格式 (避免 RGBA 報錯)
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
