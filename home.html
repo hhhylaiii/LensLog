@@ -1,0 +1,1446 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LensLog — 為每個攝影愛好者記錄黃金時刻</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:         #0f1e38;
+    --ink-soft:    #4a5773;
+    --ink-mute:    #7d88a0;
+    --line:        #dde3ee;
+    --paper:       #eef2f8;
+    --paper-2:     #dfe6f0;
+    --card:        #ffffff;
+
+    --accent:      #1e5fb3;
+    --accent-ink:  #143e77;
+    --accent-soft: #e3edfa;
+    --accent-neon: #60a5fa;
+
+    --night:       #0a1629;
+    --night-2:     #1a2942;
+    --sunset:      #d9927d;
+    --gold:        #ffc879;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Geist', 'Noto Sans TC', -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'ss01', 'cv11';
+    letter-spacing: -0.005em;
+    line-height: 1.55;
+  }
+
+  /* Serif display font for headlines */
+  .serif {
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  img { display: block; max-width: 100%; }
+
+  /* ---------------- NAV ---------------- */
+  .nav {
+    position: absolute; top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex; align-items: center;
+    padding: 22px 48px;
+    color: #fff;
+  }
+  .nav .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    letter-spacing: -0.015em;
+  }
+  .nav .brand .mark {
+    width: 24px; height: 24px;
+    background: var(--accent-neon);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zm0 1.8a7.7 7.7 0 016.33 3.32l-4.82 2.78-1.51-5.64a7.72 7.72 0 010-.46zm-1.96.21l1.51 5.64-5.64-1.51a7.72 7.72 0 014.13-4.13zm-4.79 5.56l5.64 1.51-4.13 4.13A7.7 7.7 0 014.3 12a7.7 7.7 0 01.95-3.93zm12.54.22A7.7 7.7 0 0119.7 12a7.7 7.7 0 01-.95 3.93l-4.13-4.13 4.17-1.12zM12 10.2a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zm-4.13 3.93l4.13-1.11 1.51 5.64a7.72 7.72 0 01-5.64-4.53zm8.26 0a7.72 7.72 0 01-4.13 4.13l1.51-5.64 2.62 1.51z'/></svg>") center / contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zm0 1.8a7.7 7.7 0 016.33 3.32l-4.82 2.78-1.51-5.64a7.72 7.72 0 010-.46zm-1.96.21l1.51 5.64-5.64-1.51a7.72 7.72 0 014.13-4.13zm-4.79 5.56l5.64 1.51-4.13 4.13A7.7 7.7 0 014.3 12a7.7 7.7 0 01.95-3.93zm12.54.22A7.7 7.7 0 0119.7 12a7.7 7.7 0 01-.95 3.93l-4.13-4.13 4.17-1.12zM12 10.2a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zm-4.13 3.93l4.13-1.11 1.51 5.64a7.72 7.72 0 01-5.64-4.53zm8.26 0a7.72 7.72 0 01-4.13 4.13l1.51-5.64 2.62 1.51z'/></svg>") center / contain no-repeat;
+  }
+  .nav-links {
+    margin-left: 48px; display: flex; gap: 28px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.75);
+  }
+  .nav-links a { transition: color 0.2s; }
+  .nav-links a:hover { color: #fff; }
+  .nav-actions { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  .btn {
+    height: 40px; padding: 0 20px;
+    border-radius: 22px;
+    border: 1px solid transparent;
+    font-family: 'Geist', sans-serif;
+    font-size: 13.5px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s, border-color 0.15s;
+    letter-spacing: -0.005em;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.ghost-light {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+  .btn.ghost-light:hover { border-color: rgba(255, 255, 255, 0.55); }
+  .btn.solid-light {
+    background: #fff;
+    color: var(--accent-ink);
+  }
+  .btn.solid-light:hover { background: var(--accent-soft); }
+  .btn.solid {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn.solid:hover { background: var(--accent-ink); }
+  .btn.ghost {
+    background: transparent;
+    border-color: var(--line);
+    color: var(--ink);
+  }
+  .btn.ghost:hover { background: var(--paper-2); }
+  .btn.sm { height: 32px; font-size: 12.5px; padding: 0 14px; }
+  .btn.lg { height: 48px; font-size: 15px; padding: 0 26px; border-radius: 26px; }
+
+  /* ---------------- HERO ---------------- */
+  .hero {
+    position: relative;
+    height: 100vh; min-height: 640px; max-height: 880px;
+    overflow: hidden;
+    color: #fff;
+  }
+  .hero-sky {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+  .hero-sky svg { width: 100%; height: 100%; display: block; }
+
+  /* Film grain overlay for texture */
+  .hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: 0.06;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    mix-blend-mode: overlay;
+    z-index: 1;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 48px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+    padding: 7px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.06);
+    width: max-content;
+    margin-bottom: 28px;
+    animation: fadeUp 0.8s ease-out both;
+  }
+  .hero-eyebrow .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent-neon);
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.9);
+    animation: pulse 2s ease-out infinite;
+  }
+
+  .hero h1 {
+    margin: 0;
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-weight: 400;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    max-width: 920px;
+    color: #fff;
+    animation: fadeUp 0.9s 0.1s ease-out both;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--gold);
+    font-weight: 400;
+  }
+  .hero h1 .grad {
+    background: linear-gradient(120deg, #ffc879 0%, #d9927d 50%, #60a5fa 100%);
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+  }
+
+  .hero p {
+    margin: 28px 0 0;
+    font-size: clamp(16px, 1.3vw, 19px);
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.82);
+    max-width: 520px;
+    animation: fadeUp 0.9s 0.25s ease-out both;
+  }
+
+  .hero-actions {
+    margin-top: 40px;
+    display: flex; gap: 14px; align-items: center;
+    animation: fadeUp 0.9s 0.4s ease-out both;
+  }
+  .hero-meta-strip {
+    position: absolute;
+    bottom: 40px;
+    left: 48px;
+    right: 48px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    z-index: 2;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    animation: fadeUp 0.9s 0.6s ease-out both;
+  }
+  .hero-meta-strip .caption {
+    max-width: 300px;
+    line-height: 1.7;
+  }
+  .hero-meta-strip .caption-right {
+    text-align: right;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.6); }
+    70%  { box-shadow: 0 0 0 10px rgba(96, 165, 250, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0); }
+  }
+
+  /* ---------------- SECTION SCAFFOLD ---------------- */
+  section { padding: 120px 48px; }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  .section-label {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .section-label::before {
+    content: '';
+    width: 24px; height: 1px; background: var(--accent);
+  }
+
+  h2.section-title {
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-weight: 400;
+    font-size: clamp(34px, 4.2vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin: 0 0 20px;
+    color: var(--ink);
+    max-width: 760px;
+  }
+  h2.section-title em { font-style: italic; color: var(--accent); }
+
+  .section-lead {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    max-width: 600px;
+    margin: 0;
+  }
+
+  /* ---------------- FEATURE SECTION (asymmetric) ---------------- */
+  .features {
+    background:
+      linear-gradient(180deg, var(--paper) 0%, #e4eaf2 100%);
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 20px;
+    margin-top: 64px;
+  }
+  .feature-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 32px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -20px rgba(26, 41, 66, 0.18);
+    border-color: #c8d2e3;
+  }
+  .feature-card.tall { grid-column: span 5; grid-row: span 2; padding: 36px; }
+  .feature-card.wide { grid-column: span 7; }
+  .feature-card.half { grid-column: span 6; }
+  .feature-card.third { grid-column: span 4; }
+
+  .feature-card .fc-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+  .feature-card h3 {
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-weight: 400;
+    font-size: 26px;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .feature-card p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  /* Feature card embellishments */
+  .feature-map-mini {
+    margin-top: 24px;
+    height: 180px;
+    border-radius: 12px;
+    background:
+      radial-gradient(ellipse 140px 80px at 30% 45%, #cfd9e8 40%, transparent 72%),
+      radial-gradient(ellipse 160px 90px at 72% 65%, #dce2ec 30%, transparent 72%),
+      #e1e7ef;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .feature-map-mini::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(15,30,56,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15,30,56,0.05) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .mini-pin {
+    position: absolute;
+    width: 12px; height: 16px;
+    background: var(--accent);
+    border: 1.5px solid #fff;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 2px 4px rgba(26,41,66,0.25);
+  }
+  .mini-pin.neon { background: var(--accent-neon); border-color: var(--ink); }
+
+  .feature-exif-mini {
+    margin-top: 24px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    padding: 18px;
+    background: #fafbfd;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .feature-exif-mini .k { color: var(--ink-mute); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .feature-exif-mini .v { color: var(--ink); font-weight: 500; font-size: 14px; margin-top: 2px; font-family: 'Geist', sans-serif; letter-spacing: -0.01em; }
+
+  .feature-bar-mini {
+    margin-top: 24px;
+    display: flex; align-items: flex-end; gap: 4px;
+    height: 60px;
+    padding: 16px 0 0;
+    border-top: 1px dashed var(--line);
+  }
+  .feature-bar-mini .b {
+    flex: 1;
+    background: #dbe3ef;
+    border-radius: 2px 2px 0 0;
+  }
+  .feature-bar-mini .b.hi { background: var(--accent); }
+
+  /* ---------------- BIG STATEMENT (asymmetric hero-style section) ---------------- */
+  .statement {
+    background: var(--night);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    padding: 140px 48px;
+  }
+  .statement::before {
+    content: '';
+    position: absolute;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(96,165,250,0.15) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .statement::after {
+    content: '';
+    position: absolute;
+    bottom: -300px; left: -100px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(217,146,125,0.12) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .statement .container {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+  .statement h2 {
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-weight: 400;
+    font-size: clamp(40px, 5vw, 72px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    margin: 0;
+    color: #fff;
+  }
+  .statement h2 em { font-style: italic; color: var(--gold); }
+  .statement .timing {
+    display: flex; flex-direction: column; gap: 32px;
+    padding-left: 32px;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .timing-item .k {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 8px;
+  }
+  .timing-item .v {
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-size: 40px;
+    letter-spacing: -0.02em;
+    color: #fff;
+    line-height: 1;
+  }
+  .timing-item .v em { color: var(--accent-neon); font-style: normal; }
+  .timing-item .note {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.55);
+    margin-top: 8px;
+  }
+
+  /* ---------------- SPOTS SECTION ---------------- */
+  .spots-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 40px; flex-wrap: wrap;
+    margin-bottom: 56px;
+  }
+  .spots-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .spot-card {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    aspect-ratio: 3 / 4;
+    cursor: pointer;
+    transition: transform 0.4s ease;
+  }
+  .spot-card:hover { transform: translateY(-4px); }
+  .spot-card.wide { aspect-ratio: 3 / 2; grid-column: span 2; }
+
+  .spot-card .spot-bg {
+    position: absolute; inset: 0;
+    transition: transform 0.6s ease;
+  }
+  .spot-card:hover .spot-bg { transform: scale(1.06); }
+
+  .spot-card .spot-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+      rgba(15, 30, 56, 0) 0%,
+      rgba(15, 30, 56, 0) 50%,
+      rgba(15, 30, 56, 0.82) 100%);
+  }
+  .spot-card .spot-label {
+    position: absolute; top: 16px; left: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 14px;
+    backdrop-filter: blur(6px);
+  }
+  .spot-card .spot-info {
+    position: absolute; left: 18px; right: 18px; bottom: 18px;
+    color: #fff;
+  }
+  .spot-card .spot-info h4 {
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: -0.015em;
+    margin: 0 0 2px;
+  }
+  .spot-card .spot-info .meta {
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.78);
+    letter-spacing: -0.005em;
+  }
+  .spot-card .spot-info .meta .mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  /* Individual spot gradients — each gets a unique landscape mood */
+  .bg-elephant {
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 75%, rgba(255, 200, 120, 0.25) 0%, transparent 55%),
+      linear-gradient(180deg, #0a1629 0%, #1a2d50 35%, #2b4670 60%, #6b5a7a 85%, #d9927d 100%);
+  }
+  .bg-alishan {
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 40%, rgba(255, 180, 110, 0.35) 0%, transparent 55%),
+      linear-gradient(180deg, #2b4670 0%, #6b5a7a 30%, #d9927d 55%, #f0c891 70%, #e8e4f0 90%, #c5d6e8 100%);
+  }
+  .bg-taroko {
+    background: linear-gradient(180deg, #4a6378 0%, #3a4e62 40%, #2a3a4a 80%, #1a2838 100%);
+  }
+  .bg-jiufen {
+    background:
+      radial-gradient(ellipse 50% 30% at 55% 70%, rgba(255, 180, 90, 0.4) 0%, transparent 55%),
+      linear-gradient(180deg, #0f1e38 0%, #1a2d50 40%, #3d3648 70%, #4a3a42 100%);
+  }
+  .bg-sun-moon {
+    background: linear-gradient(180deg, #8fb4cc 0%, #b8d2dc 30%, #dce6eb 55%, #5a7a8a 80%, #3a5568 100%);
+  }
+  .bg-turtle {
+    background:
+      radial-gradient(ellipse 55% 30% at 50% 35%, rgba(180, 210, 230, 0.5) 0%, transparent 55%),
+      linear-gradient(180deg, #a8c4d8 0%, #7ba1bc 35%, #4a7390 65%, #2a5878 100%);
+  }
+  .bg-qingshui {
+    background: linear-gradient(180deg, #5a8ba8 0%, #3a6b8a 35%, #2a5878 65%, #1a3858 100%);
+  }
+  .bg-fulong {
+    background:
+      radial-gradient(ellipse 70% 40% at 50% 30%, rgba(255, 220, 180, 0.4) 0%, transparent 55%),
+      linear-gradient(180deg, #d9927d 0%, #e8a58a 20%, #7ba8c5 55%, #4a7a9a 100%);
+  }
+
+  /* Decorative silhouette layer on spot cards */
+  .silhouette {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 40%;
+    opacity: 0.8;
+  }
+
+  /* ---------------- PHOTOGRAPHERS ---------------- */
+  .photographers {
+    background: var(--card);
+  }
+  .ph-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 64px;
+  }
+  .ph-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px;
+    background: var(--card);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .ph-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  .ph-head {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+  }
+  .ph-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, #c6dbf3, #7ba1bc);
+    border: 1px solid var(--line);
+  }
+  .ph-name {
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-size: 22px;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+  .ph-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-mute);
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+  }
+  .ph-thumbs {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    margin-bottom: 18px;
+  }
+  .ph-thumbs .t {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    background: linear-gradient(160deg, #6b82a8, #334a75 60%, #1a2942);
+    border: 1px solid var(--line);
+  }
+  .ph-thumbs .t:nth-child(2) { background: linear-gradient(160deg, #8fb4cc, #4a7390 60%, #2a5878); }
+  .ph-thumbs .t:nth-child(3) { background: linear-gradient(160deg, #d9927d, #7ba8c5 60%, #4a7a9a); }
+  .ph-stats {
+    display: flex; gap: 16px; font-size: 12.5px; color: var(--ink-soft);
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+  }
+  .ph-stats .stat { display: flex; flex-direction: column; }
+  .ph-stats .stat .n { font-weight: 600; color: var(--ink); font-size: 15px; letter-spacing: -0.01em; }
+  .ph-stats .stat .l { font-size: 11px; color: var(--ink-mute); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  /* ---------------- CTA BAND ---------------- */
+  .cta-band {
+    background: var(--night-2);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-band::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1100px; height: 1100px;
+    background: radial-gradient(circle, rgba(96,165,250,0.18) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .cta-band .container {
+    position: relative;
+    text-align: center;
+    padding: 40px 0;
+  }
+  .cta-band h2 {
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-weight: 400;
+    font-size: clamp(36px, 4.5vw, 60px);
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin: 0 0 18px;
+    color: #fff;
+  }
+  .cta-band h2 em { font-style: italic; color: var(--gold); }
+  .cta-band p {
+    margin: 0 auto 36px;
+    max-width: 520px;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.6;
+  }
+  .cta-actions { display: inline-flex; gap: 12px; }
+
+  /* ---------------- FOOTER ---------------- */
+  footer {
+    background: var(--night);
+    color: rgba(255, 255, 255, 0.55);
+    padding: 72px 48px 40px;
+    font-size: 13.5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  footer .foot-grid {
+    max-width: 1280px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 40px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  footer .foot-brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: #fff;
+    margin-bottom: 14px;
+  }
+  footer .foot-brand .mark {
+    width: 22px; height: 22px;
+    background: var(--accent-neon);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zm0 1.8a7.7 7.7 0 016.33 3.32l-4.82 2.78-1.51-5.64a7.72 7.72 0 010-.46zm-1.96.21l1.51 5.64-5.64-1.51a7.72 7.72 0 014.13-4.13zm-4.79 5.56l5.64 1.51-4.13 4.13A7.7 7.7 0 014.3 12a7.7 7.7 0 01.95-3.93zm12.54.22A7.7 7.7 0 0119.7 12a7.7 7.7 0 01-.95 3.93l-4.13-4.13 4.17-1.12zM12 10.2a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zm-4.13 3.93l4.13-1.11 1.51 5.64a7.72 7.72 0 01-5.64-4.53zm8.26 0a7.72 7.72 0 01-4.13 4.13l1.51-5.64 2.62 1.51z'/></svg>") center / contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zm0 1.8a7.7 7.7 0 016.33 3.32l-4.82 2.78-1.51-5.64a7.72 7.72 0 010-.46zm-1.96.21l1.51 5.64-5.64-1.51a7.72 7.72 0 014.13-4.13zm-4.79 5.56l5.64 1.51-4.13 4.13A7.7 7.7 0 014.3 12a7.7 7.7 0 01.95-3.93zm12.54.22A7.7 7.7 0 0119.7 12a7.7 7.7 0 01-.95 3.93l-4.13-4.13 4.17-1.12zM12 10.2a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zm-4.13 3.93l4.13-1.11 1.51 5.64a7.72 7.72 0 01-5.64-4.53zm8.26 0a7.72 7.72 0 01-4.13 4.13l1.51-5.64 2.62 1.51z'/></svg>") center / contain no-repeat;
+  }
+  footer .tagline {
+    font-family: 'Instrument Serif', 'Noto Serif TC', serif;
+    font-size: 18px;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.4;
+    max-width: 280px;
+  }
+  footer h5 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    margin: 0 0 16px;
+    font-weight: 500;
+  }
+  footer .foot-links { display: flex; flex-direction: column; gap: 10px; }
+  footer .foot-links a { color: rgba(255, 255, 255, 0.72); transition: color 0.2s; }
+  footer .foot-links a:hover { color: #fff; }
+  footer .foot-bot {
+    max-width: 1280px; margin: 0 auto;
+    padding-top: 28px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------------- RESPONSIVE ---------------- */
+  @media (max-width: 960px) {
+    .nav { padding: 20px 24px; }
+    .nav-links { display: none; }
+    .hero-content { padding: 0 24px; }
+    .hero-meta-strip { left: 24px; right: 24px; bottom: 24px; }
+    .hero-meta-strip .caption { font-size: 10px; }
+    section { padding: 80px 24px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .feature-card.tall,
+    .feature-card.wide,
+    .feature-card.half,
+    .feature-card.third { grid-column: span 12; }
+    .statement { padding: 80px 24px; }
+    .statement .container { grid-template-columns: 1fr; gap: 48px; }
+    .statement .timing { padding-left: 0; border-left: 0; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 32px; }
+    .spots-grid { grid-template-columns: repeat(2, 1fr); }
+    .spot-card.wide { grid-column: span 2; }
+    .ph-grid { grid-template-columns: 1fr; }
+    footer { padding: 48px 24px 32px; }
+    footer .foot-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================= NAV ======================= -->
+<nav class="nav">
+  <div class="brand">
+    <span class="mark"></span>
+    LensLog
+  </div>
+  <div class="nav-links">
+    <a href="#features">功能</a>
+    <a href="#spots">景點</a>
+    <a href="#photographers">攝影師</a>
+    <a href="#pricing">訂閱方案</a>
+  </div>
+  <div class="nav-actions">
+    <a class="btn ghost-light sm">登入</a>
+    <a class="btn solid-light sm">開始使用</a>
+  </div>
+</nav>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <div class="hero-sky">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="h-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#060f22"/>
+          <stop offset="25%"  stop-color="#0f1e38"/>
+          <stop offset="50%"  stop-color="#1a2d50"/>
+          <stop offset="72%"  stop-color="#4a4670"/>
+          <stop offset="88%"  stop-color="#9b6a78"/>
+          <stop offset="100%" stop-color="#d9927d"/>
+        </linearGradient>
+        <linearGradient id="h-mount-far" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1a2d50" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="#2b4670" stop-opacity="0.85"/>
+        </linearGradient>
+        <linearGradient id="h-mount-near" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#0a1629"/>
+          <stop offset="100%" stop-color="#1a2942"/>
+        </linearGradient>
+        <radialGradient id="h-glow" cx="54%" cy="100%" r="45%">
+          <stop offset="0%" stop-color="#ffb277" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#ffb277" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="h-moon" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff" stop-opacity="0.95"/>
+          <stop offset="70%" stop-color="#fff" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+
+      <rect width="1600" height="900" fill="url(#h-sky)"/>
+
+      <!-- Moon -->
+      <circle cx="300" cy="180" r="40" fill="url(#h-moon)"/>
+      <circle cx="300" cy="180" r="22" fill="#f0ecde" opacity="0.9"/>
+
+      <!-- Sunset glow on horizon -->
+      <ellipse cx="860" cy="760" rx="520" ry="160" fill="url(#h-glow)"/>
+
+      <!-- Stars -->
+      <g fill="#ffffff">
+        <circle cx="160"  cy="80"  r="1.2" opacity="0.8"/>
+        <circle cx="420"  cy="100" r="0.8" opacity="0.7"/>
+        <circle cx="580"  cy="60"  r="1"   opacity="0.8"/>
+        <circle cx="760"  cy="90"  r="0.7" opacity="0.6"/>
+        <circle cx="920"  cy="50"  r="1.1" opacity="0.85"/>
+        <circle cx="1080" cy="110" r="0.8" opacity="0.7"/>
+        <circle cx="1260" cy="70"  r="1"   opacity="0.75"/>
+        <circle cx="1440" cy="130" r="0.7" opacity="0.6"/>
+        <circle cx="120"  cy="200" r="0.6" opacity="0.55"/>
+        <circle cx="520"  cy="180" r="0.7" opacity="0.6"/>
+        <circle cx="1200" cy="220" r="0.8" opacity="0.7"/>
+        <circle cx="1380" cy="260" r="0.6" opacity="0.5"/>
+        <circle cx="680"  cy="250" r="0.5" opacity="0.5"/>
+        <circle cx="1520" cy="180" r="0.9" opacity="0.75"/>
+      </g>
+
+      <!-- Distant mountain ridges (Yangmingshan / Central Range) -->
+      <path fill="url(#h-mount-far)"
+            d="M 0 620 L 120 560 L 240 590 L 360 530 L 500 570 L 640 520 L 780 550 L 920 500 L 1080 540 L 1220 510 L 1360 550 L 1500 530 L 1600 540 L 1600 900 L 0 900 Z"/>
+
+      <!-- Mid-distance hills -->
+      <path fill="#1a2942" opacity="0.85"
+            d="M 0 700 L 100 680 L 200 695 L 340 660 L 460 685 L 600 650 L 760 680 L 900 645 L 1060 670 L 1220 650 L 1360 675 L 1500 655 L 1600 680 L 1600 900 L 0 900 Z"/>
+
+      <!-- City skyline with Taipei 101 prominent -->
+      <g fill="url(#h-mount-near)">
+        <!-- Left cluster -->
+        <rect x="40"   y="730" width="34" height="170"/>
+        <rect x="80"   y="715" width="28" height="185"/>
+        <rect x="114"  y="740" width="36" height="160"/>
+        <rect x="158"  y="705" width="30" height="195"/>
+        <rect x="195"  y="725" width="34" height="175"/>
+        <rect x="236"  y="735" width="40" height="165"/>
+        <rect x="282"  y="712" width="32" height="188"/>
+        <rect x="320"  y="728" width="36" height="172"/>
+        <rect x="364"  y="718" width="30" height="182"/>
+        <rect x="400"  y="742" width="42" height="158"/>
+        <rect x="448"  y="722" width="32" height="178"/>
+        <rect x="486"  y="708" width="36" height="192"/>
+        <rect x="528"  y="730" width="34" height="170"/>
+        <rect x="568"  y="716" width="32" height="184"/>
+        <rect x="606"  y="735" width="40" height="165"/>
+        <rect x="652"  y="722" width="30" height="178"/>
+        <rect x="688"  y="706" width="36" height="194"/>
+        <rect x="730"  y="728" width="34" height="172"/>
+        <rect x="770"  y="715" width="38" height="185"/>
+        <rect x="814"  y="738" width="32" height="162"/>
+
+        <!-- Taipei 101 — centered around x=920 -->
+        <rect x="1122" y="720" width="34" height="180"/>   <!-- neighbor tower -->
+        <rect x="1162" y="735" width="40" height="165"/>
+        <rect x="1208" y="718" width="32" height="182"/>
+
+        <!-- 101 main pagoda shaft -->
+        <rect x="894" y="450" width="58" height="450"/>
+        <!-- Pagoda segments -->
+        <rect x="888" y="435" width="70" height="12"/>
+        <rect x="884" y="417" width="78" height="12"/>
+        <rect x="880" y="399" width="86" height="12"/>
+        <rect x="884" y="381" width="78" height="12"/>
+        <rect x="888" y="363" width="70" height="12"/>
+        <rect x="892" y="345" width="62" height="12"/>
+        <rect x="896" y="327" width="54" height="12"/>
+        <rect x="900" y="309" width="46" height="12"/>
+        <!-- Base podium -->
+        <rect x="876" y="790" width="94" height="110"/>
+        <!-- Spire -->
+        <rect x="920" y="240" width="6" height="65"/>
+      </g>
+      <!-- Spire tip light -->
+      <circle cx="923" cy="236" r="4" fill="#60a5fa"/>
+      <circle cx="923" cy="236" r="8" fill="#60a5fa" opacity="0.3"/>
+
+      <g fill="url(#h-mount-near)">
+        <!-- Right cluster -->
+        <rect x="1250" y="730" width="36" height="170"/>
+        <rect x="1292" y="712" width="30" height="188"/>
+        <rect x="1328" y="735" width="40" height="165"/>
+        <rect x="1374" y="720" width="32" height="180"/>
+        <rect x="1412" y="728" width="34" height="172"/>
+        <rect x="1452" y="705" width="30" height="195"/>
+        <rect x="1488" y="732" width="38" height="168"/>
+        <rect x="1532" y="720" width="32" height="180"/>
+        <rect x="1570" y="728" width="30" height="172"/>
+      </g>
+
+      <!-- Window lights -->
+      <g fill="#ffc879">
+        <!-- Scattered across buildings -->
+        <rect x="50"  y="750" width="3" height="3" opacity="0.9"/>
+        <rect x="60"  y="770" width="3" height="3" opacity="0.85"/>
+        <rect x="88"  y="735" width="3" height="3" opacity="0.9"/>
+        <rect x="96"  y="760" width="3" height="3" opacity="0.85"/>
+        <rect x="122" y="755" width="3" height="3" opacity="0.9"/>
+        <rect x="134" y="780" width="3" height="3" opacity="0.85"/>
+        <rect x="166" y="720" width="3" height="3" opacity="0.9"/>
+        <rect x="174" y="745" width="3" height="3" opacity="0.8"/>
+        <rect x="204" y="745" width="3" height="3" opacity="0.85"/>
+        <rect x="246" y="760" width="3" height="3" opacity="0.9"/>
+        <rect x="258" y="780" width="3" height="3" opacity="0.8"/>
+        <rect x="292" y="730" width="3" height="3" opacity="0.85"/>
+        <rect x="330" y="752" width="3" height="3" opacity="0.85"/>
+        <rect x="370" y="740" width="3" height="3" opacity="0.8"/>
+        <rect x="412" y="768" width="3" height="3" opacity="0.9"/>
+        <rect x="458" y="742" width="3" height="3" opacity="0.85"/>
+        <rect x="496" y="730" width="3" height="3" opacity="0.9"/>
+        <rect x="538" y="760" width="3" height="3" opacity="0.85"/>
+        <rect x="576" y="744" width="3" height="3" opacity="0.8"/>
+        <rect x="616" y="758" width="3" height="3" opacity="0.85"/>
+        <rect x="660" y="748" width="3" height="3" opacity="0.85"/>
+        <rect x="696" y="728" width="3" height="3" opacity="0.9"/>
+        <rect x="740" y="750" width="3" height="3" opacity="0.85"/>
+        <rect x="780" y="738" width="3" height="3" opacity="0.85"/>
+        <rect x="824" y="762" width="3" height="3" opacity="0.8"/>
+
+        <!-- 101 denser warm windows -->
+        <rect x="905" y="460" width="3" height="3" opacity="0.95"/>
+        <rect x="920" y="466" width="3" height="3" opacity="0.9"/>
+        <rect x="934" y="460" width="3" height="3" opacity="0.95"/>
+        <rect x="945" y="472" width="3" height="3" opacity="0.9"/>
+        <rect x="908" y="485" width="3" height="3" opacity="0.85"/>
+        <rect x="922" y="490" width="3" height="3" opacity="0.9"/>
+        <rect x="938" y="486" width="3" height="3" opacity="0.95"/>
+        <rect x="900" y="510" width="3" height="3" opacity="0.85"/>
+        <rect x="916" y="516" width="3" height="3" opacity="0.9"/>
+        <rect x="932" y="510" width="3" height="3" opacity="0.95"/>
+        <rect x="948" y="520" width="3" height="3" opacity="0.85"/>
+        <rect x="905" y="540" width="3" height="3" opacity="0.9"/>
+        <rect x="918" y="546" width="3" height="3" opacity="0.95"/>
+        <rect x="934" y="542" width="3" height="3" opacity="0.9"/>
+        <rect x="910" y="568" width="3" height="3" opacity="0.85"/>
+        <rect x="924" y="574" width="3" height="3" opacity="0.9"/>
+        <rect x="940" y="568" width="3" height="3" opacity="0.95"/>
+        <rect x="900" y="595" width="3" height="3" opacity="0.85"/>
+        <rect x="916" y="600" width="3" height="3" opacity="0.9"/>
+        <rect x="932" y="595" width="3" height="3" opacity="0.95"/>
+        <rect x="946" y="605" width="3" height="3" opacity="0.85"/>
+        <rect x="906" y="625" width="3" height="3" opacity="0.9"/>
+        <rect x="920" y="630" width="3" height="3" opacity="0.85"/>
+        <rect x="935" y="625" width="3" height="3" opacity="0.9"/>
+        <rect x="910" y="655" width="3" height="3" opacity="0.95"/>
+        <rect x="924" y="660" width="3" height="3" opacity="0.9"/>
+        <rect x="940" y="656" width="3" height="3" opacity="0.85"/>
+        <rect x="902" y="685" width="3" height="3" opacity="0.9"/>
+        <rect x="918" y="690" width="3" height="3" opacity="0.95"/>
+        <rect x="934" y="685" width="3" height="3" opacity="0.9"/>
+        <rect x="948" y="695" width="3" height="3" opacity="0.85"/>
+        <rect x="908" y="715" width="3" height="3" opacity="0.95"/>
+        <rect x="924" y="720" width="3" height="3" opacity="0.9"/>
+        <rect x="938" y="715" width="3" height="3" opacity="0.95"/>
+        <rect x="914" y="745" width="3" height="3" opacity="0.9"/>
+        <rect x="928" y="750" width="3" height="3" opacity="0.85"/>
+        <rect x="942" y="746" width="3" height="3" opacity="0.9"/>
+        <rect x="906" y="775" width="3" height="3" opacity="0.95"/>
+        <rect x="922" y="780" width="3" height="3" opacity="0.9"/>
+
+        <!-- Right cluster lights -->
+        <rect x="1138" y="755" width="3" height="3" opacity="0.85"/>
+        <rect x="1178" y="760" width="3" height="3" opacity="0.9"/>
+        <rect x="1222" y="748" width="3" height="3" opacity="0.85"/>
+        <rect x="1264" y="762" width="3" height="3" opacity="0.9"/>
+        <rect x="1302" y="745" width="3" height="3" opacity="0.85"/>
+        <rect x="1342" y="760" width="3" height="3" opacity="0.9"/>
+        <rect x="1386" y="752" width="3" height="3" opacity="0.85"/>
+        <rect x="1424" y="762" width="3" height="3" opacity="0.9"/>
+        <rect x="1464" y="732" width="3" height="3" opacity="0.95"/>
+        <rect x="1502" y="758" width="3" height="3" opacity="0.85"/>
+        <rect x="1544" y="748" width="3" height="3" opacity="0.9"/>
+        <rect x="1582" y="762" width="3" height="3" opacity="0.85"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="hero-content">
+    <span class="hero-eyebrow">
+      <span class="live-dot"></span>
+      Taipei · 象山觀景點 · 18:42
+    </span>
+    <h1 class="serif">
+      為每個攝影師<br/>
+      記錄<em>黃金時刻</em>
+    </h1>
+    <p>
+      LensLog 是專為攝影愛好者打造的工具。自動讀取 EXIF、配對景點、追蹤器材,還能告訴你日落前還剩幾分鐘最好的光。
+    </p>
+    <div class="hero-actions">
+      <a class="btn solid-light lg">免費開始 →</a>
+      <a class="btn ghost-light lg">▸ 看 90 秒介紹</a>
+    </div>
+  </div>
+
+  <div class="hero-meta-strip">
+    <div class="caption">
+      Blue hour · ƒ/2.8 · 1/60s · ISO 800<br/>
+      Sony α7 IV · FE 35mm f/1.4 GM
+    </div>
+    <div class="caption caption-right">
+      N25.027° E121.571°<br/>
+      象山六巨石 · 海拔 183 m
+    </div>
+  </div>
+</header>
+
+<!-- ======================= FEATURES ======================= -->
+<section class="features" id="features">
+  <div class="container">
+    <span class="section-label">核心功能</span>
+    <h2 class="section-title">把攝影這件事,<em>變得清楚</em>。</h2>
+    <p class="section-lead">
+      從規劃、拍攝,到事後的回顧——把分散在相機、地圖、筆記本裡的資訊整合在一起。
+    </p>
+
+    <div class="features-grid">
+      <!-- Tall feature — Map -->
+      <div class="feature-card tall">
+        <div class="fc-icon">⦿</div>
+        <h3>攝影地圖</h3>
+        <p>482 處台灣在地攝影熱點,從象山夜景、阿里山雲海到太魯閣峽谷。每個景點都有天氣、日落、黃金時刻倒數,和其他攝影師拍過的參考照。</p>
+
+        <div class="feature-map-mini">
+          <div class="mini-pin" style="top: 30%; left: 22%;"></div>
+          <div class="mini-pin neon" style="top: 55%; left: 38%;"></div>
+          <div class="mini-pin" style="top: 42%; left: 55%;"></div>
+          <div class="mini-pin" style="top: 68%; left: 72%;"></div>
+          <div class="mini-pin neon" style="top: 28%; left: 78%;"></div>
+          <div class="mini-pin" style="top: 75%; left: 18%;"></div>
+        </div>
+      </div>
+
+      <!-- Wide — EXIF auto -->
+      <div class="feature-card wide">
+        <div class="fc-icon">⌗</div>
+        <h3>EXIF 自動讀取</h3>
+        <p>上傳時自動擷取機身、鏡頭、光圈、快門、ISO、焦距——你不用手動輸入任何技術細節。</p>
+
+        <div class="feature-exif-mini">
+          <div><div class="k">機身</div><div class="v">Sony α7 IV</div></div>
+          <div><div class="k">鏡頭</div><div class="v">FE 35mm f/1.4</div></div>
+          <div><div class="k">光圈 · 快門</div><div class="v">f/2.8 · 1/60s</div></div>
+          <div><div class="k">ISO · 焦距</div><div class="v">800 · 35mm</div></div>
+        </div>
+      </div>
+
+      <!-- Half — Stats -->
+      <div class="feature-card half">
+        <div class="fc-icon">▤</div>
+        <h3>拍攝習慣統計</h3>
+        <p>焦段分佈、光圈使用、ISO 趨勢、熱力日曆——知道自己真正常用的是 35mm 還是 85mm。</p>
+
+        <div class="feature-bar-mini">
+          <div class="b" style="height:22%"></div>
+          <div class="b" style="height:38%"></div>
+          <div class="b" style="height:48%"></div>
+          <div class="b hi" style="height:92%"></div>
+          <div class="b" style="height:42%"></div>
+          <div class="b" style="height:28%"></div>
+          <div class="b" style="height:60%"></div>
+          <div class="b" style="height:34%"></div>
+          <div class="b" style="height:22%"></div>
+          <div class="b" style="height:16%"></div>
+          <div class="b" style="height:28%"></div>
+        </div>
+      </div>
+
+      <!-- Half — Gear -->
+      <div class="feature-card half">
+        <div class="fc-icon">▣</div>
+        <h3>器材庫與保養追蹤</h3>
+        <p>機身快門數、鏡頭使用頻率、保養週期提醒——讓每一件器材都有自己的故事。</p>
+
+        <div style="margin-top: 24px; padding: 18px; background: #fafbfd; border: 1px solid var(--line); border-radius: 12px;">
+          <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-mute);">
+            <span>快門數</span><span>12,034 / 500,000</span>
+          </div>
+          <div style="height: 6px; background: var(--paper-2); border-radius: 3px; margin-top: 8px; overflow: hidden;">
+            <div style="width: 2.4%; height: 100%; background: var(--accent);"></div>
+          </div>
+          <div style="margin-top: 6px; font-size: 12px; color: var(--ink-soft);">Sony α7 IV · 預期壽命剩 97.6%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= STATEMENT (Blue hour timing) ======================= -->
+<section class="statement">
+  <div class="container">
+    <div>
+      <span class="section-label" style="color: var(--accent-neon);">黃金時刻追蹤</span>
+      <h2>
+        最好的光,<br/>
+        通常只持續<em>40 分鐘</em>。
+      </h2>
+      <p style="color: rgba(255,255,255,0.72); margin-top: 24px; font-size: 16px; line-height: 1.7; max-width: 460px;">
+        日出前 15 分鐘、日落後 30 分鐘——這段「藍調時刻」是所有攝影師都在等的瞬間。我們幫你精算到每一分鐘。
+      </p>
+    </div>
+
+    <div class="timing">
+      <div class="timing-item">
+        <div class="k">今天 · 象山</div>
+        <div class="v">18:42</div>
+        <div class="note">日落時刻 · 台北市</div>
+      </div>
+      <div class="timing-item">
+        <div class="k">黃金時刻剩餘</div>
+        <div class="v"><em>40</em> 分</div>
+        <div class="note">建議 f/2.8 以上、ISO 800 起</div>
+      </div>
+      <div class="timing-item">
+        <div class="k">天氣 · 雲量</div>
+        <div class="v">22° · 35%</div>
+        <div class="note">低雲,適合拍剪影與火燒雲</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= SPOTS ======================= -->
+<section id="spots" style="background: var(--paper);">
+  <div class="container">
+    <div class="spots-header">
+      <div>
+        <span class="section-label">在地景點</span>
+        <h2 class="section-title">從北到南,<em>每一種</em>台灣的光。</h2>
+      </div>
+      <a class="btn ghost">瀏覽全部 482 處 →</a>
+    </div>
+
+    <div class="spots-grid">
+      <!-- Elephant mountain — wide feature -->
+      <div class="spot-card wide">
+        <div class="spot-bg bg-elephant"></div>
+        <svg class="silhouette" viewBox="0 0 400 80" preserveAspectRatio="none">
+          <rect x="40" y="50" width="20" height="30" fill="rgba(10,22,41,0.9)"/>
+          <rect x="70" y="40" width="18" height="40" fill="rgba(10,22,41,0.9)"/>
+          <rect x="95" y="55" width="22" height="25" fill="rgba(10,22,41,0.9)"/>
+          <rect x="125" y="45" width="18" height="35" fill="rgba(10,22,41,0.9)"/>
+          <rect x="150" y="60" width="16" height="20" fill="rgba(10,22,41,0.9)"/>
+          <rect x="178" y="20" width="18" height="60" fill="rgba(10,22,41,0.95)"/>
+          <rect x="176" y="14" width="22" height="8" fill="rgba(10,22,41,0.95)"/>
+          <rect x="174" y="8" width="26" height="6" fill="rgba(10,22,41,0.95)"/>
+          <rect x="215" y="50" width="20" height="30" fill="rgba(10,22,41,0.9)"/>
+          <rect x="245" y="58" width="16" height="22" fill="rgba(10,22,41,0.9)"/>
+          <rect x="270" y="42" width="22" height="38" fill="rgba(10,22,41,0.9)"/>
+          <rect x="300" y="55" width="18" height="25" fill="rgba(10,22,41,0.9)"/>
+          <rect x="328" y="48" width="20" height="32" fill="rgba(10,22,41,0.9)"/>
+          <rect x="358" y="55" width="18" height="25" fill="rgba(10,22,41,0.9)"/>
+        </svg>
+        <div class="spot-overlay"></div>
+        <div class="spot-label">台北 · 夜景</div>
+        <div class="spot-info">
+          <h4>象山六巨石</h4>
+          <div class="meta"><span class="mono">1.8 km</span> 步道 · ★4.8 · 1,284 張作品</div>
+        </div>
+      </div>
+
+      <!-- Alishan -->
+      <div class="spot-card">
+        <div class="spot-bg bg-alishan"></div>
+        <svg class="silhouette" viewBox="0 0 200 80" preserveAspectRatio="none">
+          <path d="M 0 80 L 40 50 L 80 65 L 120 40 L 160 55 L 200 45 L 200 80 Z" fill="rgba(10,22,41,0.85)"/>
+          <path d="M 0 80 L 30 70 L 70 75 L 110 62 L 150 70 L 200 65 L 200 80 Z" fill="rgba(10,22,41,0.95)"/>
+        </svg>
+        <div class="spot-overlay"></div>
+        <div class="spot-label">嘉義 · 雲海日出</div>
+        <div class="spot-info">
+          <h4>阿里山祝山</h4>
+          <div class="meta"><span class="mono">2,489 m</span> · ★4.9 · 842 張</div>
+        </div>
+      </div>
+
+      <!-- Taroko -->
+      <div class="spot-card">
+        <div class="spot-bg bg-taroko"></div>
+        <svg class="silhouette" viewBox="0 0 200 80" preserveAspectRatio="none">
+          <path d="M 0 80 L 0 20 L 30 18 L 50 42 L 80 25 L 110 48 L 140 20 L 170 45 L 200 28 L 200 80 Z" fill="rgba(10,22,41,0.9)"/>
+        </svg>
+        <div class="spot-overlay"></div>
+        <div class="spot-label">花蓮 · 峽谷</div>
+        <div class="spot-info">
+          <h4>太魯閣燕子口</h4>
+          <div class="meta"><span class="mono">1.4 km</span> 步道 · ★4.7 · 512 張</div>
+        </div>
+      </div>
+
+      <!-- Jiufen -->
+      <div class="spot-card">
+        <div class="spot-bg bg-jiufen"></div>
+        <svg class="silhouette" viewBox="0 0 200 80" preserveAspectRatio="none">
+          <rect x="10" y="45" width="16" height="35" fill="rgba(10,22,41,0.9)"/>
+          <rect x="30" y="38" width="22" height="42" fill="rgba(10,22,41,0.9)"/>
+          <rect x="55" y="50" width="18" height="30" fill="rgba(10,22,41,0.9)"/>
+          <rect x="76" y="32" width="20" height="48" fill="rgba(10,22,41,0.9)"/>
+          <rect x="100" y="45" width="16" height="35" fill="rgba(10,22,41,0.9)"/>
+          <rect x="120" y="40" width="22" height="40" fill="rgba(10,22,41,0.9)"/>
+          <rect x="145" y="48" width="18" height="32" fill="rgba(10,22,41,0.9)"/>
+          <rect x="168" y="35" width="20" height="45" fill="rgba(10,22,41,0.9)"/>
+          <!-- Lantern dots -->
+          <circle cx="38" cy="50" r="2" fill="#ffb060" opacity="0.9"/>
+          <circle cx="88" cy="45" r="2" fill="#ffb060" opacity="0.9"/>
+          <circle cx="132" cy="52" r="2" fill="#ffb060" opacity="0.9"/>
+          <circle cx="176" cy="48" r="2" fill="#ffb060" opacity="0.9"/>
+        </svg>
+        <div class="spot-overlay"></div>
+        <div class="spot-label">新北 · 老街</div>
+        <div class="spot-info">
+          <h4>九份老街</h4>
+          <div class="meta"><span class="mono">常霧</span> · ★4.4 · 1,608 張</div>
+        </div>
+      </div>
+
+      <!-- Sun Moon Lake -->
+      <div class="spot-card">
+        <div class="spot-bg bg-sun-moon"></div>
+        <svg class="silhouette" viewBox="0 0 200 80" preserveAspectRatio="none">
+          <path d="M 0 80 L 0 55 L 40 48 L 80 58 L 120 50 L 160 56 L 200 52 L 200 80 Z" fill="rgba(10,22,41,0.75)"/>
+          <path d="M 0 80 L 20 68 L 60 72 L 100 66 L 140 70 L 180 65 L 200 72 L 200 80 Z" fill="rgba(10,22,41,0.9)"/>
+          <!-- Mist lines -->
+          <line x1="20" y1="60" x2="60" y2="60" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
+          <line x1="90" y1="64" x2="140" y2="64" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
+        </svg>
+        <div class="spot-overlay"></div>
+        <div class="spot-label">南投 · 湖景</div>
+        <div class="spot-info">
+          <h4>日月潭涵碧樓</h4>
+          <div class="meta"><span class="mono">晨霧</span> · ★4.6 · 728 張</div>
+        </div>
+      </div>
+
+      <!-- Turtle Island -->
+      <div class="spot-card">
+        <div class="spot-bg bg-turtle"></div>
+        <svg class="silhouette" viewBox="0 0 200 80" preserveAspectRatio="none">
+          <path d="M 0 80 L 0 60 L 60 62 L 80 52 L 130 54 L 140 48 L 200 52 L 200 80 Z" fill="rgba(10,22,41,0.7)"/>
+          <!-- Wave lines -->
+          <path d="M 0 72 Q 40 68, 80 72 T 160 72 T 200 72" stroke="rgba(255,255,255,0.25)" stroke-width="0.8" fill="none"/>
+          <path d="M 0 76 Q 50 72, 100 76 T 200 76" stroke="rgba(255,255,255,0.2)" stroke-width="0.6" fill="none"/>
+        </svg>
+        <div class="spot-overlay"></div>
+        <div class="spot-label">宜蘭 · 海景</div>
+        <div class="spot-info">
+          <h4>龜山島外澳</h4>
+          <div class="meta"><span class="mono">賞鯨季</span> · ★4.5 · 446 張</div>
+        </div>
+      </div>
+
+      <!-- Qingshui -->
+      <div class="spot-card">
+        <div class="spot-bg bg-qingshui"></div>
+        <svg class="silhouette" viewBox="0 0 200 80" preserveAspectRatio="none">
+          <path d="M 0 80 L 0 35 L 20 30 L 40 18 L 70 15 L 90 28 L 110 22 L 130 12 L 160 20 L 180 30 L 200 28 L 200 80 Z" fill="rgba(10,22,41,0.9)"/>
+        </svg>
+        <div class="spot-overlay"></div>
+        <div class="spot-label">花蓮 · 海岸</div>
+        <div class="spot-info">
+          <h4>清水斷崖</h4>
+          <div class="meta"><span class="mono">峭壁</span> · ★4.8 · 1,042 張</div>
+        </div>
+      </div>
+
+      <!-- Fulong — wide feature -->
+      <div class="spot-card wide">
+        <div class="spot-bg bg-fulong"></div>
+        <svg class="silhouette" viewBox="0 0 400 80" preserveAspectRatio="none">
+          <path d="M 0 80 L 0 55 L 80 58 L 160 52 L 240 56 L 320 50 L 400 54 L 400 80 Z" fill="rgba(10,22,41,0.7)"/>
+          <path d="M 0 80 Q 80 74, 160 78 T 320 78 T 400 76 L 400 80 Z" fill="rgba(10,22,41,0.9)"/>
+          <!-- Wave ripples -->
+          <path d="M 20 70 Q 80 66, 140 70" stroke="rgba(255,255,255,0.3)" stroke-width="0.8" fill="none"/>
+          <path d="M 200 72 Q 260 68, 320 72" stroke="rgba(255,255,255,0.25)" stroke-width="0.8" fill="none"/>
+          <path d="M 100 74 Q 160 70, 220 74" stroke="rgba(255,255,255,0.2)" stroke-width="0.6" fill="none"/>
+        </svg>
+        <div class="spot-overlay"></div>
+        <div class="spot-label">新北 · 海岸線</div>
+        <div class="spot-info">
+          <h4>福隆沙灘</h4>
+          <div class="meta"><span class="mono">3.2 km</span> 沙岸 · ★4.3 · 672 張作品</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= PHOTOGRAPHERS ======================= -->
+<section id="photographers" class="photographers">
+  <div class="container">
+    <span class="section-label">攝影師社群</span>
+    <h2 class="section-title">3,284 位攝影師<br/>正在<em>看同一個黃昏</em>。</h2>
+    <p class="section-lead">
+      追蹤喜歡的創作者,看他們用什麼焦段、在什麼光線下拍出那張照片。
+    </p>
+
+    <div class="ph-grid">
+      <div class="ph-card">
+        <div class="ph-head">
+          <div class="ph-avatar" style="background: linear-gradient(135deg, #d9927d, #9b6a78);"></div>
+          <div>
+            <h3 class="ph-name">陳雅琪</h3>
+            <div class="ph-meta">@yachi · 高山 / 雲海</div>
+          </div>
+        </div>
+        <div class="ph-thumbs">
+          <div class="t"></div><div class="t"></div><div class="t"></div>
+        </div>
+        <div class="ph-stats">
+          <div class="stat"><span class="n">1,204</span><span class="l">作品</span></div>
+          <div class="stat"><span class="n">47</span><span class="l">景點</span></div>
+          <div class="stat"><span class="n">1.2k</span><span class="l">追蹤</span></div>
+        </div>
+      </div>
+
+      <div class="ph-card">
+        <div class="ph-head">
+          <div class="ph-avatar" style="background: linear-gradient(135deg, #7ba1bc, #2a5878);"></div>
+          <div>
+            <h3 class="ph-name">阿 Ken</h3>
+            <div class="ph-meta">@ken_coast · 海岸 / 長曝</div>
+          </div>
+        </div>
+        <div class="ph-thumbs">
+          <div class="t"></div><div class="t"></div><div class="t"></div>
+        </div>
+        <div class="ph-stats">
+          <div class="stat"><span class="n">842</span><span class="l">作品</span></div>
+          <div class="stat"><span class="n">38</span><span class="l">景點</span></div>
+          <div class="stat"><span class="n">842</span><span class="l">追蹤</span></div>
+        </div>
+      </div>
+
+      <div class="ph-card">
+        <div class="ph-head">
+          <div class="ph-avatar" style="background: linear-gradient(135deg, #4a4670, #1a2942);"></div>
+          <div>
+            <h3 class="ph-name">mori</h3>
+            <div class="ph-meta">@mori_night · 老街 / 夜景</div>
+          </div>
+        </div>
+        <div class="ph-thumbs">
+          <div class="t"></div><div class="t"></div><div class="t"></div>
+        </div>
+        <div class="ph-stats">
+          <div class="stat"><span class="n">3,421</span><span class="l">作品</span></div>
+          <div class="stat"><span class="n">62</span><span class="l">景點</span></div>
+          <div class="stat"><span class="n">3.4k</span><span class="l">追蹤</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CTA BAND ======================= -->
+<section class="cta-band">
+  <div class="container">
+    <h2>下一個<em>黃金時刻</em><br/>是 18 小時 42 分鐘後。</h2>
+    <p>免費使用所有核心功能。你只需要一台相機,和願意等光線的耐心。</p>
+    <div class="cta-actions">
+      <a class="btn solid-light lg">免費開始 →</a>
+      <a class="btn ghost-light lg">下載 iOS · Android</a>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FOOTER ======================= -->
+<footer>
+  <div class="foot-grid">
+    <div>
+      <div class="foot-brand">
+        <span class="mark"></span>
+        LensLog
+      </div>
+      <p class="tagline">為每個攝影愛好者<br/>記錄黃金時刻。</p>
+    </div>
+    <div>
+      <h5>產品</h5>
+      <div class="foot-links">
+        <a>攝影地圖</a>
+        <a>器材庫</a>
+        <a>統計儀表板</a>
+        <a>社群動態牆</a>
+      </div>
+    </div>
+    <div>
+      <h5>公司</h5>
+      <div class="foot-links">
+        <a>關於我們</a>
+        <a>部落格</a>
+        <a>徵才</a>
+        <a>聯絡我們</a>
+      </div>
+    </div>
+    <div>
+      <h5>資源</h5>
+      <div class="foot-links">
+        <a>幫助中心</a>
+        <a>開發者 API</a>
+        <a>景點申請</a>
+        <a>系統狀態</a>
+      </div>
+    </div>
+    <div>
+      <h5>法律</h5>
+      <div class="foot-links">
+        <a>服務條款</a>
+        <a>隱私權</a>
+        <a>Cookie 設定</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-bot">
+    <div>© 2026 LensLog · Made in Taiwan</div>
+    <div>v2.4.0 · 482 處景點 · 128,402 張作品</div>
+  </div>
+</footer>
+
+</body>
+</html>
