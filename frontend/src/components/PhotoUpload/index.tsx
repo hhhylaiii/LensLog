@@ -140,12 +140,13 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onSuccess }) => {
     updateFile(index, { status: 'uploading', progress: 0 })
     try {
       // 1. Get presigned URL
+      const contentType = item.file.type || 'application/octet-stream'
       const { data } = await api.post<{ presigned_url: string; s3_key: string }>(
-        `/photos/presign?filename=${encodeURIComponent(item.file.name)}`
+        `/photos/presign?filename=${encodeURIComponent(item.file.name)}&content_type=${encodeURIComponent(contentType)}`
       )
       // 2. PUT directly to storage (no auth header — use plain axios)
       await axios.put(data.presigned_url, item.file, {
-        headers: { 'Content-Type': item.file.type || 'application/octet-stream' },
+        headers: { 'Content-Type': contentType },
         onUploadProgress: (e) => {
           const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0
           updateFile(index, { progress: pct })

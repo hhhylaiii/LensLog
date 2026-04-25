@@ -14,7 +14,7 @@
 | [backend-postgresql-postgis.md](./backend-postgresql-postgis.md) | PostgreSQL 14 + PostGIS、資料表結構、Docker 設定 |
 | [backend-redis-celery.md](./backend-redis-celery.md) | Redis broker、Celery 非同步任務（EXIF 解析、縮圖產生） |
 | [backend-pydantic-auth.md](./backend-pydantic-auth.md) | Pydantic v2、pydantic-settings、JWT 雙 token 認證、bcrypt 密碼雜湊 |
-| [backend-pillow-exif-s3.md](./backend-pillow-exif-s3.md) | Pillow 縮圖、piexif EXIF 解析、AWS S3 presigned URL 上傳流程、httpx 天氣 API |
+| [backend-pillow-exif-s3.md](./backend-pillow-exif-s3.md) | Pillow 縮圖、piexif EXIF 解析、S3-compatible presigned URL 上傳流程（MinIO/R2/S3）、httpx 天氣 API |
 
 ---
 

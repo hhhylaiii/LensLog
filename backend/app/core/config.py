@@ -16,15 +16,14 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # AWS S3
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_REGION: str = "ap-northeast-1"
-    S3_BUCKET_NAME: str = "lenslog-photos"
-
-    # S3-compatible storage (MinIO for dev, R2/S3 for prod)
-    S3_ENDPOINT_URL: str = ""  # e.g. http://minio:9000 for MinIO
-    S3_PUBLIC_URL: str = ""    # e.g. http://localhost:9000/lenslog-dev for MinIO
+    # --- 修改後的 Storage 設定 (帶有 MinIO 預設值) ---
+    # 這樣即便沒讀到 .env，本地開發也能正常運作
+    STORAGE_ENDPOINT_URL: str = "http://minio:9000"  
+    STORAGE_PUBLIC_URL: str = "http://localhost:9000"    
+    STORAGE_ACCESS_KEY: str = "minioadmin"
+    STORAGE_SECRET_KEY: str = "minioadmin"
+    STORAGE_BUCKET_NAME: str = "lenslog-dev"
+    STORAGE_REGION: str = "us-east-1"
 
     # Redis
     REDIS_URL: str = "redis://redis:6379/0"

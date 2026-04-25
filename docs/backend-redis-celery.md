@@ -17,8 +17,8 @@ redis>=5.0.5
 - **Celery**：非同步任務佇列，處理耗時的背景工作，避免阻塞 FastAPI 的請求處理。
 
 主要背景任務（`backend/app/tasks/`）：
-- `exif_tasks.process_exif_task`：從 S3 下載照片並解析 EXIF 元資料，存入資料庫
-- `exif_tasks.generate_thumbnail_task`：產生照片縮圖並上傳至 S3
+- `exif_tasks.process_exif_task`：從 S3-compatible storage 下載照片並解析 EXIF 元資料，存入資料庫
+- `exif_tasks.generate_thumbnail_task`：產生照片縮圖並上傳至 S3-compatible storage
 - `notification_tasks`：推播通知任務
 
 ## 主要功能與特性說明
@@ -40,18 +40,18 @@ celery_app = Celery(
 
 ### 非同步照片處理流程
 
-1. 使用者透過前端上傳照片至 S3（直接 PUT，繞過後端）
+1. 使用者透過前端上傳照片至 S3-compatible storage（直接 PUT，繞過後端）
 2. 前端通知後端照片已上傳（POST `/api/v1/photos`）
 3. 後端建立 Photo 記錄後，派發兩個 Celery 任務：
    - `process_exif_task`：解析 EXIF 並更新 `exif_data` 資料表
-   - `generate_thumbnail_task`：產生縮圖並更新 Photo 的 `thumb_key`
+   - `generate_thumbnail_task`：產生縮圖並更新 Photo 的 `thumb_key`（800px 版本）
 
 ### 縮圖生成任務範例
 
 ```python
 @celery_app.task(name="tasks.generate_thumbnail")
-def generate_thumbnail_task(s3_key: str, thumb_key: str, max_size: int = 800):
-    # 從 S3 下載 → Pillow 縮圖 → 上傳回 S3
+def generate_thumbnail_task(object_key: str, thumb_key: str, max_size: int = 800):
+    # 從 storage 下載 → Pillow 縮圖 → 上傳回 storage
     img.thumbnail((max_size, max_size))
     img.save(buf, format="JPEG", quality=85)
 ```
