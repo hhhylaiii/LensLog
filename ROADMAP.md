@@ -108,17 +108,17 @@ Week 11-12  整合測試 + 部署 + Demo 準備
 
 ### 前端工程師（Week 5–6）
 
-- [ ] 整合 Leaflet.js + React-Leaflet，顯示台灣地圖
-- [ ] 串接 `GET /locations`，將景點顯示為地圖 Marker
-- [ ] 實作 Marker Clustering（`leaflet.markercluster`）
-- [ ] 點擊 Marker 開啟 Popup：顯示景點名稱、預覽縮圖、天氣、日落時間
-- [ ] 左側 Panel：標籤過濾、地理搜尋（「找我附近 5 公里」呼叫 Geolocation API）
-- [ ] 新增景點 Modal（表單 + Zod 驗證）
+- [x] 整合 Leaflet.js + React-Leaflet，顯示台灣地圖
+- [x] 串接 `GET /locations`，將景點顯示為地圖 Marker
+- [x] 實作 Marker Clustering（`leaflet.markercluster`） #7
+- [x] 點擊 Marker 開啟 spotCard：景點名稱、天氣、日落時間（縮圖待 #38、原 popup 規格 #8 已併入 spotCard）
+- [x] 左側 Panel：標籤過濾、附近搜尋（Geolocation API） #9
+- [x] 新增景點 Modal（表單 + react-hook-form 驗證）
 
 ### 交付驗收（Week 6 結束）
-- [ ] 可在地圖上新增景點、查看景點清單、依標籤過濾
-- [ ] 點擊景點顯示 7 天天氣預報與日出日落時間
-- [ ] Marker 數量 > 50 時自動 Clustering
+- [x] 可在地圖上新增景點、查看景點清單、依標籤過濾
+- [x] 點擊景點顯示天氣與日落時間（7 天預報、降雨/風速、日出待後續 issue 補齊）
+- [x] Marker 數量 > 50 時自動 Clustering
 
 ---
 
