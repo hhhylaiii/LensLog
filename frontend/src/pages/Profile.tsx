@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
@@ -60,6 +60,52 @@ const s: Record<string, React.CSSProperties> = {
     fontFamily: "'Inter', system-ui, sans-serif",
     maxWidth: '1040px',
     margin: '0 auto',
+  },
+
+  // ── Banner ──
+  bannerWrap: {
+    position: 'relative',
+    width: '100%',
+    height: '160px',
+    marginBottom: '24px',
+    borderRadius: '14px',
+    overflow: 'hidden',
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  bannerImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover' as const,
+  },
+  bannerOverlay: {
+    position: 'absolute',
+    inset: 0,
+    background: 'rgba(0,0,0,0.38)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    fontSize: '14px',
+    color: '#e8e8f0',
+    transition: 'opacity 0.15s',
+  },
+  bannerPresets: {
+    position: 'absolute',
+    bottom: '12px',
+    right: '12px',
+    display: 'flex',
+    gap: '6px',
+    zIndex: 5,
+  },
+  bannerPreset: {
+    width: '26px',
+    height: '26px',
+    borderRadius: '6px',
+    border: '2px solid rgba(255,255,255,0.25)',
+    cursor: 'pointer',
+    padding: 0,
+    transition: 'border-color 0.15s',
   },
 
   // ── Header ──
@@ -254,30 +300,35 @@ const s: Record<string, React.CSSProperties> = {
     color: '#e8e8f0',
   },
 
-  // Lock badge (top-right of any photo)
+  // Visibility pill (top-right of any photo)
   lockBadge: {
     position: 'absolute',
-    top: '7px',
-    right: '7px',
-    background: 'rgba(0,0,0,0.55)',
-    backdropFilter: 'blur(4px)',
-    borderRadius: '6px',
-    width: '26px',
-    height: '26px',
+    top: '8px',
+    right: '8px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '12px',
-    cursor: 'pointer',
+    gap: '4px',
+    padding: '4px 10px',
+    borderRadius: '20px',
     border: 'none',
-    padding: 0,
+    fontSize: '11px',
+    fontWeight: 600,
+    cursor: 'pointer',
     zIndex: 2,
+    backdropFilter: 'blur(6px)',
+    letterSpacing: '0.03em',
+    whiteSpace: 'nowrap' as const,
   },
 
-  // Empty placeholder cell
-  emptyCell: {
-    gridColumn: 'span 2',
-    gridRow: 'span 2',
+  // Empty placeholder cell (standalone, 2/3 of original 2×2 featured size)
+  emptyCellWrap: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '24px',
+  },
+  emptyCellSm: {
+    width: '293px',
+    height: '293px',
     background: 'transparent',
     border: '2px dashed #2a2a38',
     borderRadius: '6px',
@@ -288,6 +339,8 @@ const s: Record<string, React.CSSProperties> = {
     gap: '10px',
     cursor: 'pointer',
   },
+  emptyCellIcon: { fontSize: '36px', color: '#2a2a4e' },
+  emptyCellLabel: { fontSize: '13px', color: '#555' },
 
   // Load more
   loadMoreWrap: { display: 'flex', justifyContent: 'center', marginBottom: '48px' },
@@ -369,6 +422,74 @@ const s: Record<string, React.CSSProperties> = {
 
   emptyNote: { color: '#555', fontSize: '13px', padding: '12px 0' },
 
+  // ── Avatar editing ──
+  avatarWrap: {
+    position: 'relative',
+    flexShrink: 0,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    inset: 0,
+    borderRadius: '50%',
+    background: 'rgba(0,0,0,0.48)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '22px',
+    cursor: 'pointer',
+    transition: 'opacity 0.15s',
+  },
+  badgePickerBtn: {
+    position: 'absolute',
+    bottom: '0',
+    right: '-4px',
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    background: '#2a2a3e',
+    border: '2px solid #0a0a0f',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '11px',
+    cursor: 'pointer',
+    color: '#aaa',
+    padding: 0,
+    zIndex: 2,
+  },
+  badgePicker: {
+    position: 'absolute',
+    top: '100px',
+    left: 0,
+    background: '#1a1a28',
+    border: '1px solid #2a2a38',
+    borderRadius: '10px',
+    padding: '8px',
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '4px',
+    width: '144px',
+    zIndex: 10,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+  },
+  badgeOption: {
+    width: '32px',
+    height: '32px',
+    background: 'transparent',
+    border: '1px solid transparent',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeOptionActive: {
+    background: '#2a2a44',
+    borderColor: '#6366f1',
+  },
+  hiddenInput: { display: 'none' },
+
   // FAB
   fab: {
     position: 'fixed',
@@ -431,6 +552,45 @@ const Profile: React.FC = () => {
   const [photoLimit, setPhotoLimit] = useState(PAGE_SIZE)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
+  const [localAvatar, setLocalAvatar] = useState<string | null>(null)
+  const [avatarHovered, setAvatarHovered] = useState(false)
+  const [badgeEmoji, setBadgeEmoji] = useState('◈')
+  const [showBadgePicker, setShowBadgePicker] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  const [localBanner, setLocalBanner] = useState<string | null>(null)
+  const [bannerGradientIdx, setBannerGradientIdx] = useState(0)
+  const [bannerHovered, setBannerHovered] = useState(false)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+
+  const BADGE_OPTIONS = ['◈', '◉', '◎', '⊕', '⬡', '★', '✦', '⬤', '🌙', '🔭', '📷', '🎞']
+
+  const BANNER_GRADIENTS = [
+    'linear-gradient(135deg, #0f0f1a 0%, #1a1040 50%, #0d1a2e 100%)',
+    'linear-gradient(135deg, #0a0a18 0%, #1e0a2e 50%, #2e1040 100%)',
+    'linear-gradient(135deg, #0a1020 0%, #0d2030 50%, #102840 100%)',
+    'linear-gradient(135deg, #120a1e 0%, #200a30 50%, #1a0820 100%)',
+    'linear-gradient(135deg, #0a1818 0%, #0d2820 50%, #102818 100%)',
+  ]
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => setLocalAvatar(ev.target?.result as string)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => setLocalBanner(ev.target?.result as string)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
   const { data: user } = useQuery<User>({
     queryKey: ['me'],
     queryFn: () => api.get('/auth/me').then((r) => r.data),
@@ -492,16 +652,102 @@ const Profile: React.FC = () => {
   const topGear = gear.slice(0, 3)
   const maxLocCount = topLocations[0]?.photoCount || 1
 
+  const bannerBg = localBanner ? undefined : BANNER_GRADIENTS[bannerGradientIdx]
+
   return (
     <>
       <div style={s.page}>
 
+        {/* ── Banner ── */}
+        <div
+          style={{ ...s.bannerWrap, background: bannerBg, backgroundImage: bannerBg }}
+          onMouseEnter={() => setBannerHovered(true)}
+          onMouseLeave={() => setBannerHovered(false)}
+          onClick={() => bannerInputRef.current?.click()}
+          title="點擊更換橫幅"
+        >
+          {localBanner && (
+            <img src={localBanner} alt="banner" style={s.bannerImg} />
+          )}
+          {bannerHovered && (
+            <div style={s.bannerOverlay}>
+              <span>📷</span>
+              <span style={{ fontSize: '13px' }}>更換橫幅</span>
+            </div>
+          )}
+          {/* Preset gradient swatches */}
+          <div style={s.bannerPresets} onClick={(e) => e.stopPropagation()}>
+            {BANNER_GRADIENTS.map((g, i) => (
+              <button
+                key={i}
+                type="button"
+                style={{
+                  ...s.bannerPreset,
+                  background: g,
+                  borderColor: !localBanner && i === bannerGradientIdx ? '#fff' : 'rgba(255,255,255,0.25)',
+                }}
+                title={`預設配色 ${i + 1}`}
+                onClick={() => { setLocalBanner(null); setBannerGradientIdx(i) }}
+              />
+            ))}
+          </div>
+        </div>
+        <input
+          ref={bannerInputRef}
+          type="file"
+          accept="image/*"
+          title="上傳橫幅"
+          style={s.hiddenInput}
+          onChange={handleBannerChange}
+        />
+
         {/* ── Profile header ── */}
         <div style={s.profileHeader}>
-          <div style={s.avatar}>
-            {user?.avatar_url
-              ? <SafeImage src={user.avatar_url} alt="avatar" style={s.avatarImg} />
-              : '◈'}
+          <div style={s.avatarWrap}>
+            <div
+              style={s.avatar}
+              onMouseEnter={() => setAvatarHovered(true)}
+              onMouseLeave={() => setAvatarHovered(false)}
+              onClick={() => avatarInputRef.current?.click()}
+              title="點擊更換頭像"
+            >
+              {localAvatar || user?.avatar_url
+                ? <SafeImage src={localAvatar ?? user!.avatar_url!} alt="avatar" style={s.avatarImg} />
+                : <span>{badgeEmoji}</span>}
+              {avatarHovered && (
+                <div style={s.avatarOverlay}>📷</div>
+              )}
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              title="上傳頭像"
+              style={s.hiddenInput}
+              onChange={handleAvatarChange}
+            />
+            <button
+              type="button"
+              style={s.badgePickerBtn}
+              title="更換 Badge"
+              onClick={() => setShowBadgePicker(v => !v)}
+            >
+              ✎
+            </button>
+            {showBadgePicker && (
+              <div style={s.badgePicker}>
+                {BADGE_OPTIONS.map(e => (
+                  <button
+                    key={e}
+                    type="button"
+                    style={{ ...s.badgeOption, ...(badgeEmoji === e ? s.badgeOptionActive : {}) }}
+                    onClick={() => { setBadgeEmoji(e); setShowBadgePicker(false) }}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div style={s.profileInfo}>
             <div style={s.nameRow}>
@@ -579,10 +825,10 @@ const Profile: React.FC = () => {
 
             {/* Photo grid */}
             {visiblePhotos.length === 0 ? (
-              <div style={s.photoGrid}>
-                <div style={s.emptyCell} onClick={() => navigate('/upload')}>
-                  <span style={{ fontSize: '36px', color: '#2a2a4e' }}>⊕</span>
-                  <span style={{ fontSize: '13px', color: '#555' }}>上傳第一張照片</span>
+              <div style={s.emptyCellWrap}>
+                <div style={s.emptyCellSm} onClick={() => navigate('/upload')}>
+                  <span style={s.emptyCellIcon}>⊕</span>
+                  <span style={s.emptyCellLabel}>上傳第一張照片</span>
                 </div>
               </div>
             ) : (
@@ -642,17 +888,22 @@ const Profile: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Lock icon */}
-                      {(!photo.is_public || isHovered) && (
-                        <button
-                          type="button"
-                          style={{ ...s.lockBadge, opacity: isPending ? 0.4 : 1 }}
-                          title={photo.is_public ? '點擊設為私人' : '點擊設為公開'}
-                          onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(photo) }}
-                        >
-                          {photo.is_public ? '🔓' : '🔒'}
-                        </button>
-                      )}
+                      {/* Visibility pill — always visible */}
+                      <button
+                        type="button"
+                        style={{
+                          ...s.lockBadge,
+                          background: photo.is_public
+                            ? 'rgba(16,185,129,0.85)'
+                            : 'rgba(99,102,241,0.85)',
+                          color: '#fff',
+                          opacity: isPending ? 0.4 : 1,
+                        }}
+                        title={photo.is_public ? '點擊設為私人' : '點擊設為公開'}
+                        onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(photo) }}
+                      >
+                        {photo.is_public ? '🔓 公開' : '🔒 私人'}
+                      </button>
                     </div>
                   )
                 })}
