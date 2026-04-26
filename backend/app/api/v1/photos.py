@@ -2,6 +2,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.config import settings
@@ -24,7 +25,12 @@ def _with_url(photo: Photo) -> PhotoResponse:
     """輔助函式：將資料庫模型轉為 Response 並附上完整 URL"""
     data = PhotoResponse.model_validate(photo)
     data.url = get_object_url(photo.s3_key)
+    if photo.thumb_key:
+        data.thumb_url = get_object_url(photo.thumb_key)
     return data
+
+def _exif_opts():
+    return selectinload(Photo.exif)
 
 @router.get("", response_model=list[PhotoResponse])
 async def list_photos(
@@ -35,7 +41,11 @@ async def list_photos(
 ):
     """獲取當前使用者的照片列表"""
     result = await db.execute(
-        select(Photo).where(Photo.user_id == current_user.id).offset(skip).limit(limit)
+        select(Photo)
+        .where(Photo.user_id == current_user.id)
+        .options(_exif_opts())
+        .offset(skip)
+        .limit(limit)
     )
     return [_with_url(p) for p in result.scalars().all()]
 
@@ -86,7 +96,7 @@ async def create_photo(
 ):
     """
     建立照片紀錄並觸發後台處理任務。
-    
+
     修改點：
     1. 使用 await db.commit() 確保 ID 已產生。
     2. 呼叫 process_exif_task.delay 處理元數據。
@@ -94,7 +104,7 @@ async def create_photo(
     """
     photo = Photo(**data.model_dump(), user_id=current_user.id)
     db.add(photo)
-    
+
     # 【修改】必須先 Commit，否則後台 Worker 會因為 Transaction 未完成而找不到這筆 ID
     await db.commit()
     await db.refresh(photo)
@@ -120,7 +130,9 @@ async def create_photo(
 @router.get("/{photo_id}", response_model=PhotoResponse)
 async def get_photo(photo_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """獲取單張照片詳情"""
-    result = await db.execute(select(Photo).where(Photo.id == photo_id))
+    result = await db.execute(
+        select(Photo).where(Photo.id == photo_id).options(_exif_opts())
+    )
     photo = result.scalar_one_or_none()
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
@@ -134,16 +146,18 @@ async def update_photo(
     current_user: User = Depends(get_current_active_user),
 ):
     """更新照片資訊 (如標題、描述)"""
-    result = await db.execute(select(Photo).where(Photo.id == photo_id))
+    result = await db.execute(
+        select(Photo).where(Photo.id == photo_id).options(_exif_opts())
+    )
     photo = result.scalar_one_or_none()
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
     if photo.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(photo, field, value)
-    
+
     await db.commit() # 【修改】更新也需要 commit
     await db.refresh(photo)
     return _with_url(photo)
@@ -161,6 +175,6 @@ async def delete_photo(
         raise HTTPException(status_code=404, detail="Photo not found")
     if photo.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     await db.delete(photo)
     await db.commit() # 【修改】確保刪除生效

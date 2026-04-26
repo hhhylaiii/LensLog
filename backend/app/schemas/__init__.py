@@ -39,6 +39,24 @@ class UserResponse(BaseModel):
 
 # ─── Photo Schemas ────────────────────────────────────────────────────────────
 
+class ExifResponse(BaseModel):
+    make: Optional[str] = None
+    model: Optional[str] = None
+    lens_model: Optional[str] = None
+    focal_length: Optional[float] = None
+    focal_length_35: Optional[float] = None
+    aperture: Optional[float] = None
+    shutter_speed: Optional[str] = None
+    iso: Optional[int] = None
+    gps_lat: Optional[float] = None
+    gps_lng: Optional[float] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
 class PhotoCreate(BaseModel):
     s3_key: str
     thumb_key: Optional[str] = None
@@ -54,10 +72,12 @@ class PhotoResponse(BaseModel):
     s3_key: str
     thumb_key: Optional[str]
     url: Optional[str] = None
+    thumb_url: Optional[str] = None
     caption: Optional[str]
     is_public: bool
     taken_at: Optional[datetime]
     created_at: datetime
+    exif: Optional[ExifResponse] = None
 
     class Config:
         from_attributes = True
