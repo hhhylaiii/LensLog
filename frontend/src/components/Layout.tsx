@@ -115,6 +115,7 @@ const NAV_ITEMS = [
   { to: '/upload', label: 'Upload', icon: '⊕', end: false },
   { to: '/map', label: 'Map', icon: '◎', end: false },
   { to: '/gear', label: 'Gear Vault', icon: '⬡', end: false },
+  { to: '/profile', label: 'Profile', icon: '◉', end: false },
 ]
 
 const ADMIN_NAV_ITEM = { to: '/admin', label: 'Admin', icon: '⚙', end: false }

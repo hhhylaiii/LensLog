@@ -2,6 +2,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.models.models import Photo, User
@@ -15,7 +16,13 @@ router = APIRouter(prefix="/photos", tags=["photos"])
 def _with_url(photo: Photo) -> PhotoResponse:
     data = PhotoResponse.model_validate(photo)
     data.url = get_object_url(photo.s3_key)
+    if photo.thumb_key:
+        data.thumb_url = get_object_url(photo.thumb_key)
     return data
+
+
+def _exif_opts():
+    return selectinload(Photo.exif)
 
 
 @router.get("", response_model=list[PhotoResponse])
@@ -26,7 +33,11 @@ async def list_photos(
     current_user: User = Depends(get_current_active_user),
 ):
     result = await db.execute(
-        select(Photo).where(Photo.user_id == current_user.id).offset(skip).limit(limit)
+        select(Photo)
+        .where(Photo.user_id == current_user.id)
+        .options(_exif_opts())
+        .offset(skip)
+        .limit(limit)
     )
     return [_with_url(p) for p in result.scalars().all()]
 
@@ -50,12 +61,15 @@ async def create_photo(
     photo = Photo(**data.model_dump(), user_id=current_user.id)
     db.add(photo)
     await db.flush()
+    await db.refresh(photo, ["exif"])
     return _with_url(photo)
 
 
 @router.get("/{photo_id}", response_model=PhotoResponse)
 async def get_photo(photo_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Photo).where(Photo.id == photo_id))
+    result = await db.execute(
+        select(Photo).where(Photo.id == photo_id).options(_exif_opts())
+    )
     photo = result.scalar_one_or_none()
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
@@ -69,7 +83,9 @@ async def update_photo(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    result = await db.execute(select(Photo).where(Photo.id == photo_id))
+    result = await db.execute(
+        select(Photo).where(Photo.id == photo_id).options(_exif_opts())
+    )
     photo = result.scalar_one_or_none()
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
