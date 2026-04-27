@@ -42,28 +42,19 @@ function getProgressInfo(item: GearItem): ProgressInfo | null {
   return null
 }
 
-function getSubtitle(item: GearItem): { text: string; isWarn: boolean } {
-  if (item.status === 'maintenance_due' && item.overdueDays) {
-    return { text: `逾期 ${item.overdueDays} 天`, isWarn: true }
-  }
-  if (item.purchaseDate) {
-    return { text: `購入 ${item.purchaseDate}`, isWarn: false }
-  }
-  if (item.daysSinceLastUsed) {
-    return { text: `${item.daysSinceLastUsed} 天未使用`, isWarn: false }
-  }
-  return { text: item.brand ?? '', isWarn: false }
-}
+
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    background: T.ink,
+    background: T.card,
     borderRadius: '14px',
     padding: '14px',
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
     minHeight: '260px',
+    border: `1px solid ${T.line}`,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
   },
   topRow: {
     display: 'flex',
@@ -71,36 +62,39 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
   },
   categoryBadge: {
-    background: T.sideBgTwo,
-    color: T.sideText,
-    borderRadius: '6px',
-    padding: '2px 9px',
-    fontSize: '11px',
+    background: T.card,
+    color: T.inkSoft,
+    borderRadius: '12px',
+    padding: '4px 12px',
+    fontSize: '12px',
     fontWeight: 600,
+    border: `1px solid ${T.line}`,
   },
   badgeMostUsed: {
     background: T.accentSoft,
     color: T.accent,
-    borderRadius: '6px',
+    borderRadius: '12px',
     padding: '2px 9px',
     fontSize: '11px',
     fontWeight: 600,
+    border: `1px solid ${T.lineSoft}`,
   },
   badgeMaintenance: {
     background: T.warnSoft,
     color: T.warn,
-    borderRadius: '6px',
+    borderRadius: '12px',
     padding: '2px 9px',
     fontSize: '11px',
     fontWeight: 600,
+    border: `1px solid #fed7aa`,
   },
   badgeSerial: {
-    color: T.sideMute,
+    color: T.inkMute,
     fontSize: '11px',
     fontWeight: 500,
   },
   imagePlaceholder: {
-    background: T.sideBgTwo,
+    background: `linear-gradient(135deg, ${T.sideBgTwo}, ${T.ink})`,
     borderRadius: '8px',
     height: '110px',
     display: 'flex',
@@ -110,9 +104,12 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   placeholderDash: {
-    color: T.inkSoft,
-    fontSize: '22px',
-    fontWeight: 300,
+    background: 'rgba(255,255,255,0.85)',
+    color: T.ink,
+    fontSize: '11px',
+    fontWeight: 600,
+    padding: '2px 8px',
+    borderRadius: '4px',
     userSelect: 'none',
   },
   image: {
@@ -122,7 +119,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
   },
   modelName: {
-    color: T.sideText,
+    color: T.ink,
     fontSize: '15px',
     fontWeight: 700,
     lineHeight: 1.25,
@@ -131,16 +128,24 @@ const styles: Record<string, React.CSSProperties> = {
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
   } as React.CSSProperties,
-  subtitleNormal: {
-    color: T.sideMute,
+  brandText: {
+    color: T.inkMute,
     fontSize: '12px',
+    marginTop: '-4px',
   },
-  subtitleWarn: {
+  infoText: {
+    color: T.inkSoft,
+    fontSize: '12px',
+    marginTop: '2px',
+  },
+  infoWarn: {
     color: T.warn,
     fontSize: '12px',
+    fontWeight: 500,
+    marginTop: '2px',
   },
   shutterCount: {
-    color: T.sideMute,
+    color: T.inkSoft,
     fontSize: '11px',
   },
   progressWrap: {
@@ -149,13 +154,13 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
   },
   progressTrack: {
-    background: T.sideLine,
+    background: T.lineSoft,
     borderRadius: '99px',
     height: '4px',
     overflow: 'hidden',
   },
   progressLabel: {
-    color: T.sideMute,
+    color: T.inkMute,
     fontSize: '11px',
   },
   communityRow: {
@@ -172,13 +177,13 @@ const styles: Record<string, React.CSSProperties> = {
     width: '16px',
     height: '16px',
     borderRadius: '50%',
-    background: T.inkSoft,
-    border: `2px solid ${T.ink}`,
+    background: T.line,
+    border: `2px solid ${T.card}`,
     marginRight: '-4px',
     flexShrink: 0,
   },
   communityText: {
-    color: T.sideMute,
+    color: T.inkMute,
     fontSize: '11px',
     paddingLeft: '10px',
   },
@@ -190,8 +195,6 @@ interface GearCardProps {
 
 export default function GearCard({ item }: GearCardProps) {
   const progress = getProgressInfo(item)
-  const subtitle = getSubtitle(item)
-
   return (
     <div style={styles.card}>
       <div style={styles.topRow}>
@@ -211,17 +214,20 @@ export default function GearCard({ item }: GearCardProps) {
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.model} style={styles.image} />
         ) : (
-          <span style={styles.placeholderDash}>—</span>
+          <span style={styles.placeholderDash}>{CATEGORY_LABEL[item.type]}圖</span>
         )}
       </div>
 
       <div style={styles.modelName}>{item.model}</div>
+      {item.brand && <div style={styles.brandText}>{item.brand}</div>}
 
-      {subtitle.text && (
-        <div style={subtitle.isWarn ? styles.subtitleWarn : styles.subtitleNormal}>
-          {subtitle.text}
-        </div>
-      )}
+      {item.status === 'maintenance_due' && item.overdueDays ? (
+        <div style={styles.infoWarn}>逾期 {item.overdueDays} 天</div>
+      ) : item.purchaseDate ? (
+        <div style={styles.infoText}>購入 {item.purchaseDate}</div>
+      ) : item.daysSinceLastUsed ? (
+        <div style={styles.infoText}>{item.daysSinceLastUsed} 天未使用</div>
+      ) : null}
 
       {progress?.shutterCountText && (
         <div style={styles.shutterCount}>{progress.shutterCountText}</div>

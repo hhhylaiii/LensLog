@@ -11,8 +11,8 @@ interface GearGridProps {
 const styles: Record<string, React.CSSProperties> = {
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-    gap: '16px',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+    gap: '20px',
   },
   addCard: {
     border: `2px dashed ${T.line}`,

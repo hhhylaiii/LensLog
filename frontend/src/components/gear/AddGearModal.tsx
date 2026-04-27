@@ -206,7 +206,7 @@ export default function AddGearModal({ onClose }: AddGearModalProps) {
               <input
                 style={styles.input}
                 type="text"
-                placeholder="例：Sony"
+                placeholder="例：Sony（選填）"
                 {...register('brand')}
               />
               {errors.brand && <span style={styles.errorMsg}>{errors.brand.message}</span>}
