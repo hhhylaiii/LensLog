@@ -14,8 +14,8 @@ Base API prefix: `/api/v1`
 - `POST /api/v1/auth/logout`: Logout and blacklist the current access token and refresh token.
 - `GET /api/v1/auth/me`: Return the current logged-in user's profile.
 - `GET /api/v1/photos`: List the current user's photos.
-- `POST /api/v1/photos/presign`: Generate a presigned S3 upload URL and `s3_key`.
-- `POST /api/v1/photos`: Create a photo record after upload finishes.
+- `POST /api/v1/photos/presign`: Generate a presigned upload URL and `s3_key` (S3-compatible: MinIO/R2/S3).
+- `POST /api/v1/photos`: Create a photo record after upload finishes (then triggers background EXIF + thumbnails).
 - `GET /api/v1/photos/{photo_id}`: Get one photo by ID.
 - `PATCH /api/v1/photos/{photo_id}`: Update photo metadata.
 - `DELETE /api/v1/photos/{photo_id}`: Delete a photo.
@@ -171,8 +171,9 @@ Success response `200 OK`:
 Photo upload uses direct upload:
 
 1. Frontend calls `POST /api/v1/photos/presign`.
-2. Frontend uploads the file directly to S3 with the returned signed URL.
+2. Frontend uploads the file directly to storage (MinIO/R2/S3) with the returned signed URL.
 3. Frontend calls `POST /api/v1/photos` to save metadata.
+4. Backend triggers background tasks to parse EXIF and generate thumbnails.
 
 ![Photo Upload Flow](images/photo_upload.png)
 
@@ -210,7 +211,7 @@ Success response `200 OK`:
 
 ### POST `/api/v1/photos/presign`
 
-Purpose: Generate a presigned S3 upload URL and `s3_key`.
+Purpose: Generate a presigned upload URL and `s3_key`.
 
 Auth:
 
@@ -219,6 +220,12 @@ Auth:
 Request params:
 
 - Query: `filename=taipei-street.jpg`
+- Query (recommended): `content_type=image/jpeg`
+
+Notes:
+
+- If `content_type` is provided, the frontend `PUT` request should use the same `Content-Type` header value.
+- In local dev with MinIO, the backend may rewrite the presigned URL host from an internal Docker hostname to a public hostname (e.g. `minio:9000` -> `localhost:9000`) so the browser can reach it.
 
 Success response `200 OK`:
 
@@ -242,12 +249,15 @@ Request body:
 ```json
 {
   "s3_key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg",
-  "thumb_key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/thumb-taipei-street.jpg",
   "caption": "Rainy night in Ximending",
   "location_id": "90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73",
   "is_public": true
 }
 ```
+
+Notes:
+
+- `thumb_key` is generated asynchronously by Celery after the photo record is created.
 
 Success response `201 Created`:
 
@@ -257,7 +267,7 @@ Success response `201 Created`:
   "user_id": "3f4a8c2d-7d87-4b69-8cc8-e12d9b3a0f11",
   "location_id": "90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73",
   "s3_key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg",
-  "thumb_key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/thumb-taipei-street.jpg",
+  "thumb_key": null,
   "url": "https://s3.amazonaws.com/lenslog/photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg",
   "caption": "Rainy night in Ximending",
   "is_public": true,
@@ -830,6 +840,6 @@ Key relationships:
 ## Notes
 
 - `POST /api/v1/auth/refresh` uses `refresh_token` as a query parameter, not a JSON body.
-- `POST /api/v1/photos/presign` uses `filename` as a query parameter, not a JSON body.
+- `POST /api/v1/photos/presign` uses query parameters (at minimum `filename`; `content_type` is recommended), not a JSON body.
 - `POST /api/v1/auth/logout` requires both the current Bearer token and a `refresh_token` in the body because both are blacklisted on logout.
 - Successful `DELETE` endpoints return `204 No Content`.

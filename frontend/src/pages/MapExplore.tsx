@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
+import 'leaflet.markercluster'
 import api from '../lib/api'
 
 // Fix Leaflet default marker icons in bundled apps
@@ -28,6 +31,7 @@ interface Location {
   longitude: number
   user_id: string
   created_at: string
+  tags: string[]
 }
 
 interface LocationForm {
@@ -95,6 +99,32 @@ const s: Record<string, React.CSSProperties> = {
   locationDesc: { fontSize: '12px', color: '#666', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   locationCoords: { fontSize: '11px', color: '#444', marginTop: '4px' },
   mapArea: { flex: 1 },
+  sidebarTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '12px',
+  },
+  toggleBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: '#888',
+    cursor: 'pointer',
+    fontSize: '16px',
+    padding: '4px 6px',
+    borderRadius: '6px',
+    lineHeight: 1,
+  },
+  sidebarCollapsed: {
+    width: '40px',
+    flexShrink: 0,
+    background: '#13131a',
+    borderRight: '1px solid #2a2a38',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingTop: '12px',
+  },
   // Modal
   overlay: {
     position: 'fixed',
@@ -166,6 +196,33 @@ const s: Record<string, React.CSSProperties> = {
   },
   errText: { color: '#f87171', fontSize: '12px', marginTop: '4px' },
   emptyList: { padding: '20px', color: '#555', fontSize: '13px', textAlign: 'center' },
+}
+
+// ─── ClusterMarkers — renders all locations as a clustered layer ──────────────
+
+interface ClusterMarkersProps {
+  locations: Location[]
+}
+
+const ClusterMarkers: React.FC<ClusterMarkersProps> = ({ locations }) => {
+  const map = useMap()
+
+  useEffect(() => {
+    const cluster = (L as any).markerClusterGroup()
+
+    locations.forEach((loc) => {
+      const marker = L.marker([loc.latitude, loc.longitude])
+      marker.bindPopup(
+        `<strong>${loc.name}</strong>${loc.description ? `<br/>${loc.description}` : ''}`
+      )
+      cluster.addLayer(marker)
+    })
+
+    map.addLayer(cluster)
+    return () => { map.removeLayer(cluster) }
+  }, [map, locations])
+
+  return null
 }
 
 // ─── MapController — fly to target when selected ──────────────────────────────
@@ -272,65 +329,137 @@ const MapExplore: React.FC = () => {
   const [search, setSearch] = useState('')
   const [target, setTarget] = useState<[number, number] | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
-
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [nearbyLoading, setNearbyLoading] = useState(false)
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
     queryFn: () => api.get('/locations').then((r) => r.data),
   })
-
-  const filtered = locations.filter((l) =>
-    l.name.toLowerCase().includes(search.toLowerCase()),
-  )
+  const allTags = Array.from(new Set(locations.flatMap((l) => l.tags)))
+  const filtered = locations.filter((l) => {
+    const matchesSearch = l.name.toLowerCase().includes(search.toLowerCase())
+    const matchesTag = selectedTag ? l.tags.includes(selectedTag) : true
+    return matchesSearch && matchesTag
+  })
 
   const handleSelectLocation = (loc: Location) => {
     setTarget([loc.latitude, loc.longitude])
   }
 
+  const handleNearby = () => {
+    if (!navigator.geolocation) return alert('瀏覽器不支援定位')
+    setNearbyLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        setTarget([latitude, longitude])
+        queryClient.fetchQuery({
+          queryKey: ['locations', latitude, longitude],
+          queryFn: () =>
+            api.get('/locations', { params: { lat: latitude, lng: longitude, radius: 5000 } })
+               .then((r) => r.data),
+        })
+        setNearbyLoading(false)
+      },
+      () => {
+        alert('無法取得位置')
+        setNearbyLoading(false)
+      }
+    )
+  }
+
   return (
     <div style={s.page}>
       {/* Left sidebar */}
-      <div style={s.sidebar}>
-        <div style={s.sidebarHeader}>
-          <div style={s.sidebarTitle}>Locations</div>
-          <input
-            style={s.searchInput}
-            placeholder="Search locations…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button style={s.addBtn} onClick={() => setShowModal(true)}>
-            + Add Location
+      {sidebarCollapsed ? (
+        <div style={s.sidebarCollapsed}>
+          <button style={s.toggleBtn} onClick={() => setSidebarCollapsed(false)} title="Expand sidebar">
+            ▶
+          </button>
+
+          {/* 標籤過濾 */}
+          {allTags.length > 0 && (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px', marginTop: '10px' }}>
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    border: '1px solid',
+                    cursor: 'pointer',
+                    background: selectedTag === tag ? '#6366f1' : 'transparent',
+                    color: selectedTag === tag ? '#fff' : '#aaa',
+                    borderColor: selectedTag === tag ? '#6366f1' : '#2a2a38',
+                  }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 附近搜尋按鈕 */}
+          <button
+            style={{ ...s.addBtn, background: '#1e1e2e', color: '#aaa', marginTop: '8px' }}
+            onClick={handleNearby}
+            disabled={nearbyLoading}
+          >
+            {nearbyLoading ? '定位中…' : '📍 找我附近 5 公里'}
           </button>
         </div>
-
-        <div style={s.locationList}>
-          {filtered.length === 0 ? (
-            <div style={s.emptyList}>
-              {search ? 'No matching locations.' : 'No locations yet.'}
+      ) : (
+        <div style={s.sidebar}>
+          <div style={s.sidebarHeader}>
+            <div style={s.sidebarTitleRow}>
+              <div style={s.sidebarTitle}>Locations</div>
+              <button style={s.toggleBtn} onClick={() => setSidebarCollapsed(true)} title="Collapse sidebar">
+                ◀
+              </button>
             </div>
-          ) : (
-            filtered.map((loc) => (
-              <div
-                key={loc.id}
-                style={{
-                  ...s.locationItem,
-                  background: hoveredId === loc.id ? '#1e1e2e' : 'transparent',
-                }}
-                onClick={() => handleSelectLocation(loc)}
-                onMouseEnter={() => setHoveredId(loc.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                <div style={s.locationName}>{loc.name}</div>
-                {loc.description && <div style={s.locationDesc}>{loc.description}</div>}
-                <div style={s.locationCoords}>
-                  {Number(loc.latitude).toFixed(4)}, {Number(loc.longitude).toFixed(4)}
-                </div>
+            <input
+              style={s.searchInput}
+              placeholder="Search locations…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button style={s.addBtn} onClick={() => setShowModal(true)}>
+              + Add Location
+            </button>
+          </div>
+
+          <div style={s.locationList}>
+            {filtered.length === 0 ? (
+              <div style={s.emptyList}>
+                {search ? 'No matching locations.' : 'No locations yet.'}
               </div>
-            ))
-          )}
+            ) : (
+              filtered.map((loc) => (
+                <div
+                  key={loc.id}
+                  style={{
+                    ...s.locationItem,
+                    background: hoveredId === loc.id ? '#1e1e2e' : 'transparent',
+                  }}
+                  onClick={() => handleSelectLocation(loc)}
+                  onMouseEnter={() => setHoveredId(loc.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  <div style={s.locationName}>{loc.name}</div>
+                  {loc.description && <div style={s.locationDesc}>{loc.description}</div>}
+                  <div style={s.locationCoords}>
+                    {Number(loc.latitude).toFixed(4)}, {Number(loc.longitude).toFixed(4)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Map */}
       <div style={s.mapArea}>
@@ -344,14 +473,7 @@ const MapExplore: React.FC = () => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
           <MapController target={target} />
-          {locations.map((loc) => (
-            <Marker key={loc.id} position={[loc.latitude, loc.longitude]}>
-              <Popup>
-                <strong>{loc.name}</strong>
-                {loc.description && <><br />{loc.description}</>}
-              </Popup>
-            </Marker>
-          ))}
+          <ClusterMarkers locations={locations} />
         </MapContainer>
       </div>
 

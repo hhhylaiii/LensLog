@@ -123,8 +123,12 @@ Backend 透過 `env_file: ./backend/.env` 注入，關鍵生產變數：
 SECRET_KEY=<隨機產生的高熵字串>
 DATABASE_URL=postgresql+asyncpg://postgres:${DB_PASSWORD}@db:5432/lenslog
 REDIS_URL=redis://redis:6379/0
-AWS_ACCESS_KEY_ID=<AWS 憑證>
-AWS_SECRET_ACCESS_KEY=<AWS 憑證>
+STORAGE_ENDPOINT_URL=<空字串=AWS S3；或填 MinIO/R2 endpoint>
+STORAGE_PUBLIC_URL=<瀏覽器可達的 storage URL>
+STORAGE_ACCESS_KEY=<Storage access key>
+STORAGE_SECRET_KEY=<Storage secret key>
+STORAGE_BUCKET_NAME=<Bucket name>
+STORAGE_REGION=<Region>
 ```
 
 ## 相關資源
