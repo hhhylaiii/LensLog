@@ -100,6 +100,7 @@ export default function GearHeader({ searchQuery, onSearchChange, onAddGear }: G
         role="img"
         aria-label="用戶頭像"
         title="個人頁面（即將推出）"
+        onClick={() => alert('個人頁面功能即將推出！')}
       />
     </div>
   )

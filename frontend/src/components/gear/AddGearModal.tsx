@@ -144,6 +144,30 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.6,
     cursor: 'not-allowed',
   },
+  imageUploadPlaceholder: {
+    height: '140px',
+    border: `2px dashed ${T.line}`,
+    borderRadius: '12px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    background: T.paper,
+    cursor: 'pointer',
+    transition: 'background 0.15s, border-color 0.15s',
+    marginBottom: '8px',
+  },
+  uploadIcon: {
+    fontSize: '24px',
+    color: T.inkMute,
+    lineHeight: 1,
+  },
+  uploadText: {
+    fontSize: '13px',
+    color: T.inkMute,
+    fontWeight: 500,
+  },
   apiError: {
     color: T.warn,
     fontSize: '13px',
@@ -185,6 +209,14 @@ export default function AddGearModal({ onClose }: AddGearModalProps) {
         </div>
 
         <form style={styles.form} onSubmit={onSubmit}>
+          <div
+            style={styles.imageUploadPlaceholder}
+            onClick={() => alert('上傳器材照片功能即將推出！')}
+          >
+            <div style={styles.uploadIcon}>📷</div>
+            <div style={styles.uploadText}>點擊上傳器材照片 (即將推出)</div>
+          </div>
+
           <div style={styles.field}>
             <label style={styles.label}>
               類型<span style={styles.required}>*</span>
