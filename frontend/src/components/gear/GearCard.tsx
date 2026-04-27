@@ -187,27 +187,55 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '11px',
     paddingLeft: '10px',
   },
+  deleteBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: T.inkMute,
+    cursor: 'pointer',
+    fontSize: '16px',
+    padding: '4px',
+    lineHeight: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '6px',
+  },
 }
 
 interface GearCardProps {
   item: GearItem
+  onDeleteClick?: (item: GearItem) => void
 }
 
-export default function GearCard({ item }: GearCardProps) {
+export default function GearCard({ item, onDeleteClick }: GearCardProps) {
   const progress = getProgressInfo(item)
   return (
     <div style={styles.card}>
       <div style={styles.topRow}>
         <span style={styles.categoryBadge}>{CATEGORY_LABEL[item.type]}</span>
-        {item.status === 'most_used' && (
-          <span style={styles.badgeMostUsed}>最常用</span>
-        )}
-        {item.status === 'maintenance_due' && (
-          <span style={styles.badgeMaintenance}>⚠️ 待保養</span>
-        )}
-        {item.status === 'normal' && item.serialNumber && (
-          <span style={styles.badgeSerial}>#{item.serialNumber}</span>
-        )}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          {item.status === 'most_used' && (
+            <span style={styles.badgeMostUsed}>最常用</span>
+          )}
+          {item.status === 'maintenance_due' && (
+            <span style={styles.badgeMaintenance}>⚠️ 待保養</span>
+          )}
+          {item.status === 'normal' && item.serialNumber && (
+            <span style={styles.badgeSerial}>#{item.serialNumber}</span>
+          )}
+          {onDeleteClick && (
+            <button
+              style={styles.deleteBtn}
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeleteClick(item)
+              }}
+              aria-label="刪除"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={styles.imagePlaceholder}>
