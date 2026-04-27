@@ -5,6 +5,7 @@ Base API prefix: `/api/v1`
 > Note:
 > This README uses example payloads and example responses.
 > IDs, tokens, timestamps, URLs, usernames, and emails below are mock values for documentation purposes.
+> If your environment has a globally-set `DEBUG` variable (e.g. `DEBUG=release`), the backend will treat non-boolean values like `release` / `production` as `false` to avoid startup failures.
 
 ## API Summary
 
@@ -225,6 +226,10 @@ Request params:
 Notes:
 
 - If `content_type` is provided, the frontend `PUT` request should use the same `Content-Type` header value.
+- `filename` is sanitized before being embedded into `s3_key`:
+  - Only `A-Z`, `a-z`, `0-9`, `_`, `-`, and `.` are kept; other characters are replaced with `_`.
+  - Any path components are dropped (both `/` and `\`), so only the basename is used.
+  - Leading dots are stripped to avoid hidden filenames; if the result is empty, it falls back to `file`.
 - In local dev with MinIO, the backend may rewrite the presigned URL host from an internal Docker hostname to a public hostname (e.g. `minio:9000` -> `localhost:9000`) so the browser can reach it.
 
 Success response `200 OK`:

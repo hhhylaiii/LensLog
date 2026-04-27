@@ -31,6 +31,7 @@ backend/
 │   ├── core/
 │   │   ├── config.py
 │   │   ├── database.py
+│   │   ├── filenames.py
 │   │   ├── redis.py
 │   │   └── security.py
 │   ├── models/
@@ -64,6 +65,7 @@ backend/
 │   ├── test_blacklist.py
 │   ├── test_exif.py
 │   ├── test_main.py
+│   ├── test_photos_presign_security.py
 │   ├── test_storage.py
 │   ├── test_weather.py
 │   └── test_weather_service.py
@@ -167,9 +169,13 @@ backend/
 
 `app/core/config.py`
 - Reads and exposes application settings from environment variables.
+- `DEBUG` also accepts common non-boolean values like `release` / `production` and treats them as `False` to avoid startup failures from globally-set environment variables.
 
 `app/core/database.py`
 - SQLAlchemy database engine and session setup.
+
+`app/core/filenames.py`
+- Filename sanitization helpers used by endpoints that accept user-provided filenames (e.g. presign upload).
 
 `app/core/redis.py`
 - Redis connection setup.
@@ -268,6 +274,9 @@ backend/
 
 `tests/test_main.py`
 - Basic app-level tests, such as health checks.
+
+`tests/test_photos_presign_security.py`
+- Security regression tests for `POST /api/v1/photos/presign` filename sanitization.
 
 `tests/test_auth.py`
 - Authentication flow tests.

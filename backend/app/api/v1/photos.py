@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.filenames import sanitize_filename
 from app.models.models import Photo, User
 from app.schemas import PhotoCreate, PhotoUpdate, PhotoResponse, PresignResponse
 from app.services.storage_service import generate_presigned_url, get_object_url
@@ -40,7 +41,8 @@ async def presign_upload(
     current_user: User = Depends(get_current_active_user),
 ):
     """產生 S3 預簽名網址，供前端直接上傳原圖至 MinIO"""
-    s3_key = f"photos/{uuid.uuid4()}/{filename}"
+    safe_filename = sanitize_filename(filename)
+    s3_key = f"photos/{uuid.uuid4()}/{safe_filename}"
     url = generate_presigned_url(s3_key, content_type=content_type)
     return PresignResponse(presigned_url=url, s3_key=s3_key)
 
