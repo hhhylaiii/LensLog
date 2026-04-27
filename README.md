@@ -5,13 +5,10 @@
 - [Heroicons](https://heroicons.com/])
 
 
-## Usage
-
-please download the home.html, web.html and open with liveserver or clip it to open 
-
 ## Statements
 
-如果有遇到無法設計出來的困難，不用一定要遵從 ui/ux 上的設計
+- please download the home.html, web.html and open with liveserver or clip it to open 
+- 如果有遇到無法設計出來的困難，不用一定要遵從 ui/ux 上的設計
 
 ## Sprint 1
 
