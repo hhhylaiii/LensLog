@@ -86,7 +86,9 @@ async def create_photo(
 @router.get("/{photo_id}", response_model=PhotoResponse)
 async def get_photo(photo_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """獲取單張照片詳情"""
-    result = await db.execute(select(Photo).where(Photo.id == photo_id))
+    result = await db.execute(
+        select(Photo).where(Photo.id == photo_id).options(_exif_opts())
+    )
     photo = result.scalar_one_or_none()
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")

@@ -195,7 +195,7 @@ const s: Record<string, React.CSSProperties> = {
     borderColor: '#e8e8f0',
     fontWeight: 600,
   },
-  viewToggle: { display: 'flex', gap: '4px', flexShrink: 0 },
+  viewToggle: { display: 'flex', gap: '4px', flexShrink: 0, alignItems: 'center' },
   viewBtn: {
     width: '32px',
     height: '32px',
@@ -210,6 +210,75 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: '15px',
   },
   viewBtnActive: { background: '#6366f1', color: '#fff', borderColor: '#6366f1' },
+  sortSelect: {
+    background: '#0d0d18',
+    border: '1px solid #2a2a38',
+    borderRadius: '6px',
+    color: '#888',
+    fontSize: '12px',
+    padding: '0 8px',
+    height: '32px',
+    cursor: 'pointer',
+    outline: 'none',
+    marginRight: '4px',
+  },
+
+  // ── Photo list (single column) ──
+  photoList: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '2px',
+    marginBottom: '24px',
+  },
+  photoListRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    padding: '10px 12px',
+    background: '#0d0d18',
+    borderRadius: '8px',
+    cursor: 'pointer',
+  },
+  photoListThumb: {
+    width: '56px',
+    height: '56px',
+    borderRadius: '6px',
+    objectFit: 'cover' as const,
+    flexShrink: 0,
+    background: '#1e1e2e',
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#333',
+    fontSize: '11px',
+    fontFamily: 'monospace',
+  },
+  photoListInfo: { flex: 1, minWidth: 0 },
+  photoListTitle: {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: '#e8e8f0',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+    marginBottom: '3px',
+  },
+  photoListMeta: { fontSize: '12px', color: '#555' },
+  lockBadgeInline: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 10px',
+    borderRadius: '20px',
+    border: 'none',
+    fontSize: '11px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    letterSpacing: '0.03em',
+    whiteSpace: 'nowrap' as const,
+    flexShrink: 0,
+  },
 
   // ── Photo grid (4-col, first photo 2×2) ──
   photoGrid: {
@@ -227,6 +296,32 @@ const s: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   photoCellFeatured: { gridColumn: 'span 2', gridRow: 'span 2' },
+  photoCellFeaturedFull: {
+    background: '#13131a',
+    overflow: 'hidden',
+    borderRadius: '3px',
+    position: 'relative' as const,
+    cursor: 'pointer',
+    gridColumn: 'span 2',
+    gridRow: 'span 2',
+  },
+  photoCaptionHover: {
+    position: 'absolute' as const,
+    bottom: 0, left: 0, right: 0,
+    padding: '20px 8px 8px',
+    background: 'linear-gradient(to top, rgba(0,0,0,0.72), transparent)',
+    fontSize: '11px',
+    color: '#e8e8f0',
+    lineHeight: 1.4,
+  },
+  lockPublic:        { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 1 },
+  lockPrivate:       { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(99,102,241,0.85)',  color: '#fff', opacity: 1 },
+  lockPublicPend:    { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 0.4 },
+  lockPrivatePend:   { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(99,102,241,0.85)',  color: '#fff', opacity: 0.4 },
+  lockInlinePublic:  { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 1 },
+  lockInlinePrivate: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(99,102,241,0.85)',  color: '#fff', opacity: 1 },
+  lockInlinePublicP: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 0.4 },
+  lockInlinePrivateP:{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(99,102,241,0.85)',  color: '#fff', opacity: 0.4 },
   photoImg: { width: '100%', height: '100%', objectFit: 'cover' as const },
   photoPlaceholder: {
     width: '100%',
@@ -567,6 +662,7 @@ const Profile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('photos')
   const [activeTag, setActiveTag] = useState('全部')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [sortBy, setSortBy] = useState<'time-desc' | 'time-asc' | 'name-asc' | 'name-desc'>('time-desc')
   const [photoLimit, setPhotoLimit] = useState(PAGE_SIZE)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
@@ -662,12 +758,18 @@ const Profile: React.FC = () => {
   }, [locations])
 
   const filteredPhotos = useMemo(() => {
-    if (activeTag === '全部') return allPhotos
-    return allPhotos.filter((p) => {
-      if (!p.location_id) return false
-      return locationMap[p.location_id]?.tags?.includes(activeTag)
-    })
-  }, [allPhotos, activeTag, locationMap])
+    const base = activeTag === '全部'
+      ? allPhotos
+      : allPhotos.filter((p) => p.location_id && locationMap[p.location_id]?.tags?.includes(activeTag))
+    const arr = [...base]
+    switch (sortBy) {
+      case 'time-asc':  return arr.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      case 'time-desc': return arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      case 'name-asc':  return arr.sort((a, b) => (a.caption ?? '').localeCompare(b.caption ?? ''))
+      case 'name-desc': return arr.sort((a, b) => (b.caption ?? '').localeCompare(a.caption ?? ''))
+      default: return arr
+    }
+  }, [allPhotos, activeTag, locationMap, sortBy])
 
   const visiblePhotos = filteredPhotos.slice(0, photoLimit)
   const remaining = filteredPhotos.length - photoLimit
@@ -708,6 +810,27 @@ const Profile: React.FC = () => {
             </div>
           )}
           {/* Preset / extracted swatches + custom colour picker */}
+          <div style={s.bannerPresets} onClick={(e) => e.stopPropagation()}>
+            {(extractedGradients ?? BANNER_GRADIENTS).map((g, i) => (
+              <button
+                key={i}
+                type="button"
+                style={{
+                  ...s.bannerPreset,
+                  background: g,
+                  borderColor: !localBanner && activeGradient === g ? '#fff' : 'rgba(255,255,255,0.25)',
+                }}
+                title={extractedGradients ? `提取色彩 ${i + 1}` : `預設配色 ${i + 1}`}
+                onClick={() => { setLocalBanner(null); setActiveGradient(g) }}
+              />
+            ))}
+            <button
+              type="button"
+              style={s.bannerPresetColorPicker}
+              title="自訂顏色"
+              onClick={() => colorPickerRef.current?.click()}
+            />
+          </div>
         </div>
         <input
           ref={bannerInputRef}
@@ -850,12 +973,23 @@ const Profile: React.FC = () => {
                 ))}
               </div>
               <div style={s.viewToggle}>
-                <button type="button" style={{ ...s.viewBtn, ...(viewMode === 'grid' ? s.viewBtnActive : {}) }} onClick={() => setViewMode('grid')}>⊞</button>
-                <button type="button" style={{ ...s.viewBtn, ...(viewMode === 'list' ? s.viewBtnActive : {}) }} onClick={() => setViewMode('list')}>≡</button>
+                <select
+                  style={s.sortSelect}
+                  aria-label="排序方式"
+                  value={sortBy}
+                  onChange={(e) => { setSortBy(e.target.value as typeof sortBy); setPhotoLimit(PAGE_SIZE) }}
+                >
+                  <option value="time-desc">最新優先</option>
+                  <option value="time-asc">最舊優先</option>
+                  <option value="name-asc">名稱 A→Z</option>
+                  <option value="name-desc">名稱 Z→A</option>
+                </select>
+                <button type="button" style={viewMode === 'grid' ? s.viewBtnActive : s.viewBtn} onClick={() => setViewMode('grid')}>⊞</button>
+                <button type="button" style={viewMode === 'list' ? s.viewBtnActive : s.viewBtn} onClick={() => setViewMode('list')}>≡</button>
               </div>
             </div>
 
-            {/* Photo grid */}
+            {/* Photos — empty state */}
             {visiblePhotos.length === 0 ? (
               <div style={s.emptyCellWrap}>
                 <div style={s.emptyCellSm} onClick={() => navigate('/upload')}>
@@ -863,7 +997,41 @@ const Profile: React.FC = () => {
                   <span style={s.emptyCellLabel}>上傳第一張照片</span>
                 </div>
               </div>
+            ) : viewMode === 'list' ? (
+              /* ── List view ── */
+              <div style={s.photoList}>
+                {visiblePhotos.map((photo) => {
+                  const loc = photo.location_id ? locationMap[photo.location_id] : null
+                  const thumbSrc = photo.thumb_url || photo.url
+                  const isPending = pendingPhoto?.id === photo.id
+                  return (
+                    <div key={photo.id} style={s.photoListRow} onClick={() => navigate(`/photos/${photo.id}`)}>
+                      {thumbSrc
+                        ? <SafeImage src={thumbSrc} alt={photo.caption ?? ''} style={s.photoListThumb} />
+                        : <div style={s.photoListThumb}>{photo.id.slice(-4).toUpperCase()}</div>
+                      }
+                      <div style={s.photoListInfo}>
+                        <div style={s.photoListTitle}>{photo.caption || '未命名照片'}</div>
+                        <div style={s.photoListMeta}>
+                          {relativeTime(photo.created_at)}{loc ? ` · ${loc.name}` : ''}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        style={photo.is_public
+                          ? (isPending ? s.lockInlinePublicP  : s.lockInlinePublic)
+                          : (isPending ? s.lockInlinePrivateP : s.lockInlinePrivate)}
+                        title={photo.is_public ? '點擊設為私人' : '點擊設為公開'}
+                        onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(photo) }}
+                      >
+                        {photo.is_public ? '🔓 公開' : '🔒 私人'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
             ) : (
+              /* ── Grid view ── */
               <div style={s.photoGrid}>
                 {visiblePhotos.map((photo, idx) => {
                   const isFeatured = idx === 0
@@ -882,55 +1050,32 @@ const Profile: React.FC = () => {
                   return (
                     <div
                       key={photo.id}
-                      style={{ ...s.photoCell, ...(isFeatured ? s.photoCellFeatured : {}) }}
+                      style={isFeatured ? s.photoCellFeaturedFull : s.photoCell}
                       onMouseEnter={() => setHoveredId(photo.id)}
                       onMouseLeave={() => setHoveredId(null)}
                       onClick={() => navigate(`/photos/${photo.id}`)}
                     >
-                      {/* Thumbnail */}
                       {thumbSrc
                         ? <SafeImage src={thumbSrc} alt={photo.caption ?? ''} style={s.photoImg} />
                         : <div style={s.photoPlaceholder}>{photo.id.slice(-4).toUpperCase()}</div>
                       }
-
-                      {/* Featured: location + time (top-left) */}
                       {isFeatured && loc && (
-                        <div style={s.overlayTop}>
-                          {loc.name} · {relativeTime(photo.created_at)}
-                        </div>
+                        <div style={s.overlayTop}>{loc.name} · {relativeTime(photo.created_at)}</div>
                       )}
-
-                      {/* Featured: EXIF + like (bottom) */}
                       {isFeatured && (
                         <div style={s.overlayBottom}>
                           <span style={s.exifBadge}>{exifLabel || '—'}</span>
                           <span style={s.likeBadge}>♡ 0</span>
                         </div>
                       )}
-
-                      {/* Hover caption (non-featured) */}
                       {!isFeatured && isHovered && photo.caption && (
-                        <div style={{
-                          position: 'absolute', bottom: 0, left: 0, right: 0,
-                          padding: '20px 8px 8px',
-                          background: 'linear-gradient(to top, rgba(0,0,0,0.72), transparent)',
-                          fontSize: '11px', color: '#e8e8f0', lineHeight: 1.4,
-                        }}>
-                          {photo.caption}
-                        </div>
+                        <div style={s.photoCaptionHover}>{photo.caption}</div>
                       )}
-
-                      {/* Visibility pill — always visible */}
                       <button
                         type="button"
-                        style={{
-                          ...s.lockBadge,
-                          background: photo.is_public
-                            ? 'rgba(16,185,129,0.85)'
-                            : 'rgba(99,102,241,0.85)',
-                          color: '#fff',
-                          opacity: isPending ? 0.4 : 1,
-                        }}
+                        style={photo.is_public
+                          ? (isPending ? s.lockPublicPend  : s.lockPublic)
+                          : (isPending ? s.lockPrivatePend : s.lockPrivate)}
                         title={photo.is_public ? '點擊設為私人' : '點擊設為公開'}
                         onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(photo) }}
                       >
