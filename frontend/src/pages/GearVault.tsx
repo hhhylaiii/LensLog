@@ -7,6 +7,7 @@ import GearFilterBar from '../components/gear/GearFilterBar'
 import GearGrid from '../components/gear/GearGrid'
 import AddGearModal from '../components/gear/AddGearModal'
 import DeleteGearModal from '../components/gear/DeleteGearModal'
+import EditGearModal from '../components/gear/EditGearModal'
 import { filterGear, computePillCounts } from '../utils/gearUtils'
 import { useGear } from '@shared/hooks/useGear'
 import { api } from '../api'
@@ -125,6 +126,7 @@ const GearVault: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [deletingGearItem, setDeletingGearItem] = useState<GearItem | null>(null)
+  const [viewingGearId, setViewingGearId] = useState<string | null>(null)
 
   const pillCounts = useMemo(() => computePillCounts(gearItems), [gearItems])
 
@@ -187,6 +189,7 @@ const GearVault: React.FC = () => {
               items={filteredGear}
               onAddGear={() => setShowAddModal(true)}
               onDeleteClick={setDeletingGearItem}
+              onCardClick={setViewingGearId}
             />
           </>
         )}
@@ -197,6 +200,12 @@ const GearVault: React.FC = () => {
         <DeleteGearModal
           item={deletingGearItem}
           onClose={() => setDeletingGearItem(null)}
+        />
+      )}
+      {viewingGearId && (
+        <EditGearModal
+          gearId={viewingGearId}
+          onClose={() => setViewingGearId(null)}
         />
       )}
     </div>

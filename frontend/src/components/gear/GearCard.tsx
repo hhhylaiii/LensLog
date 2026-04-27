@@ -55,6 +55,13 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '260px',
     border: `1px solid ${T.line}`,
     boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+    transition: 'border-color 0.15s, background 0.15s',
+    cursor: 'pointer',
+  },
+  cardHovered: {
+    borderColor: T.accent,
+    boxShadow: `0 0 0 1px ${T.accent}, 0 6px 16px rgba(0,0,0,0.06)`,
+    background: T.paper,
   },
   topRow: {
     display: 'flex',
@@ -205,12 +212,23 @@ const styles: Record<string, React.CSSProperties> = {
 interface GearCardProps {
   item: GearItem
   onDeleteClick?: (item: GearItem) => void
+  onCardClick?: (id: string) => void
 }
 
-export default function GearCard({ item, onDeleteClick }: GearCardProps) {
+export default function GearCard({ item, onDeleteClick, onCardClick }: GearCardProps) {
+  const [isHovered, setIsHovered] = React.useState(false)
+  const [isDeleteHovered, setIsDeleteHovered] = React.useState(false)
   const progress = getProgressInfo(item)
   return (
-    <div style={styles.card}>
+    <div
+      style={{
+        ...styles.card,
+        ...(isHovered && !isDeleteHovered ? styles.cardHovered : {}),
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => onCardClick?.(item.id)}
+    >
       <div style={styles.topRow}>
         <span style={styles.categoryBadge}>{CATEGORY_LABEL[item.type]}</span>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -225,7 +243,12 @@ export default function GearCard({ item, onDeleteClick }: GearCardProps) {
           )}
           {onDeleteClick && (
             <button
-              style={styles.deleteBtn}
+              style={{
+                ...styles.deleteBtn,
+                ...(isDeleteHovered ? { background: T.lineSoft, color: T.warn } : {}),
+              }}
+              onMouseEnter={() => setIsDeleteHovered(true)}
+              onMouseLeave={() => setIsDeleteHovered(false)}
               onClick={(e) => {
                 e.stopPropagation()
                 onDeleteClick(item)

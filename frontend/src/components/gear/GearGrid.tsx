@@ -7,6 +7,7 @@ interface GearGridProps {
   items: GearItem[]
   onAddGear: () => void
   onDeleteClick?: (item: GearItem) => void
+  onCardClick?: (id: string) => void
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -40,11 +41,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
 }
 
-export default function GearGrid({ items, onAddGear, onDeleteClick }: GearGridProps) {
+export default function GearGrid({ items, onAddGear, onDeleteClick, onCardClick }: GearGridProps) {
   return (
     <div style={styles.grid}>
       {items.map(item => (
-        <GearCard key={item.id} item={item} onDeleteClick={onDeleteClick} />
+        <GearCard key={item.id} item={item} onDeleteClick={onDeleteClick} onCardClick={onCardClick} />
       ))}
       <div
         style={styles.addCard}
