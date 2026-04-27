@@ -4,9 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.models.models import Photo, User
 from app.schemas import PhotoCreate, PhotoUpdate, PhotoResponse, PresignResponse
-from app.services.storage_service import generate_presigned_url, get_object_url
+from app.services.storage_service import generate_presigned_post, get_object_url
 from app.api.deps import get_current_active_user
 
 # 【新增】匯入 Celery 任務模組
@@ -39,10 +40,19 @@ async def presign_upload(
     content_type: str | None = None,
     current_user: User = Depends(get_current_active_user),
 ):
-    """產生 S3 預簽名網址，供前端直接上傳原圖至 MinIO"""
+    """產生 S3 預簽名 POST，供前端直接上傳原圖至 MinIO (含大小上限)"""
     s3_key = f"photos/{uuid.uuid4()}/{filename}"
-    url = generate_presigned_url(s3_key, content_type=content_type)
-    return PresignResponse(presigned_url=url, s3_key=s3_key)
+    data = generate_presigned_post(
+        s3_key,
+        content_type=content_type,
+        max_size_mb=settings.PHOTO_UPLOAD_MAX_SIZE_MB,
+    )
+    return PresignResponse(
+        presigned_url=data["url"],
+        s3_key=s3_key,
+        fields=data["fields"],
+        max_size_mb=settings.PHOTO_UPLOAD_MAX_SIZE_MB,
+    )
 
 @router.post("", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
 async def create_photo(

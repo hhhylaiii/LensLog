@@ -64,6 +64,7 @@ backend/
 │   ├── test_blacklist.py
 │   ├── test_exif.py
 │   ├── test_main.py
+│   ├── test_photos_presign_post_size.py
 │   ├── test_storage.py
 │   ├── test_weather.py
 │   └── test_weather_service.py
@@ -167,6 +168,8 @@ backend/
 
 `app/core/config.py`
 - Reads and exposes application settings from environment variables.
+- `DEBUG` also accepts common non-boolean values like `release` / `production` and treats them as `False` to avoid startup failures from globally-set environment variables.
+- `PHOTO_UPLOAD_MAX_SIZE_MB` controls the maximum allowed direct-upload size for photo presigned POST policies.
 
 `app/core/database.py`
 - SQLAlchemy database engine and session setup.
@@ -201,7 +204,7 @@ backend/
 
 `app/services/storage_service.py`
 - S3-compatible storage helpers (MinIO / Cloudflare R2 / AWS S3).
-- Generates presigned upload URLs, uploads/downloads objects, and builds public object URLs.
+- Generates presigned upload URLs / POST policies (with size limits), uploads/downloads objects, and builds public object URLs.
 
 `app/services/s3_service.py`
 - Legacy compatibility shim kept for backward compatibility; new code should use `storage_service.py`.
@@ -280,6 +283,9 @@ backend/
 
 `tests/test_weather_service.py`
 - Unit tests for `weather_service.py` helpers (`_safe_int`, `_extract_element_times`, `_build_periods`, `get_weather_forecast`). All HTTP calls mocked.
+
+`tests/test_photos_presign_post_size.py`
+- Regression tests for `POST /api/v1/photos/presign` returning a presigned POST and enforcing a max upload size.
 
 ## Images Folder
 

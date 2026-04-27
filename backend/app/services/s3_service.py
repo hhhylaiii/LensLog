@@ -11,6 +11,7 @@ from botocore.exceptions import ClientError
 
 from app.core.config import settings
 from app.services.storage_service import generate_presigned_url as _generate_presigned_url
+from app.services.storage_service import generate_presigned_post as _generate_presigned_post
 from app.services.storage_service import get_object_url as _get_object_url
 from app.services.storage_service import get_storage_client
 
@@ -18,6 +19,21 @@ from app.services.storage_service import get_storage_client
 def generate_presigned_url(s3_key: str, expiration: int = 3600) -> str:
     """產生 Presigned URL 供前端直接上傳（delegates to storage_service）。"""
     return _generate_presigned_url(s3_key, expiration=expiration)
+
+
+def generate_presigned_post(
+    s3_key: str,
+    expiration: int = 3600,
+    content_type: str | None = None,
+    max_size_mb: int | None = None,
+) -> dict:
+    """產生 Presigned POST 供前端直傳（delegates to storage_service）。"""
+    return _generate_presigned_post(
+        s3_key,
+        expiration=expiration,
+        content_type=content_type,
+        max_size_mb=max_size_mb,
+    )
 
 
 def get_object_url(s3_key: str) -> str:

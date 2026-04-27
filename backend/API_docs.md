@@ -5,6 +5,7 @@ Base API prefix: `/api/v1`
 > Note:
 > This README uses example payloads and example responses.
 > IDs, tokens, timestamps, URLs, usernames, and emails below are mock values for documentation purposes.
+> If your environment has a globally-set `DEBUG` variable (e.g. `DEBUG=release`), the backend will treat non-boolean values like `release` / `production` as `false` to avoid startup failures.
 
 ## API Summary
 
@@ -171,7 +172,7 @@ Success response `200 OK`:
 Photo upload uses direct upload:
 
 1. Frontend calls `POST /api/v1/photos/presign`.
-2. Frontend uploads the file directly to storage (MinIO/R2/S3) with the returned signed URL.
+2. Frontend uploads the file directly to storage (MinIO/R2/S3) with the returned presigned POST form.
 3. Frontend calls `POST /api/v1/photos` to save metadata.
 4. Backend triggers background tasks to parse EXIF and generate thumbnails.
 
@@ -224,15 +225,30 @@ Request params:
 
 Notes:
 
-- If `content_type` is provided, the frontend `PUT` request should use the same `Content-Type` header value.
+- This endpoint returns a **presigned POST** (not a PUT URL). The frontend must upload using `multipart/form-data`:
+  - Send a `POST` to `presigned_url`
+  - Include all returned `fields`
+  - Include the binary file in a field named `file`
+- A strict upload size limit is enforced via POST policy condition `content-length-range`:
+  - Max size (MB) is returned as `max_size_mb`
 - In local dev with MinIO, the backend may rewrite the presigned URL host from an internal Docker hostname to a public hostname (e.g. `minio:9000` -> `localhost:9000`) so the browser can reach it.
 
 Success response `200 OK`:
 
 ```json
 {
-  "presigned_url": "https://s3.amazonaws.com/lenslog/upload-signed-url",
-  "s3_key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg"
+  "presigned_url": "https://s3.amazonaws.com/lenslog",
+  "s3_key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg",
+  "fields": {
+    "key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg",
+    "Content-Type": "image/jpeg",
+    "policy": "base64-encoded-policy",
+    "x-amz-algorithm": "AWS4-HMAC-SHA256",
+    "x-amz-credential": "…",
+    "x-amz-date": "…",
+    "x-amz-signature": "…"
+  },
+  "max_size_mb": 20
 }
 ```
 

@@ -2,6 +2,13 @@ import axios from 'axios'
 import api from './api'
 import type { FileItem } from './uploadTypes'
 
+type PresignPostResponse = {
+  presigned_url: string
+  s3_key: string
+  fields: Record<string, string>
+  max_size_mb?: number
+}
+
 export async function uploadOne(
   item: FileItem,
   index: number,
@@ -10,11 +17,28 @@ export async function uploadOne(
   updateItem(index, { status: 'uploading', progress: 0 })
   try {
     const contentType = item.file.type || 'application/octet-stream'
-    const { data } = await api.post<{ presigned_url: string; s3_key: string }>(
+    const { data } = await api.post<PresignPostResponse>(
       `/photos/presign?filename=${encodeURIComponent(item.file.name)}&content_type=${encodeURIComponent(contentType)}`
     )
-    await axios.put(data.presigned_url, item.file, {
-      headers: { 'Content-Type': contentType },
+
+    if (typeof data.max_size_mb === 'number') {
+      const maxBytes = data.max_size_mb * 1024 * 1024
+      if (item.file.size > maxBytes) {
+        updateItem(index, {
+          status: 'error',
+          error: `檔案大小超過上限 (${data.max_size_mb} MB)`,
+          progress: 0,
+        })
+        return
+      }
+    }
+
+    const form = new FormData()
+    Object.entries(data.fields || {}).forEach(([k, v]) => form.append(k, v))
+    form.append('file', item.file)
+
+    // POST directly to storage (no auth header — use plain axios)
+    await axios.post(data.presigned_url, form, {
       onUploadProgress: (e) => {
         const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0
         updateItem(index, { progress: pct })

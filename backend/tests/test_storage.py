@@ -22,6 +22,27 @@ def test_generate_presigned_url_includes_content_type_and_rewrites_host(monkeypa
     assert call_kwargs["Params"]["Key"] == "photos/test.jpg"
 
 
+def test_generate_presigned_post_enforces_content_length_range_and_rewrites_host(monkeypatch):
+    mock_client = Mock()
+    mock_client.generate_presigned_post.return_value = {
+        "url": "http://minio:9000/lenslog-dev",
+        "fields": {"key": "photos/test.jpg"},
+    }
+    monkeypatch.setattr(storage_service, "get_storage_client", lambda: mock_client)
+
+    data = storage_service.generate_presigned_post(
+        "photos/test.jpg",
+        content_type="image/jpeg",
+        max_size_mb=20,
+    )
+
+    assert data["url"].startswith("http://localhost:9000/")
+    call_kwargs = mock_client.generate_presigned_post.call_args.kwargs
+    assert call_kwargs["Key"] == "photos/test.jpg"
+    assert call_kwargs["Fields"]["Content-Type"] == "image/jpeg"
+    assert ["content-length-range", 1, 20 * 1024 * 1024] in call_kwargs["Conditions"]
+
+
 def test_upload_and_download_object(monkeypatch):
     mock_client = Mock()
     mock_client.get_object.return_value = {"Body": Mock(read=Mock(return_value=b"hello"))}

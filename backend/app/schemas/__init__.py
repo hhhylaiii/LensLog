@@ -66,6 +66,8 @@ class PhotoResponse(BaseModel):
 class PresignResponse(BaseModel):
     presigned_url: str
     s3_key: str
+    fields: Optional[dict[str, str]] = None
+    max_size_mb: Optional[int] = None
 
 
 # ─── Location Schemas ─────────────────────────────────────────────────────────
