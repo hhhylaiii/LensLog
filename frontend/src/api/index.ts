@@ -17,7 +17,7 @@ export * from '@shared/api/services'
 
 const apiClient = createApiClient({
   baseURL: '/api/v1',
-  getAccessToken: () => localStorage.getItem('access_token'),
+  getAccessToken: () => localStorage.getItem('lenslog_access_token'),
   onUnauthorized: () => {
     window.location.href = '/login'
   },
