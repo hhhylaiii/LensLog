@@ -23,6 +23,9 @@ def _with_url(photo: Photo) -> PhotoResponse:
         data.thumb_url = get_object_url(photo.thumb_key)
     return data
 
+def _exif_opts():
+    return selectinload(Photo.exif)
+
 @router.get("", response_model=list[PhotoResponse])
 async def list_photos(
     skip: int = 0,
