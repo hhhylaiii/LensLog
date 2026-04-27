@@ -22,10 +22,11 @@ function mapGearToGearItem(gear: Gear): GearItem {
   const msPerDay = 86_400_000
   let status: GearItem['status'] = 'normal'
   let overdueDays: number | undefined
+  const referenceDate = gear.last_maintained || gear.purchase_date
 
-  if (gear.last_maintained && gear.maintenance_interval_days) {
+  if (referenceDate && gear.maintenance_interval_days) {
     const daysSince = Math.floor(
-      (Date.now() - new Date(gear.last_maintained).getTime()) / msPerDay,
+      (Date.now() - new Date(referenceDate).getTime()) / msPerDay,
     )
     if (daysSince > gear.maintenance_interval_days) {
       status = 'maintenance_due'
@@ -40,7 +41,7 @@ function mapGearToGearItem(gear: Gear): GearItem {
     model: gear.model,
     serialNumber: gear.serial_number,
     purchaseDate: formatPurchaseDate(gear.purchase_date),
-    lastMaintained: gear.last_maintained,
+    lastMaintained: referenceDate,
     maintenanceIntervalDays: gear.maintenance_interval_days,
     status,
     overdueDays,
@@ -63,7 +64,7 @@ const PILL_DEFS: ReadonlyArray<{ key: GearFilter; label: string }> = [
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
-    background: T.paper,
+    background: T.card,
     minHeight: '100%',
     fontFamily: "'Inter', system-ui, sans-serif",
     display: 'flex',
@@ -74,7 +75,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
   },
   titleSection: {
-    marginBottom: '12px',
+    marginBottom: '20px',
   },
   title: {
     fontSize: '28px',
@@ -82,11 +83,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: T.ink,
     letterSpacing: '-0.5px',
     lineHeight: 1.2,
+    display: 'inline-block',
+    paddingBottom: '2px',
+    paddingRight: '4px',
+    borderBottom: `3px solid ${T.accent}`,
   },
   statsSubtitle: {
     color: T.inkMute,
     fontSize: '14px',
-    marginTop: '4px',
+    marginTop: '8px',
   },
   filterSection: {
     marginBottom: '16px',
@@ -145,9 +150,21 @@ const GearVault: React.FC = () => {
         <div style={styles.titleSection}>
           <div style={styles.title}>器材庫</div>
           <div style={styles.statsSubtitle}>
-            {isLoading
-              ? '載入中...'
-              : `共 ${gearItems.length} 件${maintenanceCount > 0 ? ` · ${maintenanceCount} 件待保養` : ''}`}
+            {isLoading ? (
+              '載入中...'
+            ) : (
+              <>
+                共 {gearItems.length} 件
+                {maintenanceCount > 0 && (
+                  <>
+                    {' · '}
+                    <span style={{ color: T.accent, fontWeight: 600 }}>
+                      {maintenanceCount} 件待保養
+                    </span>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
 

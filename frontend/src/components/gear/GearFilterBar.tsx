@@ -33,13 +33,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pillDefault: {
     background: T.card,
-    color: T.ink,
+    color: T.inkMute,
     border: `1px solid ${T.line}`,
   },
   pillActive: {
-    background: T.accent,
-    color: '#ffffff',
-    border: `1px solid ${T.accent}`,
+    background: T.ink,
+    color: T.card,
+    border: `1px solid ${T.ink}`,
   },
   pillWarnDefault: {
     background: T.warnSoft,

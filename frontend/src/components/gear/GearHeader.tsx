@@ -14,21 +14,32 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '12px',
     padding: '14px 32px',
     background: T.card,
-    borderBottom: `1px solid ${T.line}`,
   },
   searchWrap: {
-    flex: 1,
+    width: '480px',
+    position: 'relative' as const,
+  },
+  searchIcon: {
+    position: 'absolute' as const,
+    left: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: T.inkMute,
+    pointerEvents: 'none' as const,
   },
   searchInput: {
     width: '100%',
     border: `1px solid ${T.line}`,
     borderRadius: '8px',
-    padding: '8px 14px',
+    padding: '10px 16px 10px 36px',
     fontSize: '14px',
     color: T.ink,
-    background: T.paper,
+    background: T.card,
     outline: 'none',
     boxSizing: 'border-box' as const,
+  },
+  spacer: {
+    flex: 1,
   },
   addBtn: {
     background: T.accent,
@@ -57,6 +68,20 @@ export default function GearHeader({ searchQuery, onSearchChange, onAddGear }: G
   return (
     <div style={styles.header}>
       <div style={styles.searchWrap}>
+        <svg
+          style={styles.searchIcon}
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
         <input
           type="text"
           style={styles.searchInput}
@@ -69,6 +94,7 @@ export default function GearHeader({ searchQuery, onSearchChange, onAddGear }: G
       <button style={styles.addBtn} onClick={onAddGear}>
         + 新增器材
       </button>
+      <div style={styles.spacer} />
       <div
         style={styles.avatar}
         role="img"
