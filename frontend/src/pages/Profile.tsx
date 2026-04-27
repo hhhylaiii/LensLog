@@ -58,7 +58,7 @@ const s: Record<string, React.CSSProperties> = {
     padding: '36px 40px',
     color: '#e8e8f0',
     fontFamily: "'Inter', system-ui, sans-serif",
-    maxWidth: '1040px',
+    maxWidth: '1200px',
     margin: '0 auto',
   },
 
@@ -90,23 +90,6 @@ const s: Record<string, React.CSSProperties> = {
     color: '#e8e8f0',
     transition: 'opacity 0.15s',
   },
-  bannerPresets: {
-    position: 'absolute',
-    bottom: '12px',
-    right: '12px',
-    display: 'flex',
-    gap: '6px',
-    zIndex: 5,
-  },
-  bannerPreset: {
-    width: '26px',
-    height: '26px',
-    borderRadius: '6px',
-    border: '2px solid rgba(255,255,255,0.25)',
-    cursor: 'pointer',
-    padding: 0,
-    transition: 'border-color 0.15s',
-  },
 
   // ── Header ──
   profileHeader: {
@@ -119,14 +102,14 @@ const s: Record<string, React.CSSProperties> = {
     width: '90px',
     height: '90px',
     borderRadius: '50%',
-    background: '#2a2a3e',
+    background: '#e8e8f0',
     flexShrink: 0,
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '30px',
-    color: '#444',
+    color: '#939393',
   },
   avatarImg: { width: '100%', height: '100%', objectFit: 'cover' as const },
   profileInfo: { flex: 1 },
@@ -134,7 +117,7 @@ const s: Record<string, React.CSSProperties> = {
   displayName: { fontSize: '22px', fontWeight: 700, letterSpacing: '-0.3px' },
   proBadge: {
     background: '#6366f1',
-    color: '#fff',
+    color: '#e8e8f0',
     fontSize: '10px',
     fontWeight: 700,
     padding: '2px 7px',
@@ -529,6 +512,41 @@ function relativeTime(iso: string) {
   return new Date(iso).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })
 }
 
+function hexToGradient(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const dk = (c: number) => Math.round(c * 0.3)
+  return `linear-gradient(135deg, rgb(${dk(r)},${dk(g)},${dk(b)}) 0%, rgb(${r},${g},${b}) 50%, rgb(${dk(r)},${dk(g)},${dk(b)}) 100%)`
+}
+
+function extractRegionColors(imgEl: HTMLImageElement): string[] {
+  const canvas = document.createElement('canvas')
+  canvas.width = 60
+  canvas.height = 60
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return []
+  ctx.drawImage(imgEl, 0, 0, 60, 60)
+  const regions: [number, number, number, number][] = [
+    [0, 0, 25, 25],
+    [35, 0, 25, 25],
+    [17, 17, 26, 26],
+    [0, 35, 25, 25],
+    [35, 35, 25, 25],
+  ]
+  return regions.map(([x, y, w, h]) => {
+    const { data } = ctx.getImageData(x, y, w, h)
+    let r = 0, g = 0, b = 0
+    const n = data.length / 4
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i]; g += data[i + 1]; b += data[i + 2]
+    }
+    r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n)
+    const dk = (c: number) => Math.round(c * 0.35)
+    return `linear-gradient(135deg, rgb(${dk(r)},${dk(g)},${dk(b)}) 0%, rgb(${r},${g},${b}) 50%, rgb(${dk(r)},${dk(g)},${dk(b)}) 100%)`
+  })
+}
+
 // ─── SafeImage ────────────────────────────────────────────────────────────────
 
 function SafeImage({ src, alt, style }: { src: string; alt?: string; style?: React.CSSProperties }) {
@@ -559,9 +577,14 @@ const Profile: React.FC = () => {
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const [localBanner, setLocalBanner] = useState<string | null>(null)
-  const [bannerGradientIdx, setBannerGradientIdx] = useState(0)
+  const [activeGradient, setActiveGradient] = useState(
+    'linear-gradient(135deg, #0f0f1a 0%, #1a1040 50%, #0d1a2e 100%)'
+  )
+  const [extractedGradients, setExtractedGradients] = useState<string[] | null>(null)
+  const [customColor, setCustomColor] = useState('#6366f1')
   const [bannerHovered, setBannerHovered] = useState(false)
   const bannerInputRef = useRef<HTMLInputElement>(null)
+  const colorPickerRef = useRef<HTMLInputElement>(null)
 
   const BADGE_OPTIONS = ['◈', '◉', '◎', '⊕', '⬡', '★', '✦', '⬤', '🌙', '🔭', '📷', '🎞']
 
@@ -586,7 +609,16 @@ const Profile: React.FC = () => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => setLocalBanner(ev.target?.result as string)
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string
+      setLocalBanner(dataUrl)
+      const img = new Image()
+      img.onload = () => {
+        const colors = extractRegionColors(img)
+        if (colors.length) setExtractedGradients(colors)
+      }
+      img.src = dataUrl
+    }
     reader.readAsDataURL(file)
     e.target.value = ''
   }
@@ -652,7 +684,7 @@ const Profile: React.FC = () => {
   const topGear = gear.slice(0, 3)
   const maxLocCount = topLocations[0]?.photoCount || 1
 
-  const bannerBg = localBanner ? undefined : BANNER_GRADIENTS[bannerGradientIdx]
+  const bannerBg = localBanner ? undefined : activeGradient
 
   return (
     <>
@@ -675,22 +707,7 @@ const Profile: React.FC = () => {
               <span style={{ fontSize: '13px' }}>更換橫幅</span>
             </div>
           )}
-          {/* Preset gradient swatches */}
-          <div style={s.bannerPresets} onClick={(e) => e.stopPropagation()}>
-            {BANNER_GRADIENTS.map((g, i) => (
-              <button
-                key={i}
-                type="button"
-                style={{
-                  ...s.bannerPreset,
-                  background: g,
-                  borderColor: !localBanner && i === bannerGradientIdx ? '#fff' : 'rgba(255,255,255,0.25)',
-                }}
-                title={`預設配色 ${i + 1}`}
-                onClick={() => { setLocalBanner(null); setBannerGradientIdx(i) }}
-              />
-            ))}
-          </div>
+          {/* Preset / extracted swatches + custom colour picker */}
         </div>
         <input
           ref={bannerInputRef}
@@ -699,6 +716,21 @@ const Profile: React.FC = () => {
           title="上傳橫幅"
           style={s.hiddenInput}
           onChange={handleBannerChange}
+        />
+        <input
+          ref={colorPickerRef}
+          type="color"
+          value={customColor}
+          title="選擇自訂顏色"
+          aria-label="選擇自訂顏色"
+          style={s.hiddenInput}
+          onChange={(e) => {
+            const hex = e.target.value
+            setCustomColor(hex)
+            setActiveGradient(hexToGradient(hex))
+            setLocalBanner(null)
+            setExtractedGradients(null)
+          }}
         />
 
         {/* ── Profile header ── */}

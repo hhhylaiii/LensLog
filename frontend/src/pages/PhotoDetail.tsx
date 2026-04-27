@@ -311,6 +311,46 @@ const s: Record<string, React.CSSProperties> = {
     border: '1px solid #2a2a38',
   },
 
+  // Delete
+  deleteBtn: {
+    background: 'transparent',
+    border: '1px solid #2a2a38',
+    borderRadius: '8px',
+    color: '#555',
+    fontSize: '12px',
+    padding: '7px',
+    cursor: 'pointer',
+    width: '100%',
+    marginTop: '8px',
+  },
+  deleteActionRow: { display: 'flex', gap: '8px', marginTop: '14px' },
+  saveBtnDanger: {
+    flex: 1,
+    background: '#ef4444',
+    border: 'none',
+    borderRadius: '8px',
+    color: '#fff',
+    fontSize: '13px',
+    fontWeight: 600,
+    padding: '9px',
+    cursor: 'pointer',
+    transition: 'opacity 0.15s',
+    opacity: 1,
+  },
+  saveBtnDangerPending: {
+    flex: 1,
+    background: '#ef4444',
+    border: 'none',
+    borderRadius: '8px',
+    color: '#fff',
+    fontSize: '13px',
+    fontWeight: 600,
+    padding: '9px',
+    cursor: 'pointer',
+    transition: 'opacity 0.15s',
+    opacity: 0.6,
+  },
+
   // Retry button
   retryBtn: {
     background: 'transparent',
@@ -407,6 +447,7 @@ const PhotoView: React.FC = () => {
 
   const [imgFailed, setImgFailed] = useState(false)
   const [imgRetry, setImgRetry] = useState(0)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false)
@@ -436,6 +477,14 @@ const PhotoView: React.FC = () => {
     mutationFn: () =>
       api.patch(`/photos/${id}`, { is_public: !photo?.is_public }).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['photo', id] }),
+  })
+
+  const deletePhoto = useMutation({
+    mutationFn: () => api.delete(`/photos/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['photos', 'profile-all'] })
+      navigate(-1)
+    },
   })
 
   const saveEdit = useMutation({
@@ -615,6 +664,29 @@ const PhotoView: React.FC = () => {
                 {photo.is_public ? '切換為私人' : '切換為公開'}
               </button>
             </div>
+
+            {/* Delete photo */}
+            {!isEditing && (
+              confirmDelete ? (
+                <div style={s.deleteActionRow}>
+                  <button
+                    type="button"
+                    style={deletePhoto.isPending ? s.saveBtnDangerPending : s.saveBtnDanger}
+                    disabled={deletePhoto.isPending}
+                    onClick={() => deletePhoto.mutate()}
+                  >
+                    {deletePhoto.isPending ? '刪除中…' : '確認刪除'}
+                  </button>
+                  <button type="button" style={s.cancelBtn} onClick={() => setConfirmDelete(false)}>
+                    取消
+                  </button>
+                </div>
+              ) : (
+                <button type="button" style={s.deleteBtn} onClick={() => setConfirmDelete(true)}>
+                  刪除照片
+                </button>
+              )
+            )}
           </div>
 
           {/* ── EXIF block — always shows all rows ── */}
