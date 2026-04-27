@@ -1,6 +1,7 @@
 import axios from 'axios'
 import api from './api'
 import type { FileItem } from './uploadTypes'
+import type { PresignResponse } from '@shared/types'
 
 export async function uploadOne(
   item: FileItem,
@@ -10,11 +11,11 @@ export async function uploadOne(
   updateItem(index, { status: 'uploading', progress: 0 })
   try {
     const contentType = item.file.type || 'application/octet-stream'
-    const { data } = await api.post<{ presigned_url: string; s3_key: string }>(
+    const { data } = await api.post<PresignResponse>(
       `/photos/presign?filename=${encodeURIComponent(item.file.name)}&content_type=${encodeURIComponent(contentType)}`
     )
     await axios.put(data.presigned_url, item.file, {
-      headers: { 'Content-Type': contentType },
+      headers: data.upload_headers,
       onUploadProgress: (e) => {
         const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0
         updateItem(index, { progress: pct })
