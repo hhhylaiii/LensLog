@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { Camera, Wrench, Maximize2, Aperture, Timer, BarChart2, CalendarDays, MapPin } from 'lucide-react'
+import { MdCameraAlt, MdIso, MdCamera, MdTimer } from 'react-icons/md'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
@@ -403,7 +405,7 @@ function SafeImage({ src, style, onFail }: { src: string; style?: React.CSSPrope
 
 // ─── ExifRow — always rendered, shows "—" when value is missing ───────────────
 
-function ExifRow({ icon, label, value }: { icon: string; label: string; value?: string | number | null }) {
+function ExifRow({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | number | null }) {
   const isEmpty = value == null || value === ''
   return (
     <div style={s.exifRow}>
@@ -476,7 +478,10 @@ const PhotoView: React.FC = () => {
   const togglePublic = useMutation({
     mutationFn: () =>
       api.patch(`/photos/${id}`, { is_public: !photo?.is_public }).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['photo', id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['photo', id] })
+      qc.invalidateQueries({ queryKey: ['photos', 'profile-all'] })
+    },
   })
 
   const deletePhoto = useMutation({
@@ -693,15 +698,15 @@ const PhotoView: React.FC = () => {
           <div style={s.exifCard}>
             <div style={s.exifHeader}>EXIF 資訊</div>
             <div style={s.exifBody}>
-              <ExifRow icon="📷" label="相機"     value={cameraLabel} />
-              <ExifRow icon="🔧" label="鏡頭"     value={exif?.lens_model} />
-              <ExifRow icon="📐" label="焦段"     value={exif?.focal_length != null ? `${exif.focal_length} mm` : null} />
-              <ExifRow icon="🌀" label="光圈"     value={exif?.aperture != null ? `f/${exif.aperture}` : null} />
-              <ExifRow icon="⏱"  label="快門"     value={exif?.shutter_speed} />
-              <ExifRow icon="📊" label="ISO"      value={exif?.iso} />
-              <ExifRow icon="📅" label="拍攝時間" value={fmt(photo.taken_at)} />
+              <ExifRow icon={<Camera size={15} />}      label="相機"     value={cameraLabel} />
+              <ExifRow icon={<Wrench size={15} />}      label="鏡頭"     value={exif?.lens_model} />
+              <ExifRow icon={<Maximize2 size={15} />}   label="焦段"     value={exif?.focal_length != null ? `${exif.focal_length} mm` : null} />
+              <ExifRow icon={<Aperture size={15} />}    label="光圈"     value={exif?.aperture != null ? `f/${exif.aperture}` : null} />
+              <ExifRow icon={<Timer size={15} />}       label="快門"     value={exif?.shutter_speed} />
+              <ExifRow icon={<BarChart2 size={15} />}   label="ISO"      value={exif?.iso} />
+              <ExifRow icon={<CalendarDays size={15} />} label="拍攝時間" value={fmt(photo.taken_at)} />
               <ExifRow
-                icon="📍"
+                icon={<MapPin size={15} />}
                 label="GPS"
                 value={hasGps ? `${exif!.gps_lat!.toFixed(5)}, ${exif!.gps_lng!.toFixed(5)}` : null}
               />
