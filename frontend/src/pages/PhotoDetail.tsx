@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import { Camera, Wrench, Maximize2, Aperture, Timer, BarChart2, CalendarDays, MapPin } from 'lucide-react'
-import { MdCameraAlt, MdIso, MdCamera, MdTimer } from 'react-icons/md'
+
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
