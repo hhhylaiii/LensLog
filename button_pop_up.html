@@ -1,0 +1,1477 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LensLog — Popup Design </title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:         #1a2942;
+    --ink-soft:    #4a5773;
+    --ink-mute:    #7d88a0;
+    --line:        #dde3ee;
+    --line-soft:   #e9eef5;
+    --paper:       #eef2f8;
+    --paper-2:     #dfe6f0;
+    --card:        #ffffff;
+
+    --accent:      #1e5fb3;
+    --accent-soft: #e3edfa;
+    --accent-ink:  #143e77;
+    --accent-neon: #60a5fa;
+
+    --side-bg:     #1a2942;
+    --side-bg-2:   #253655;
+
+    --warn:        #b45309;
+    --warn-soft:   #fef6e7;
+    --ok:          #15803d;
+    --ok-soft:     #e8f5ec;
+    --danger:      #b42318;
+    --danger-soft: #fef2f1;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.005em;
+    line-height: 1.5;
+  }
+
+  /* ===================== Page scaffold ===================== */
+  .wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 56px 40px 96px;
+  }
+  .doc-head {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 56px;
+    max-width: 760px;
+  }
+  .doc-head h1 {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 6px;
+  }
+  .doc-head p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+  .sec-title {
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 56px 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sec-title .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--paper-2);
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .sec-sub {
+    color: var(--ink-soft);
+    margin: 0 0 24px 36px;
+    font-size: 13.5px;
+  }
+
+  /* ===================== Modal stage (a fake browser viewport) ===================== */
+  .stage {
+    background: linear-gradient(135deg, rgba(26, 41, 66, 0.55), rgba(26, 41, 66, 0.75));
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 56px 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  /* Faint background hint = page underneath */
+  .stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 600px 300px at 30% 20%, rgba(96, 165, 250, 0.2), transparent 60%),
+      radial-gradient(ellipse 500px 280px at 80% 80%, rgba(217, 146, 125, 0.18), transparent 60%);
+    pointer-events: none;
+  }
+  .stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+  }
+
+  .stage-label {
+    position: absolute;
+    top: 14px; left: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.6);
+    z-index: 2;
+  }
+  .stage-label .trigger {
+    color: var(--accent-neon);
+    background: rgba(96, 165, 250, 0.12);
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    margin-left: 8px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 10.5px;
+  }
+
+  /* ===================== Modal core ===================== */
+  .modal {
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    box-shadow:
+      0 1px 2px rgba(15, 30, 56, 0.04),
+      0 24px 60px -12px rgba(15, 30, 56, 0.35),
+      0 12px 24px -8px rgba(15, 30, 56, 0.18);
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-head {
+    padding: 22px 28px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .modal-head .head-text { flex: 1; min-width: 0; }
+  .modal-head h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .modal-head p {
+    margin: 4px 0 0;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+  .modal-head .close {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink-mute);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
+  }
+  .modal-head .close:hover {
+    background: var(--paper-2);
+    color: var(--ink);
+  }
+
+  .modal-body {
+    padding: 22px 28px;
+    overflow-y: auto;
+  }
+
+  .modal-foot {
+    padding: 16px 28px;
+    border-top: 1px solid var(--line-soft);
+    background: #fafbfd;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .modal-foot .foot-info {
+    flex: 1;
+    font-size: 12px;
+    color: var(--ink-mute);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0;
+  }
+
+  /* Sizes */
+  .modal.sm { width: 440px; max-width: 100%; }
+  .modal.md { width: 560px; max-width: 100%; }
+  .modal.lg { width: 720px; max-width: 100%; }
+  .modal.xl { width: 920px; max-width: 100%; }
+
+  /* ===================== Form primitives ===================== */
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field-row.thirds { grid-template-columns: 1fr 1fr 1fr; }
+
+  label.lbl {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  label.lbl .opt {
+    font-weight: 400;
+    color: var(--ink-mute);
+    font-size: 12px;
+    margin-left: 4px;
+  }
+  label.lbl .req { color: var(--danger); margin-left: 2px; }
+
+  .input,
+  .textarea,
+  .select {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: var(--ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+  }
+  .input::placeholder,
+  .textarea::placeholder { color: var(--ink-mute); }
+  .input:focus,
+  .textarea:focus,
+  .select:focus {
+    outline: 0;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(30, 95, 179, 0.12);
+  }
+  .input.has-icon { padding-left: 34px; }
+  .input-wrap { position: relative; }
+  .input-wrap .ico {
+    position: absolute;
+    left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--ink-mute);
+    pointer-events: none;
+    font-size: 13px;
+  }
+  .input-wrap .suffix {
+    position: absolute;
+    right: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--ink-mute);
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .textarea { min-height: 84px; resize: vertical; }
+  .helper {
+    margin: 6px 0 0;
+    font-size: 11.5px;
+    color: var(--ink-mute);
+  }
+  .helper.error { color: var(--danger); }
+  .helper.ok { color: var(--ok); }
+
+  /* Select arrow */
+  .select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%237d88a0'><path d='M4 6l4 4 4-4'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    padding-right: 32px;
+  }
+
+  /* Buttons */
+  .btn {
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--card);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    letter-spacing: -0.005em;
+    line-height: 1;
+  }
+  .btn:hover { background: var(--paper-2); }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn.primary:hover { background: var(--accent-ink); border-color: var(--accent-ink); }
+  .btn.danger {
+    background: transparent;
+    border-color: transparent;
+    color: var(--danger);
+  }
+  .btn.danger:hover { background: var(--danger-soft); }
+  .btn.sm { height: 28px; font-size: 12px; padding: 0 10px; }
+  .btn.lg { height: 42px; font-size: 14px; padding: 0 18px; }
+  .btn.ghost { border-color: transparent; }
+  .btn.ghost:hover { background: var(--paper-2); }
+  .btn:disabled,
+  .btn.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Chips */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--card);
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .chip:hover { background: var(--paper-2); }
+  .chip.on {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+  }
+  .chip.x {
+    border-style: dashed;
+    color: var(--ink-mute);
+  }
+
+  /* Mono helper */
+  .mono {
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0;
+  }
+
+  /* Photo placeholder (matches wireframe blue gradient) */
+  .photo {
+    background: linear-gradient(160deg, #6b82a8 0%, #4c6590 28%, #334a75 52%, #22355b 78%, #1a2942 100%);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 110%, rgba(255, 200, 130, 0.22), transparent 60%),
+      radial-gradient(ellipse 60% 30% at 20% 30%, rgba(180, 200, 220, 0.15), transparent 60%);
+    pointer-events: none;
+  }
+  .photo span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--ink-soft);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===================== Drop zone (Upload Step 1) ===================== */
+  .dropzone {
+    border: 2px dashed var(--line);
+    border-radius: 10px;
+    padding: 40px 24px;
+    text-align: center;
+    background: #fafbfd;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+  .dropzone:hover,
+  .dropzone.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .dropzone .dz-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    font-size: 22px;
+  }
+  .dropzone h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .dropzone p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .dropzone .accents {
+    margin-top: 14px;
+    display: inline-flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .dropzone .accents .ext {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-mute);
+    border: 1px solid var(--line);
+    background: var(--card);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  /* File list (after dropping) */
+  .file-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+  }
+  .file-row .ph {
+    width: 40px; height: 40px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .file-row .info { flex: 1; min-width: 0; }
+  .file-row .info .name {
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .file-row .info .meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-mute);
+    margin-top: 2px;
+  }
+  .file-row .progress {
+    width: 120px;
+    height: 5px;
+    background: var(--paper-2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .file-row .progress > div {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  .file-row .status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ok);
+    min-width: 36px;
+    text-align: right;
+  }
+  .file-row .status.up { color: var(--accent); }
+  .file-row .x {
+    width: 24px; height: 24px;
+    border-radius: 4px;
+    border: 0;
+    background: transparent;
+    color: var(--ink-mute);
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .file-row .x:hover { background: var(--paper-2); color: var(--ink); }
+
+  /* Stepper (used in upload flow) */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--ink-mute);
+    margin-bottom: 4px;
+  }
+  .stepper .step {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stepper .step.done { color: var(--ink-soft); }
+  .stepper .step.active { color: var(--ink); font-weight: 500; }
+  .stepper .num {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10.5px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .stepper .step.done .num { background: var(--ok-soft); border-color: var(--ok-soft); color: var(--ok); }
+  .stepper .step.active .num {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .stepper .line {
+    width: 24px;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* Radio cards (visibility selector) */
+  .radio-card {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+    margin-bottom: 8px;
+  }
+  .radio-card:hover { background: #fafbfd; }
+  .radio-card.on {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .radio-card .dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .radio-card.on .dot {
+    border-color: var(--accent);
+  }
+  .radio-card.on .dot::after {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .radio-card .rc-text { flex: 1; }
+  .radio-card .rc-title {
+    font-size: 13.5px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .radio-card .rc-desc {
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .radio-card .rc-icon {
+    font-size: 14px;
+    color: var(--ink-mute);
+  }
+
+  /* Toggle */
+  .toggle {
+    width: 34px; height: 20px;
+    border-radius: 11px;
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 1.5px;
+    left: 2px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1px solid var(--line);
+    transition: left 0.15s, background 0.15s;
+  }
+  .toggle.on {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .toggle.on::after {
+    left: 17px;
+    border-color: var(--accent);
+  }
+
+  /* Map preview (for spot creation) */
+  .map-preview {
+    height: 180px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 200px 140px at 28% 42%, #d7e0ec 40%, transparent 72%),
+      radial-gradient(ellipse 240px 140px at 78% 68%, #dfe4ee 30%, transparent 72%),
+      #d6dde8;
+  }
+  .map-preview::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(15, 30, 56, 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15, 30, 56, 0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .map-preview .pin {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -100%);
+    width: 18px; height: 26px;
+    background: var(--accent);
+    border: 2px solid #fff;
+    border-radius: 50% 50% 50% 0;
+    transform-origin: bottom left;
+    transform: translate(-50%, -100%) rotate(-45deg);
+    box-shadow: 0 4px 8px rgba(15, 30, 56, 0.3);
+  }
+  .map-preview .crosshair {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px; height: 80px;
+    border: 1px dashed rgba(30, 95, 179, 0.4);
+    border-radius: 50%;
+  }
+  .map-preview .gps {
+    position: absolute;
+    bottom: 8px; right: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink);
+  }
+
+  /* Gear category card grid */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .cat-card {
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--card);
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .cat-card:hover { background: #fafbfd; }
+  .cat-card.on {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .cat-card .ico {
+    font-size: 18px;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .cat-card .name {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* EXIF readout */
+  .exif-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+    padding: 14px 16px;
+    background: #fafbfd;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 12.5px;
+  }
+  .exif-grid .k {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .exif-grid .v {
+    font-weight: 500;
+    margin-top: 1px;
+  }
+
+  /* Banner alerts */
+  .banner {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+  .banner.info {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    border: 1px solid #c8dcef;
+  }
+  .banner.warn {
+    background: var(--warn-soft);
+    color: var(--warn);
+    border: 1px solid #f5e1b8;
+  }
+  .banner.ok {
+    background: var(--ok-soft);
+    color: var(--ok);
+    border: 1px solid #c5e8cf;
+  }
+  .banner .b-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Annotation marker for spec doc */
+  .anno {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 11.5px;
+  }
+  .anno .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--ink-soft);
+    letter-spacing: 0;
+    font-size: 10.5px;
+  }
+  .anno .tag b {
+    color: var(--ink);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+
+  /* Publish summary tile */
+  .pub-summary {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 16px;
+    padding: 14px;
+    background: #fafbfd;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .pub-summary .stack {
+    position: relative;
+    width: 100px;
+    height: 100px;
+  }
+  .pub-summary .stack .photo {
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 6px;
+  }
+  .pub-summary .stack .photo:nth-child(2) {
+    transform: rotate(2deg) translate(2px, -2px);
+    z-index: 1;
+  }
+  .pub-summary .stack .photo:nth-child(3) {
+    transform: rotate(-3deg) translate(-3px, -3px);
+    z-index: 0;
+  }
+  .pub-summary .stack .photo:nth-child(1) {
+    z-index: 2;
+    border: 2px solid #fff;
+  }
+
+  /* Confirm count badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ============================ DOC HEADER ============================ -->
+  <div class="doc-head">
+    <h1>Popup / Modal 設計</h1>
+    <p>LensLog 主要互動視窗的規格——新增景點、新增器材、上傳照片三步驟。每個視窗下方標註尺寸、觸發點、主要互動行為。</p>
+  </div>
+
+  <!-- ============================ 1 · 新增景點 ============================ -->
+  <div class="sec-title"><span class="num">1</span>新增景點</div>
+  <p class="sec-sub">從攝影地圖頁的「＋新增景點」按鈕觸發,讓使用者建立新的攝影地點。</p>
+
+  <div class="stage">
+    <div class="stage-label">
+      MODAL.MD
+      <span class="trigger">.btn.primary "＋ 新增景點" → 點擊</span>
+    </div>
+
+    <div class="modal md">
+      <div class="modal-head">
+        <div class="head-text">
+          <h2>新增景點 Button </h2>
+          <p>把你發現的攝影點加進地圖,讓其他攝影師也找得到。</p>
+        </div>
+        <button class="close" aria-label="關閉">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label class="lbl">景點名稱<span class="req">*</span></label>
+          <input class="input" type="text" placeholder="例:象山六巨石、阿里山祝山" value="清水斷崖觀景平台"/>
+          <p class="helper">建議用具體位置加上地形特徵,方便其他人辨識。</p>
+        </div>
+
+        <div class="field">
+          <label class="lbl">位置<span class="req">*</span></label>
+          <div class="map-preview">
+            <div class="crosshair"></div>
+            <div class="pin"></div>
+            <div class="gps">24.1825°N · 121.6948°E</div>
+          </div>
+          <p class="helper">拖曳地圖調整圖釘位置,或<a style="color:var(--accent); cursor:pointer;">使用我目前的位置</a>。</p>
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="margin: 0;">
+            <label class="lbl">類型<span class="req">*</span></label>
+            <select class="select">
+              <option>海岸線</option>
+              <option>百萬夜景</option>
+              <option>雲海日出</option>
+              <option>高山星空</option>
+              <option>老街</option>
+              <option>峽谷</option>
+            </select>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label class="lbl">難度<span class="opt">(選填)</span></label>
+            <select class="select">
+              <option>簡易</option>
+              <option selected>中等</option>
+              <option>困難</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="lbl">最佳拍攝時段<span class="opt">(可複選)</span></label>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <span class="chip on">日出</span>
+            <span class="chip">藍調時刻</span>
+            <span class="chip on">日落</span>
+            <span class="chip">深夜星空</span>
+            <span class="chip">陰雨天</span>
+            <span class="chip">霧天</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="lbl">備註<span class="opt">(選填)</span></label>
+          <textarea class="textarea" placeholder="停車資訊、推薦焦段、注意事項…">建議停在隧道口附近,從步道走進去約 5 分鐘。日落前 30 分鐘抵達剛好。靠近懸崖請小心。</textarea>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <span class="foot-info">送出後將進入審核,通常 24 小時內完成</span>
+        <button class="btn ghost">取消</button>
+        <button class="btn primary">送出新增</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="anno">
+    <span class="tag"><b>尺寸</b>560 × auto</span>
+    <span class="tag"><b>觸發</b>「＋新增景點」按鈕</span>
+    <span class="tag"><b>必填</b>名稱、位置、類型</span>
+    <span class="tag"><b>可關閉</b>右上 × · ESC · 點擊背景</span>
+    <span class="tag"><b>後續</b>送審 → 通知中心</span>
+  </div>
+
+
+  <!-- ============================ 2 · 新增器材 ============================ -->
+  <div class="sec-title"><span class="num">2</span>新增器材</div>
+  <p class="sec-sub">從器材庫頁的「＋新增器材」觸發。先選類別,再填細節——資料庫會自動補上規格。</p>
+
+  <div class="stage">
+    <div class="stage-label">
+      MODAL.MD
+      <span class="trigger">.btn.primary "＋ 新增器材" → 點擊</span>
+    </div>
+
+    <div class="modal md">
+      <div class="modal-head">
+        <div class="head-text">
+          <h2>新增器材 Button</h2>
+          <p>選擇類別後,輸入型號即可自動帶入規格。</p>
+        </div>
+        <button class="close" aria-label="關閉">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label class="lbl">器材類別<span class="req">*</span></label>
+          <div class="cat-grid">
+            <div class="cat-card on">
+              <span class="ico">📷</span>
+              <span class="name">機身</span>
+            </div>
+            <div class="cat-card">
+              <span class="ico">🔍</span>
+              <span class="name">鏡頭</span>
+            </div>
+            <div class="cat-card">
+              <span class="ico">🦵</span>
+              <span class="name">腳架</span>
+            </div>
+            <div class="cat-card">
+              <span class="ico">⚡</span>
+              <span class="name">閃燈</span>
+            </div>
+            <div class="cat-card">
+              <span class="ico">🎚️</span>
+              <span class="name">濾鏡</span>
+            </div>
+            <div class="cat-card">
+              <span class="ico">🎒</span>
+              <span class="name">背包</span>
+            </div>
+            <div class="cat-card">
+              <span class="ico">💾</span>
+              <span class="name">記憶卡</span>
+            </div>
+            <div class="cat-card">
+              <span class="ico">＋</span>
+              <span class="name">其他</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="margin: 0;">
+            <label class="lbl">品牌<span class="req">*</span></label>
+            <select class="select">
+              <option>Sony</option>
+              <option>Canon</option>
+              <option>Nikon</option>
+              <option>Fujifilm</option>
+              <option>Leica</option>
+              <option>其他</option>
+            </select>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label class="lbl">型號<span class="req">*</span></label>
+            <div class="input-wrap">
+              <input class="input" type="text" placeholder="例:α7 IV" value="α7 IV"/>
+            </div>
+            <p class="helper ok">✓ 已從資料庫帶入規格</p>
+          </div>
+        </div>
+
+        <div class="banner info" style="margin-bottom: 18px;">
+          <span class="b-icon">⌗</span>
+          <div>
+            <b>已自動帶入</b> 33 MP · 全片幅 · BIONZ XR · ISO 100–51200 · 2021 年發布
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="margin: 0;">
+            <label class="lbl">購入日期<span class="opt">(選填)</span></label>
+            <input class="input" type="text" placeholder="2024/04/18" value="2024/06/12"/>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label class="lbl">購入價格<span class="opt">(選填)</span></label>
+            <div class="input-wrap">
+              <input class="input" type="text" placeholder="0" value="78,900"/>
+              <span class="suffix">NTD</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="margin: 0;">
+            <label class="lbl">序號<span class="opt">(選填)</span></label>
+            <input class="input" type="text" placeholder="保固登記用,不公開" value="●●●●●12345"/>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label class="lbl">起始快門數<span class="opt">(選填)</span></label>
+            <input class="input" type="text" placeholder="0" value="0"/>
+          </div>
+        </div>
+
+        <div class="field" style="display:flex; align-items:center; justify-content:space-between; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fafbfd;">
+          <div>
+            <div style="font-size: 13px; font-weight: 500;">公開於個人頁</div>
+            <div style="font-size: 12px; color: var(--ink-soft); margin-top: 2px;">其他攝影師可看到你擁有這件器材</div>
+          </div>
+          <div class="toggle on"></div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <span class="foot-info">支援上傳照片(下一步)</span>
+        <button class="btn ghost">取消</button>
+        <button class="btn">儲存並繼續</button>
+        <button class="btn primary">完成新增</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="anno">
+    <span class="tag"><b>尺寸</b>560 × auto</span>
+    <span class="tag"><b>觸發</b>器材庫「＋新增器材」</span>
+    <span class="tag"><b>智慧</b>輸入型號自動帶入規格</span>
+    <span class="tag"><b>分流</b>儲存並繼續 = 上傳照片</span>
+  </div>
+
+
+  <!-- ============================ 3 · 上傳照片 · Step 1 選擇檔案 ============================ -->
+  <div class="sec-title"><span class="num">3</span>上傳照片 · Step 1 選擇檔案</div>
+  <p class="sec-sub">支援拖拉或點擊上傳,可一次上傳多張。已上傳檔案顯示進度與狀態。</p>
+
+  <div class="stage">
+    <div class="stage-label">
+      MODAL.MD
+      <span class="trigger">.btn.primary "↑ 上傳" → 點擊</span>
+    </div>
+
+    <div class="modal lg">
+      <div class="modal-head">
+        <div class="head-text">
+          <h2>上傳照片</h2>
+          <div class="stepper" style="margin-top: 6px;">
+            <span class="step active"><span class="num">1</span>選擇檔案</span>
+            <span class="line"></span>
+            <span class="step"><span class="num">2</span>檢閱 & 編輯</span>
+            <span class="line"></span>
+            <span class="step"><span class="num">3</span>發布</span>
+          </div>
+        </div>
+        <button class="close" aria-label="關閉">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="dropzone active">
+          <div class="dz-icon">↑</div>
+          <h3>把檔案拖到這裡,或點擊選取</h3>
+          <p>單次最多 20 張 · 每張不超過 100 MB</p>
+          <div class="accents">
+            <span class="ext">JPG</span>
+            <span class="ext">HEIC</span>
+            <span class="ext">RAW · ARW · NEF · CR3</span>
+            <span class="ext">TIFF</span>
+          </div>
+        </div>
+
+        <div class="file-list">
+          <div class="file-row">
+            <div class="ph photo"><span>IMG_4821</span></div>
+            <div class="info">
+              <div class="name">IMG_4821.ARW</div>
+              <div class="meta">42.3 MB · RAW · 6000 × 4000</div>
+            </div>
+            <div class="progress"><div style="width: 100%;"></div></div>
+            <span class="status">✓</span>
+            <button class="x" title="移除">×</button>
+          </div>
+
+          <div class="file-row">
+            <div class="ph photo"><span>IMG_4822</span></div>
+            <div class="info">
+              <div class="name">IMG_4822.ARW</div>
+              <div class="meta">38.9 MB · RAW · 6000 × 4000</div>
+            </div>
+            <div class="progress"><div style="width: 68%;"></div></div>
+            <span class="status up">68%</span>
+            <button class="x" title="取消">×</button>
+          </div>
+
+          <div class="file-row">
+            <div class="ph photo"><span>IMG_4823</span></div>
+            <div class="info">
+              <div class="name">IMG_4823.ARW</div>
+              <div class="meta">41.0 MB · RAW · 6000 × 4000</div>
+            </div>
+            <div class="progress"><div style="width: 24%;"></div></div>
+            <span class="status up">24%</span>
+            <button class="x" title="取消">×</button>
+          </div>
+        </div>
+
+        <div class="banner info" style="margin-top: 16px;">
+          <span class="b-icon">⌗</span>
+          <div>已自動偵測 EXIF 與 GPS 資料,下一步會幫你配對到既有景點。</div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <span class="foot-info">3 張 · 122.2 MB / 2 GB · <span style="color: var(--accent);">2 張上傳中…</span></span>
+        <button class="btn ghost">取消</button>
+        <button class="btn">存為草稿</button>
+        <button class="btn primary disabled">下一步:檢閱 & 編輯 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="anno">
+    <span class="tag"><b>尺寸</b>720 × auto</span>
+    <span class="tag"><b>觸發</b>側欄「上傳照片」、頁面右上「↑ 上傳」</span>
+    <span class="tag"><b>互動</b>拖放、貼上(⌘V)、點擊</span>
+    <span class="tag"><b>「下一步」</b>所有檔案 100% 後啟用</span>
+    <span class="tag"><b>關閉警告</b>有上傳中時跳確認</span>
+  </div>
+
+
+  <!-- ============================ 4 · 上傳照片 · Step 2 檢閱與編輯 ============================ -->
+  <div class="sec-title"><span class="num">4</span>上傳照片 · Step 2 檢閱與編輯</div>
+  <p class="sec-sub">逐張檢閱讀取的 EXIF、配對的景點、加上說明與標籤。批次操作可同時套用至所有照片。</p>
+
+  <div class="stage" style="padding: 56px 16px;">
+    <div class="stage-label">
+      MODAL.MD
+      <span class="trigger">Step 1 完成 → 自動切換</span>
+    </div>
+
+    <div class="modal xl">
+      <div class="modal-head">
+        <div class="head-text">
+          <h2>檢閱 & 編輯</h2>
+          <div class="stepper" style="margin-top: 6px;">
+            <span class="step done"><span class="num">✓</span>選擇檔案</span>
+            <span class="line"></span>
+            <span class="step active"><span class="num">2</span>檢閱 & 編輯</span>
+            <span class="line"></span>
+            <span class="step"><span class="num">3</span>發布</span>
+          </div>
+        </div>
+        <button class="close" aria-label="關閉">×</button>
+      </div>
+
+      <div class="modal-body" style="padding: 18px 28px;">
+        <!-- Photo nav strip -->
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line-soft);">
+          <button class="btn sm">◂</button>
+          <div style="display: flex; gap: 6px; flex: 1; overflow: hidden;">
+            <div class="ph photo" style="width: 48px; height: 48px; flex-shrink: 0; border: 2px solid var(--accent);"><span style="font-size: 8px;">4821</span></div>
+            <div class="ph photo" style="width: 48px; height: 48px; flex-shrink: 0;"><span style="font-size: 8px;">4822</span></div>
+            <div class="ph photo" style="width: 48px; height: 48px; flex-shrink: 0;"><span style="font-size: 8px;">4823</span></div>
+          </div>
+          <span class="mono" style="font-size: 11px; color: var(--ink-mute); margin: 0 6px;">1 / 3</span>
+          <button class="btn sm">▸</button>
+          <span style="width: 1px; height: 20px; background: var(--line); margin: 0 4px;"></span>
+          <button class="btn sm">套用至全部</button>
+        </div>
+
+        <!-- Two-column layout: preview + form -->
+        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px;">
+          <!-- Left: photo + EXIF -->
+          <div>
+            <div class="photo" style="height: 220px; border-radius: 8px;"><span>IMG_4821 · 6000 × 4000</span></div>
+
+            <div class="exif-grid" style="margin-top: 12px;">
+              <div>
+                <div class="k">機身</div>
+                <div class="v">Sony α7 IV</div>
+              </div>
+              <div>
+                <div class="k">鏡頭</div>
+                <div class="v">FE 35mm f/1.4</div>
+              </div>
+              <div>
+                <div class="k">光圈 · 快門</div>
+                <div class="v">f/2.8 · 1/60s</div>
+              </div>
+              <div>
+                <div class="k">ISO · 焦距</div>
+                <div class="v">800 · 35mm</div>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <div class="k">拍攝時間</div>
+                <div class="v">2026/04/18 18:24:32</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: editable fields -->
+          <div>
+            <!-- Spot match — featured -->
+            <div style="border: 1px solid #c8dcef; background: var(--accent-soft); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <span class="mono" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-ink);">景點 · 自動配對</span>
+                <span class="mono" style="font-size: 10px; color: var(--accent-ink);">匹配度 98%</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="photo" style="width: 44px; height: 44px; flex-shrink: 0;"><span></span></div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 600; font-size: 14px; letter-spacing: -0.01em;">象山六巨石</div>
+                  <div style="font-size: 11.5px; color: var(--ink-soft);">台北信義 · GPS 距離 12 m</div>
+                </div>
+                <button class="btn sm">手動選擇</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="lbl">說明</label>
+              <textarea class="textarea" style="min-height: 64px;">從六巨石走到觀景台大約 40 分鐘,正好趕上雲層散開的黃金時刻 🏔️</textarea>
+              <p class="helper">68 / 280 字</p>
+            </div>
+
+            <div class="field">
+              <label class="lbl">標籤<span class="opt">(可複選,輸入後 Enter)</span></label>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--card); min-height: 38px; align-items: center;">
+                <span class="chip on">#夜景</span>
+                <span class="chip on">#台北</span>
+                <span class="chip on">#象山步道</span>
+                <span class="chip on">#黃金時刻</span>
+                <input type="text" placeholder="新增標籤…" style="border: 0; outline: 0; flex: 1; min-width: 80px; font-size: 12px; font-family: inherit; color: var(--ink); background: transparent;"/>
+              </div>
+            </div>
+
+            <div class="field" style="margin-bottom: 0;">
+              <label class="lbl">關聯器材<span class="opt">(從器材庫選擇)</span></label>
+              <div style="display: flex; gap: 6px;">
+                <span class="chip on">Sony α7 IV</span>
+                <span class="chip on">FE 35mm f/1.4</span>
+                <span class="chip x">＋ 加入</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <span class="foot-info">已編輯 1 / 3 張</span>
+        <button class="btn ghost">← 上一步</button>
+        <button class="btn">存為草稿</button>
+        <button class="btn primary">下一步:發布 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="anno">
+    <span class="tag"><b>尺寸</b>920 × auto</span>
+    <span class="tag"><b>互動</b>← → 鍵切換照片</span>
+    <span class="tag"><b>批次</b>「套用至全部」可複製當前設定</span>
+    <span class="tag"><b>EXIF</b>唯讀,不可手改(避免誤資料)</span>
+  </div>
+
+
+  <!-- ============================ 5 · 上傳照片 · Step 3 發布 ============================ -->
+  <div class="sec-title"><span class="num">5</span>上傳照片 · Step 3 發布</div>
+  <p class="sec-sub">最後確認可見度與通知設定,點擊「發布」完成。也支援排程發布。</p>
+
+  <div class="stage">
+    <div class="stage-label">
+      MODAL.MD
+      <span class="trigger">Step 2 完成 → 點擊「下一步:發布」</span>
+    </div>
+
+    <div class="modal md">
+      <div class="modal-head">
+        <div class="head-text">
+          <h2>準備發布</h2>
+          <div class="stepper" style="margin-top: 6px;">
+            <span class="step done"><span class="num">✓</span>選擇檔案</span>
+            <span class="line"></span>
+            <span class="step done"><span class="num">✓</span>檢閱 & 編輯</span>
+            <span class="line"></span>
+            <span class="step active"><span class="num">3</span>發布</span>
+          </div>
+        </div>
+        <button class="close" aria-label="關閉">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Summary -->
+        <div class="pub-summary">
+          <div class="stack">
+            <div class="photo"><span>4821</span></div>
+            <div class="photo"><span>4822</span></div>
+            <div class="photo"><span>4823</span></div>
+          </div>
+          <div>
+            <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+              <span>3 張作品</span>
+              <span class="badge">象山</span>
+            </div>
+            <div style="font-size: 12.5px; color: var(--ink-soft); line-height: 1.5;">
+              📍 象山六巨石<br/>
+              📷 Sony α7 IV · FE 35mm f/1.4<br/>
+              🏷 4 個標籤
+            </div>
+          </div>
+        </div>
+
+        <!-- Visibility -->
+        <div class="field">
+          <label class="lbl">可見度<span class="req">*</span></label>
+
+          <div class="radio-card on">
+            <span class="dot"></span>
+            <div class="rc-text">
+              <div class="rc-title">公開</div>
+              <div class="rc-desc">所有人可見,會出現在動態牆與景點頁。</div>
+            </div>
+            <span class="rc-icon">🌐</span>
+          </div>
+
+          <div class="radio-card">
+            <span class="dot"></span>
+            <div class="rc-text">
+              <div class="rc-title">僅追蹤者</div>
+              <div class="rc-desc">只有你的 1,284 位追蹤者看得到。</div>
+            </div>
+            <span class="rc-icon">👥</span>
+          </div>
+
+          <div class="radio-card">
+            <span class="dot"></span>
+            <div class="rc-text">
+              <div class="rc-title">私人</div>
+              <div class="rc-desc">只有你自己,適合存檔但不分享。</div>
+            </div>
+            <span class="rc-icon">🔒</span>
+          </div>
+        </div>
+
+        <!-- Privacy options -->
+        <div class="field">
+          <label class="lbl">隱私選項</label>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); margin-bottom: 8px;">
+            <div>
+              <div style="font-size: 13px; font-weight: 500;">隱藏精確 GPS</div>
+              <div style="font-size: 11.5px; color: var(--ink-soft); margin-top: 2px;">只顯示景點名稱,不顯示座標</div>
+            </div>
+            <div class="toggle"></div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); margin-bottom: 8px;">
+            <div>
+              <div style="font-size: 13px; font-weight: 500;">允許下載原圖</div>
+              <div style="font-size: 11.5px; color: var(--ink-soft); margin-top: 2px;">追蹤者可下載含 EXIF 的原始檔</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card);">
+            <div>
+              <div style="font-size: 13px; font-weight: 500;">通知追蹤者</div>
+              <div style="font-size: 11.5px; color: var(--ink-soft); margin-top: 2px;">在動態牆推送新作品</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+        </div>
+
+        <!-- Schedule -->
+        <div class="field" style="margin-bottom: 0;">
+          <label class="lbl">發布時間</label>
+          <div style="display: flex; gap: 8px;">
+            <span class="chip on">立即發布</span>
+            <span class="chip">📅 排程…</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <span class="foot-info">即將發布 3 張到「公開」</span>
+        <button class="btn ghost">← 上一步</button>
+        <button class="btn primary">發布 3 張</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="anno">
+    <span class="tag"><b>尺寸</b>560 × auto</span>
+    <span class="tag"><b>預設</b>公開 + 通知追蹤者</span>
+    <span class="tag"><b>排程</b>展開日期時間選擇器</span>
+    <span class="tag"><b>送出後</b>顯示成功 toast → 跳轉至新作品</span>
+  </div>
+
+
+</div>
+
+</body>
+</html>
