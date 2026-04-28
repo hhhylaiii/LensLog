@@ -10,6 +10,8 @@ import MapExplore from './pages/MapExplore'
 import GearVault from './pages/GearVault'
 import Admin from './pages/Admin'
 import Upload from './pages/Upload'
+import Profile from './pages/Profile'
+import PhotoDetail from './pages/PhotoDetail'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -37,6 +39,9 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/gear" element={<GearVault />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/upload" element={<Upload />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/photos/:id" element={<PhotoDetail />} />
+
           </Route>
 
           {/* Default redirect */}
