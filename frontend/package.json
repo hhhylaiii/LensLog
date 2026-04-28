@@ -15,6 +15,7 @@
     "@lenslog/shared": "file:../shared",
     "@tanstack/react-query": "^5.40.0",
     "axios": "^1.7.2",
+    "browser-image-compression": "^2.0.2",
     "d3": "^7.9.0",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
