@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.config import settings
+from app.core.filenames import sanitize_filename
 from app.models.models import Photo, User
 from app.schemas import PhotoCreate, PhotoUpdate, PhotoResponse, PresignResponse
 from app.services.storage_service import (
@@ -61,7 +62,8 @@ async def presign_upload(
     - API 路由：回傳 presigned PUT URL + `upload_headers`（支援 `x-amz-tagging`）。
     - 單元測試/替代流程：回傳 presigned POST policy（含 `fields` 與 `max_size_mb`）。
     """
-    s3_key = f"photos/{uuid.uuid4()}/{filename}"
+    safe_filename = sanitize_filename(filename)
+    s3_key = f"photos/{uuid.uuid4()}/{safe_filename}"
 
     if isinstance(current_user, User):
         pending_tagging = "upload_state=pending"
@@ -87,7 +89,6 @@ async def presign_upload(
         fields=data.get("fields"),
         max_size_mb=settings.PHOTO_UPLOAD_MAX_SIZE_MB,
     )
-
 @router.post("", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
 async def create_photo(
     data: PhotoCreate,
