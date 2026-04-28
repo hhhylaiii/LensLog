@@ -45,6 +45,18 @@ export function useDeleteGear(api: LensLogApi) {
   })
 }
 
+export function useUpdateGear(api: LensLogApi) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<GearFormValues & { last_maintained: string }> }) =>
+      api.gear.update(id, data),
+    onSuccess: (_data, { id }) => {
+      queryClient.invalidateQueries({ queryKey: [GEAR_QUERY_KEY, id] })
+      queryClient.invalidateQueries({ queryKey: [GEAR_QUERY_KEY] })
+    },
+  })
+}
+
 export function useRecordMaintenance(api: LensLogApi) {
   const queryClient = useQueryClient()
   return useMutation({
