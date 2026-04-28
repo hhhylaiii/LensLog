@@ -107,7 +107,7 @@ async def create_photo(
 
     # 【修改】必須先 Commit，否則後台 Worker 會因為 Transaction 未完成而找不到這筆 ID
     await db.commit()
-    await db.refresh(photo)
+    await db.refresh(photo, attribute_names=["exif"])
 
     try:
         put_object_tags(photo.s3_key, {"upload_state": "confirmed"})
@@ -159,7 +159,7 @@ async def update_photo(
         setattr(photo, field, value)
 
     await db.commit() # 【修改】更新也需要 commit
-    await db.refresh(photo)
+    await db.refresh(photo, attribute_names=["exif"])
     return _with_url(photo)
 
 @router.delete("/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
