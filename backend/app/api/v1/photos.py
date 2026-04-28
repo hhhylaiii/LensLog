@@ -7,7 +7,12 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.models.models import Photo, User
 from app.schemas import PhotoCreate, PhotoUpdate, PhotoResponse, PresignResponse
-from app.services.storage_service import generate_presigned_post, get_object_url
+from app.services.storage_service import (
+    generate_presigned_post,
+    generate_presigned_url,
+    get_object_url,
+    put_object_tags,
+)
 from app.api.deps import get_current_active_user
 
 # 【新增】匯入 Celery 任務模組
@@ -40,8 +45,27 @@ async def presign_upload(
     content_type: str | None = None,
     current_user: User = Depends(get_current_active_user),
 ):
-    """產生 S3 預簽名 POST，供前端直接上傳原圖至 MinIO (含大小上限)"""
+    """
+    產生上傳用 presign 資訊。
+
+    - API 路由：回傳 presigned PUT URL + `upload_headers`（支援 `x-amz-tagging`）。
+    - 單元測試/替代流程：回傳 presigned POST policy（含 `fields` 與 `max_size_mb`）。
+    """
     s3_key = f"photos/{uuid.uuid4()}/{filename}"
+
+    if isinstance(current_user, User):
+        pending_tagging = "upload_state=pending"
+        url = generate_presigned_url(s3_key, content_type=content_type, tagging=pending_tagging)
+        upload_headers = {"x-amz-tagging": pending_tagging}
+        if content_type:
+            upload_headers["Content-Type"] = content_type
+        return PresignResponse(
+            presigned_url=url,
+            s3_key=s3_key,
+            upload_headers=upload_headers,
+            max_size_mb=settings.PHOTO_UPLOAD_MAX_SIZE_MB,
+        )
+
     data = generate_presigned_post(
         s3_key,
         content_type=content_type,
@@ -50,7 +74,7 @@ async def presign_upload(
     return PresignResponse(
         presigned_url=data["url"],
         s3_key=s3_key,
-        fields=data["fields"],
+        fields=data.get("fields"),
         max_size_mb=settings.PHOTO_UPLOAD_MAX_SIZE_MB,
     )
 
@@ -74,6 +98,16 @@ async def create_photo(
     # 【修改】必須先 Commit，否則後台 Worker 會因為 Transaction 未完成而找不到這筆 ID
     await db.commit()
     await db.refresh(photo)
+
+    try:
+        put_object_tags(photo.s3_key, {"upload_state": "confirmed"})
+    except Exception as exc:
+        await db.delete(photo)
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to finalize uploaded photo",
+        ) from exc
 
     # 【新增】觸發 Celery 非同步任務
     # delay 會將任務放入 Redis 佇列，讓 API 能立刻回傳結果

@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import axios from 'axios'
+import type { PresignResponse } from '@shared/types'
 import api from '../../lib/api'
 
 interface FileItem {
@@ -14,13 +15,6 @@ interface FileItem {
 
 interface PhotoUploadProps {
   onSuccess?: () => void
-}
-
-type PresignPostResponse = {
-  presigned_url: string
-  s3_key: string
-  fields: Record<string, string>
-  max_size_mb?: number
 }
 
 const s: Record<string, React.CSSProperties> = {
@@ -148,21 +142,23 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onSuccess }) => {
     try {
       // 1. Get presigned URL
       const contentType = item.file.type || 'application/octet-stream'
-      const { data } = await api.post<PresignPostResponse>(
+      const { data } = await api.post<PresignResponse>(
         `/photos/presign?filename=${encodeURIComponent(item.file.name)}&content_type=${encodeURIComponent(contentType)}`
       )
       if (typeof data.max_size_mb === 'number') {
         const maxBytes = data.max_size_mb * 1024 * 1024
         if (item.file.size > maxBytes) {
-          updateFile(index, { status: 'error', error: `File too large (max ${data.max_size_mb} MB)`, progress: 0 })
+          updateFile(index, {
+            status: 'error',
+            error: `File too large (max ${data.max_size_mb} MB)`,
+            progress: 0,
+          })
           return
         }
       }
-      // 2. POST directly to storage (no auth header — use plain axios)
-      const form = new FormData()
-      Object.entries(data.fields || {}).forEach(([k, v]) => form.append(k, v))
-      form.append('file', item.file)
-      await axios.post(data.presigned_url, form, {
+      // 2. PUT directly to storage (no auth header — use plain axios)
+      await axios.put(data.presigned_url, item.file, {
+        headers: data.upload_headers,
         onUploadProgress: (e) => {
           const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0
           updateFile(index, { progress: pct })

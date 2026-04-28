@@ -70,12 +70,19 @@ def upload_object(key: str, data: bytes, content_type: str = "image/jpeg"):
     )
 
 
-def generate_presigned_url(key: str, expiration: int = 3600, content_type: str | None = None) -> str:
+def generate_presigned_url(
+    key: str,
+    expiration: int = 3600,
+    content_type: str | None = None,
+    tagging: str | None = None,
+) -> str:
     """產生給前端直傳原始照片用的限時 URL"""
     s3 = get_storage_client()
     params = {"Bucket": settings.STORAGE_BUCKET_NAME, "Key": key}
     if content_type:
         params["ContentType"] = content_type
+    if tagging:
+        params["Tagging"] = tagging
 
     url = s3.generate_presigned_url(
         "put_object",
@@ -120,6 +127,17 @@ def generate_presigned_post(
     )
     data["url"] = _rewrite_presigned_url_host(data["url"])
     return data
+
+def put_object_tags(key: str, tags: dict[str, str]) -> None:
+    """更新既有物件的 tags，供 lifecycle 與狀態管理使用。"""
+    s3 = get_storage_client()
+    s3.put_object_tagging(
+        Bucket=settings.STORAGE_BUCKET_NAME,
+        Key=key,
+        Tagging={
+            "TagSet": [{"Key": tag_key, "Value": tag_value} for tag_key, tag_value in tags.items()]
+        },
+    )
 
 
 def get_object_url(key: str) -> str:

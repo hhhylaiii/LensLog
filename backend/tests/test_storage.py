@@ -14,12 +14,14 @@ def test_generate_presigned_url_includes_content_type_and_rewrites_host(monkeypa
     url = storage_service.generate_presigned_url(
         "photos/test.jpg",
         content_type="image/jpeg",
+        tagging="upload_state=pending",
     )
 
     assert url.startswith("http://localhost:9000/")
     call_kwargs = mock_client.generate_presigned_url.call_args.kwargs
     assert call_kwargs["Params"]["ContentType"] == "image/jpeg"
     assert call_kwargs["Params"]["Key"] == "photos/test.jpg"
+    assert call_kwargs["Params"]["Tagging"] == "upload_state=pending"
 
 
 def test_generate_presigned_post_enforces_content_length_range_and_rewrites_host(monkeypatch):
@@ -59,3 +61,16 @@ def test_upload_and_download_object(monkeypatch):
 def test_get_object_url_uses_public_url():
     url = storage_service.get_object_url("photos/a.jpg")
     assert url == "http://localhost:9000/lenslog-dev/photos/a.jpg"
+
+
+def test_put_object_tags(monkeypatch):
+    mock_client = Mock()
+    monkeypatch.setattr(storage_service, "get_storage_client", lambda: mock_client)
+
+    storage_service.put_object_tags("photos/test.jpg", {"upload_state": "confirmed"})
+
+    mock_client.put_object_tagging.assert_called_once_with(
+        Bucket="lenslog-dev",
+        Key="photos/test.jpg",
+        Tagging={"TagSet": [{"Key": "upload_state", "Value": "confirmed"}]},
+    )

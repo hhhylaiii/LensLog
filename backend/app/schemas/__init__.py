@@ -66,6 +66,8 @@ class PhotoResponse(BaseModel):
 class PresignResponse(BaseModel):
     presigned_url: str
     s3_key: str
+    upload_headers: dict[str, str] = Field(default_factory=dict)
+    # Optional fields kept for backwards/alternate upload flows (e.g. presigned POST).
     fields: Optional[dict[str, str]] = None
     max_size_mb: Optional[int] = None
 

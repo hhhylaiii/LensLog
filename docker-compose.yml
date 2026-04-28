@@ -70,11 +70,16 @@ services:
     entrypoint: /bin/sh
     command: >
       -c "
-        mc alias set local http://minio:9000 minioadmin minioadmin &&
-        mc mb --ignore-existing local/lenslog-dev &&
-        mc anonymous set download local/lenslog-dev &&
-        printf '{\"CORSRules\":[{\"AllowedOrigins\":[\"*\"],\"AllowedMethods\":[\"GET\",\"PUT\",\"POST\",\"DELETE\",\"HEAD\"],\"AllowedHeaders\":[\"*\"],\"ExposeHeaders\":[\"ETag\"],\"MaxAgeSeconds\":3600}]}' > /tmp/cors.json &&
-        mc cors set local/lenslog-dev /tmp/cors.json
+        set -eu
+        mc alias set local http://minio:9000 minioadmin minioadmin
+        mc mb --ignore-existing local/lenslog-dev
+        mc anonymous set download local/lenslog-dev
+        printf '{\"CORSRules\":[{\"AllowedOrigins\":[\"*\"],\"AllowedMethods\":[\"GET\",\"PUT\",\"POST\",\"DELETE\",\"HEAD\"],\"AllowedHeaders\":[\"*\"],\"ExposeHeaders\":[\"ETag\"],\"MaxAgeSeconds\":3600}]}' > /tmp/cors.json
+        if ! mc cors set local/lenslog-dev /tmp/cors.json; then
+          echo 'warning: failed to apply MinIO CORS policy; continuing so lifecycle can still be installed'
+        fi
+        printf '{\"Rules\":[{\"ID\":\"delete-pending-photo-uploads\",\"Status\":\"Enabled\",\"Filter\":{\"And\":{\"Prefix\":\"photos/\",\"Tags\":[{\"Key\":\"upload_state\",\"Value\":\"pending\"}]}},\"Expiration\":{\"Days\":1}}]}' > /tmp/lifecycle.json
+        mc ilm import local/lenslog-dev < /tmp/lifecycle.json
       "
 
   backend:
