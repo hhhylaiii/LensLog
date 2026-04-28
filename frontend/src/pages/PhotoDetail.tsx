@@ -94,12 +94,39 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: '14px',
     overflow: 'hidden',
     aspectRatio: '4/3',
+    maxHeight: 'calc(100vh - 160px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    margin: '0 auto',
   },
   image: { width: '100%', height: '100%', objectFit: 'contain' as const },
+  imageWrapNatural: {
+    background: '#0d0d18',
+    borderRadius: '14px',
+    overflow: 'hidden',
+    maxHeight: 'calc(100vh - 160px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative' as const,
+    margin: '0 auto',
+  },
+  navZoneLeft: {
+    position: 'absolute' as const,
+    left: 0, top: 0,
+    width: '25%', height: '100%',
+    cursor: 'w-resize',
+    zIndex: 2,
+  },
+  navZoneRight: {
+    position: 'absolute' as const,
+    right: 0, top: 0,
+    width: '25%', height: '100%',
+    cursor: 'e-resize',
+    zIndex: 2,
+  },
   imagePlaceholder: { color: '#2a2a44', fontSize: '80px', userSelect: 'none' as const },
   imageError: {
     display: 'flex',
@@ -397,10 +424,15 @@ function fmt(iso?: string | null) {
 
 // ─── SafeImage ────────────────────────────────────────────────────────────────
 
-function SafeImage({ src, style, onFail }: { src: string; style?: React.CSSProperties; onFail?: () => void }) {
+function SafeImage({ src, style, onFail, onLoad }: {
+  src: string
+  style?: React.CSSProperties
+  onFail?: () => void
+  onLoad?: React.ReactEventHandler<HTMLImageElement>
+}) {
   const [failed, setFailed] = useState(false)
   if (failed) return null
-  return <img src={src} alt="" style={style} onError={() => { setFailed(true); onFail?.() }} />
+  return <img src={src} alt="" style={style} onError={() => { setFailed(true); onFail?.() }} onLoad={onLoad} />
 }
 
 // ─── ExifRow — always rendered, shows "—" when value is missing ───────────────
@@ -449,7 +481,7 @@ const PhotoView: React.FC = () => {
 
   const [imgFailed, setImgFailed] = useState(false)
   const [imgRetry, setImgRetry] = useState(0)
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [imgNaturalRatio, setImgNaturalRatio] = useState<number | null>(null)
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false)
@@ -466,6 +498,15 @@ const PhotoView: React.FC = () => {
     queryKey: ['locations'],
     queryFn: () => api.get('/locations').then((r) => r.data),
   })
+
+  const { data: photoList = [] } = useQuery<PhotoFull[]>({
+    queryKey: ['photos', 'profile-all'],
+    queryFn: () => api.get('/photos?limit=500').then((r) => r.data),
+    staleTime: 30_000,
+  })
+
+  // Reset natural ratio when navigating to a different photo
+  useEffect(() => { setImgNaturalRatio(null) }, [id])
 
   // Initialise drafts whenever photo loads or edit mode opens
   useEffect(() => {
@@ -488,7 +529,10 @@ const PhotoView: React.FC = () => {
     mutationFn: () => api.delete(`/photos/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['photos', 'profile-all'] })
-      navigate(-1)
+      const idx = photoList.findIndex(p => p.id === id)
+      const target = photoList[idx + 1]?.id ?? photoList[idx - 1]?.id
+      if (target) navigate(`/photos/${target}`)
+      else navigate('/profile')
     },
   })
 
@@ -528,25 +572,37 @@ const PhotoView: React.FC = () => {
   const cameraLabel = [exif?.make, exif?.model].filter(Boolean).join(' ') || null
   const location = photo.location_id ? locations.find((l) => l.id === photo.location_id) : undefined
 
+  const currentIdx = photoList.findIndex(p => p.id === id)
+  const prevId = currentIdx > 0 ? photoList[currentIdx - 1].id : null
+  const nextId = currentIdx !== -1 && currentIdx < photoList.length - 1 ? photoList[currentIdx + 1].id : null
+  const fitsFrame = imgNaturalRatio === null || Math.abs(imgNaturalRatio - 4 / 3) < 0.1
+
   return (
     <div style={s.page}>
-      <button style={s.back} onClick={() => navigate(-1)}>← 返回</button>
+      <button style={s.back} onClick={() => navigate('/profile')}>← 返回</button>
 
       <div style={s.layout}>
 
         {/* ── Left: large image ── */}
         <div>
-          <div style={s.imageWrap}>
+          <div style={
+            fitsFrame 
+              ? s.imageWrap 
+              : { ...s.imageWrapNatural, aspectRatio: imgNaturalRatio ? String(imgNaturalRatio) : 'auto' }
+          }>
             {photo.url && !imgFailed ? (
               <SafeImage
                 key={imgRetry}
                 src={photo.url}
                 style={s.image}
                 onFail={() => setImgFailed(true)}
+                onLoad={(e) => setImgNaturalRatio(
+                  e.currentTarget.naturalWidth / e.currentTarget.naturalHeight
+                )}
               />
             ) : imgFailed ? (
               <div style={s.imageError}>
-                <span style={{ fontSize: '40px', color: '#333' }}>◈</span>
+                <span style={{ fontSize: '40px', color: '#686868' }}>◈</span>
                 <span>圖片載入失敗</span>
                 <button
                   style={s.retryBtn}
@@ -557,6 +613,20 @@ const PhotoView: React.FC = () => {
               </div>
             ) : (
               <div style={s.imagePlaceholder}>◈</div>
+            )}
+            {photo.url && !imgFailed && prevId && (
+              <div
+                style={s.navZoneLeft}
+                onClick={(e) => { e.stopPropagation(); navigate(`/photos/${prevId}`) }}
+                title="上一張"
+              />
+            )}
+            {photo.url && !imgFailed && nextId && (
+              <div
+                style={s.navZoneRight}
+                onClick={(e) => { e.stopPropagation(); navigate(`/photos/${nextId}`) }}
+                title="下一張"
+              />
             )}
           </div>
         </div>
@@ -672,25 +742,14 @@ const PhotoView: React.FC = () => {
 
             {/* Delete photo */}
             {!isEditing && (
-              confirmDelete ? (
-                <div style={s.deleteActionRow}>
-                  <button
-                    type="button"
-                    style={deletePhoto.isPending ? s.saveBtnDangerPending : s.saveBtnDanger}
-                    disabled={deletePhoto.isPending}
-                    onClick={() => deletePhoto.mutate()}
-                  >
-                    {deletePhoto.isPending ? '刪除中…' : '確認刪除'}
-                  </button>
-                  <button type="button" style={s.cancelBtn} onClick={() => setConfirmDelete(false)}>
-                    取消
-                  </button>
-                </div>
-              ) : (
-                <button type="button" style={s.deleteBtn} onClick={() => setConfirmDelete(true)}>
-                  刪除照片
-                </button>
-              )
+              <button
+                type="button"
+                style={s.deleteBtn}
+                disabled={deletePhoto.isPending}
+                onClick={() => deletePhoto.mutate()}
+              >
+                {deletePhoto.isPending ? '刪除中…' : '刪除照片'}
+              </button>
             )}
           </div>
 

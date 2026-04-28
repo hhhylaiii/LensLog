@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
@@ -55,7 +55,7 @@ interface GearItem {
 
 const s: Record<string, React.CSSProperties> = {
   page: {
-    padding: '36px 40px',
+    padding: '2px 0.25rem 16px',
     color: '#e8e8f0',
     fontFamily: "'Inter', system-ui, sans-serif",
     maxWidth: '1200px',
@@ -89,6 +89,16 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     color: '#e8e8f0',
     transition: 'opacity 0.15s',
+  },
+  bannerFadeBottom: {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '80px',
+    background: 'linear-gradient(to bottom, transparent, #0a0a0f)',
+    pointerEvents: 'none' as const,
+    zIndex: 3,
   },
 
   // ── Header ──
@@ -314,14 +324,14 @@ const s: Record<string, React.CSSProperties> = {
     color: '#e8e8f0',
     lineHeight: 1.4,
   },
-  lockPublic:        { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 1 },
-  lockPrivate:       { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(99,102,241,0.85)',  color: '#fff', opacity: 1 },
-  lockPublicPend:    { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 0.4 },
-  lockPrivatePend:   { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(99,102,241,0.85)',  color: '#fff', opacity: 0.4 },
-  lockInlinePublic:  { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 1 },
-  lockInlinePrivate: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(99,102,241,0.85)',  color: '#fff', opacity: 1 },
+  lockPublic: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 1 },
+  lockPrivate: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(165,28,48,0.85)', color: '#fff', opacity: 1 },
+  lockPublicPend: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 0.4 },
+  lockPrivatePend: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(165,28,48,0.85)', color: '#fff', opacity: 0.4 },
+  lockInlinePublic: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 1 },
+  lockInlinePrivate: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(165,28,48,0.85)', color: '#fff', opacity: 1 },
   lockInlinePublicP: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 0.4 },
-  lockInlinePrivateP:{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(99,102,241,0.85)',  color: '#fff', opacity: 0.4 },
+  lockInlinePrivateP: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(165,28,48,0.85)', color: '#fff', opacity: 0.4 },
   photoImg: { width: '100%', height: '100%', objectFit: 'cover' as const },
   photoPlaceholder: {
     width: '100%',
@@ -607,41 +617,6 @@ function relativeTime(iso: string) {
   return new Date(iso).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })
 }
 
-function hexToGradient(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  const dk = (c: number) => Math.round(c * 0.3)
-  return `linear-gradient(135deg, rgb(${dk(r)},${dk(g)},${dk(b)}) 0%, rgb(${r},${g},${b}) 50%, rgb(${dk(r)},${dk(g)},${dk(b)}) 100%)`
-}
-
-function extractRegionColors(imgEl: HTMLImageElement): string[] {
-  const canvas = document.createElement('canvas')
-  canvas.width = 60
-  canvas.height = 60
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return []
-  ctx.drawImage(imgEl, 0, 0, 60, 60)
-  const regions: [number, number, number, number][] = [
-    [0, 0, 25, 25],
-    [35, 0, 25, 25],
-    [17, 17, 26, 26],
-    [0, 35, 25, 25],
-    [35, 35, 25, 25],
-  ]
-  return regions.map(([x, y, w, h]) => {
-    const { data } = ctx.getImageData(x, y, w, h)
-    let r = 0, g = 0, b = 0
-    const n = data.length / 4
-    for (let i = 0; i < data.length; i += 4) {
-      r += data[i]; g += data[i + 1]; b += data[i + 2]
-    }
-    r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n)
-    const dk = (c: number) => Math.round(c * 0.35)
-    return `linear-gradient(135deg, rgb(${dk(r)},${dk(g)},${dk(b)}) 0%, rgb(${r},${g},${b}) 50%, rgb(${dk(r)},${dk(g)},${dk(b)}) 100%)`
-  })
-}
-
 // ─── SafeImage ────────────────────────────────────────────────────────────────
 
 function SafeImage({ src, alt, style }: { src: string; alt?: string; style?: React.CSSProperties }) {
@@ -652,8 +627,8 @@ function SafeImage({ src, alt, style }: { src: string; alt?: string; style?: Rea
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
-type TabKey = 'photos' | 'locations' | 'gear' | 'favorites'
-const PAGE_SIZE = 12
+type TabKey = 'photos' | 'albums' | 'locations' | 'gear' | 'favorites'
+const PAGE_SIZE = 8
 
 const Profile: React.FC = () => {
   const navigate = useNavigate()
@@ -673,24 +648,16 @@ const Profile: React.FC = () => {
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const [localBanner, setLocalBanner] = useState<string | null>(null)
-  const [activeGradient, setActiveGradient] = useState(
-    'linear-gradient(135deg, #0f0f1a 0%, #1a1040 50%, #0d1a2e 100%)'
-  )
-  const [extractedGradients, setExtractedGradients] = useState<string[] | null>(null)
-  const [customColor, setCustomColor] = useState('#6366f1')
   const [bannerHovered, setBannerHovered] = useState(false)
   const bannerInputRef = useRef<HTMLInputElement>(null)
-  const colorPickerRef = useRef<HTMLInputElement>(null)
+  const bannerWrapRef = useRef<HTMLDivElement>(null)
+  const bannerDragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null)
+  const [bannerPosX, setBannerPosX] = useState(50)
+  const [bannerPosY, setBannerPosY] = useState(50)
+  const [featuredIdx, setFeaturedIdx] = useState(0)
 
   const BADGE_OPTIONS = ['◈', '◉', '◎', '⊕', '⬡', '★', '✦', '⬤', '🌙', '🔭', '📷', '🎞']
 
-  const BANNER_GRADIENTS = [
-    'linear-gradient(135deg, #0f0f1a 0%, #1a1040 50%, #0d1a2e 100%)',
-    'linear-gradient(135deg, #0a0a18 0%, #1e0a2e 50%, #2e1040 100%)',
-    'linear-gradient(135deg, #0a1020 0%, #0d2030 50%, #102840 100%)',
-    'linear-gradient(135deg, #120a1e 0%, #200a30 50%, #1a0820 100%)',
-    'linear-gradient(135deg, #0a1818 0%, #0d2820 50%, #102818 100%)',
-  ]
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -708,15 +675,31 @@ const Profile: React.FC = () => {
     reader.onload = (ev) => {
       const dataUrl = ev.target?.result as string
       setLocalBanner(dataUrl)
-      const img = new Image()
-      img.onload = () => {
-        const colors = extractRegionColors(img)
-        if (colors.length) setExtractedGradients(colors)
-      }
-      img.src = dataUrl
+      setBannerPosX(50)
+      setBannerPosY(50)
     }
     reader.readAsDataURL(file)
     e.target.value = ''
+  }
+
+  const handleBannerPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    bannerDragRef.current = { x: e.clientX, y: e.clientY, px: bannerPosX, py: bannerPosY }
+  }
+  const handleBannerPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!bannerDragRef.current || !localBanner || !bannerWrapRef.current) return
+    const rect = bannerWrapRef.current.getBoundingClientRect()
+    const dx = ((e.clientX - bannerDragRef.current.x) / rect.width) * 100
+    const dy = ((e.clientY - bannerDragRef.current.y) / rect.height) * 100
+    setBannerPosX(Math.max(0, Math.min(100, bannerDragRef.current.px - dx)))
+    setBannerPosY(Math.max(0, Math.min(100, bannerDragRef.current.py - dy)))
+  }
+  const handleBannerPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!bannerDragRef.current) return
+    const moved = Math.abs(e.clientX - bannerDragRef.current.x) > 3 ||
+      Math.abs(e.clientY - bannerDragRef.current.y) > 3
+    if (!moved) bannerInputRef.current?.click()
+    bannerDragRef.current = null
   }
 
   const { data: user } = useQuery<User>({
@@ -745,6 +728,12 @@ const Profile: React.FC = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['photos', 'profile-all'] }),
   })
 
+  useEffect(() => {
+    if (allPhotos.length <= 1) return
+    const t = setInterval(() => setFeaturedIdx(i => (i + 1) % allPhotos.length), 4000)
+    return () => clearInterval(t)
+  }, [allPhotos.length])
+
   const locationMap = useMemo(() => {
     const m: Record<string, Location> = {}
     locations.forEach((l) => { m[l.id] = l })
@@ -763,9 +752,9 @@ const Profile: React.FC = () => {
       : allPhotos.filter((p) => p.location_id && locationMap[p.location_id]?.tags?.includes(activeTag))
     const arr = [...base]
     switch (sortBy) {
-      case 'time-asc':  return arr.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      case 'time-asc': return arr.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
       case 'time-desc': return arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      case 'name-asc':  return arr.sort((a, b) => (a.caption ?? '').localeCompare(b.caption ?? ''))
+      case 'name-asc': return arr.sort((a, b) => (a.caption ?? '').localeCompare(b.caption ?? ''))
       case 'name-desc': return arr.sort((a, b) => (b.caption ?? '').localeCompare(a.caption ?? ''))
       default: return arr
     }
@@ -786,7 +775,7 @@ const Profile: React.FC = () => {
   const topGear = gear.slice(0, 3)
   const maxLocCount = topLocations[0]?.photoCount || 1
 
-  const bannerBg = localBanner ? undefined : activeGradient
+  const bannerBg = localBanner ? undefined : 'linear-gradient(135deg, #0f0f1a 0%, #1a1040 50%, #0d1a2e 100%)'
 
   return (
     <>
@@ -794,43 +783,30 @@ const Profile: React.FC = () => {
 
         {/* ── Banner ── */}
         <div
+          ref={bannerWrapRef}
           style={{ ...s.bannerWrap, background: bannerBg, backgroundImage: bannerBg }}
           onMouseEnter={() => setBannerHovered(true)}
           onMouseLeave={() => setBannerHovered(false)}
-          onClick={() => bannerInputRef.current?.click()}
-          title="點擊更換橫幅"
+          onPointerDown={handleBannerPointerDown}
+          onPointerMove={handleBannerPointerMove}
+          onPointerUp={handleBannerPointerUp}
+          title={localBanner ? '拖曳調整位置 · 點擊更換圖片' : '點擊更換橫幅'}
         >
           {localBanner && (
-            <img src={localBanner} alt="banner" style={s.bannerImg} />
+            <img
+              src={localBanner}
+              alt="banner"
+              style={{ ...s.bannerImg, objectPosition: `${bannerPosX}% ${bannerPosY}%` }}
+            />
           )}
           {bannerHovered && (
             <div style={s.bannerOverlay}>
               <span>📷</span>
-              <span style={{ fontSize: '13px' }}>更換橫幅</span>
+              <span style={{ fontSize: '13px' }}>{localBanner ? '拖曳調整 · 點擊更換' : '更換橫幅'}</span>
             </div>
           )}
-          {/* Preset / extracted swatches + custom colour picker */}
-          <div style={s.bannerPresets} onClick={(e) => e.stopPropagation()}>
-            {(extractedGradients ?? BANNER_GRADIENTS).map((g, i) => (
-              <button
-                key={i}
-                type="button"
-                style={{
-                  ...s.bannerPreset,
-                  background: g,
-                  borderColor: !localBanner && activeGradient === g ? '#fff' : 'rgba(255,255,255,0.25)',
-                }}
-                title={extractedGradients ? `提取色彩 ${i + 1}` : `預設配色 ${i + 1}`}
-                onClick={() => { setLocalBanner(null); setActiveGradient(g) }}
-              />
-            ))}
-            <button
-              type="button"
-              style={s.bannerPresetColorPicker}
-              title="自訂顏色"
-              onClick={() => colorPickerRef.current?.click()}
-            />
-          </div>
+          {/* Bottom fade */}
+          <div style={s.bannerFadeBottom} />
         </div>
         <input
           ref={bannerInputRef}
@@ -839,21 +815,6 @@ const Profile: React.FC = () => {
           title="上傳橫幅"
           style={s.hiddenInput}
           onChange={handleBannerChange}
-        />
-        <input
-          ref={colorPickerRef}
-          type="color"
-          value={customColor}
-          title="選擇自訂顏色"
-          aria-label="選擇自訂顏色"
-          style={s.hiddenInput}
-          onChange={(e) => {
-            const hex = e.target.value
-            setCustomColor(hex)
-            setActiveGradient(hexToGradient(hex))
-            setLocalBanner(null)
-            setExtractedGradients(null)
-          }}
         />
 
         {/* ── Profile header ── */}
@@ -868,7 +829,12 @@ const Profile: React.FC = () => {
             >
               {localAvatar || user?.avatar_url
                 ? <SafeImage src={localAvatar ?? user!.avatar_url!} alt="avatar" style={s.avatarImg} />
-                : <span>{badgeEmoji}</span>}
+                : (
+                  <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#b0b0be" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                )}
               {avatarHovered && (
                 <div style={s.avatarOverlay}>📷</div>
               )}
@@ -920,14 +886,12 @@ const Profile: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Stats bar (5 items) ── */}
+        {/* ── Stats bar ── */}
         <div style={s.statsBar}>
           {[
             { n: allPhotos.length, label: '作品' },
             { n: locations.length, label: '路線' },
-            { n: gear.length,      label: '器材' },
-            { n: 0,                label: '追蹤者' },
-            { n: 0,                label: '追蹤中', last: true },
+            { n: gear.length, label: '器材', last: true },
           ].map(({ n, label, last }) => (
             <div key={label} style={last ? s.statItemLast : s.statItem}>
               <div style={s.statNumber}>{n.toLocaleString()}</div>
@@ -939,9 +903,10 @@ const Profile: React.FC = () => {
         {/* ── Tabs ── */}
         <div style={s.tabBar}>
           {([
-            { key: 'photos',    label: '照片', count: allPhotos.length },
+            { key: 'photos', label: '照片', count: allPhotos.length },
+            { key: 'albums', label: '專輯', count: 0 },
             { key: 'locations', label: '景點', count: locations.length },
-            { key: 'gear',      label: '器材', count: gear.length },
+            { key: 'gear', label: '器材', count: gear.length },
             { key: 'favorites', label: '收藏', count: 0 },
           ] as { key: TabKey; label: string; count: number }[]).map(({ key, label, count }) => (
             <div
@@ -1019,7 +984,7 @@ const Profile: React.FC = () => {
                       <button
                         type="button"
                         style={photo.is_public
-                          ? (isPending ? s.lockInlinePublicP  : s.lockInlinePublic)
+                          ? (isPending ? s.lockInlinePublicP : s.lockInlinePublic)
                           : (isPending ? s.lockInlinePrivateP : s.lockInlinePrivate)}
                         title={photo.is_public ? '點擊設為私人' : '點擊設為公開'}
                         onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(photo) }}
@@ -1033,53 +998,72 @@ const Profile: React.FC = () => {
             ) : (
               /* ── Grid view ── */
               <div style={s.photoGrid}>
-                {visiblePhotos.map((photo, idx) => {
-                  const isFeatured = idx === 0
-                  const loc = photo.location_id ? locationMap[photo.location_id] : null
-                  const thumbSrc = photo.thumb_url || photo.url
-                  const isHovered = hoveredId === photo.id
-                  const isPending = pendingPhoto?.id === photo.id
+                {/* 獨立的輪播牆首圖 */}
+                {allPhotos.length > 0 && (
+                  (() => {
+                    const fp = allPhotos[featuredIdx] || allPhotos[0]
+                    const loc = fp.location_id ? locationMap[fp.location_id] : null
+                    const thumbSrc = fp.thumb_url || fp.url
+                    const exifLabel = fp.exif
+                      ? [
+                          fp.exif.focal_length != null ? `${fp.exif.focal_length}mm` : null,
+                          fp.exif.aperture != null ? `f/${fp.exif.aperture}` : null,
+                        ].filter(Boolean).join(' · ')
+                      : null
 
-                  const exifLabel = photo.exif
-                    ? [
-                        photo.exif.focal_length != null ? `${photo.exif.focal_length}mm` : null,
-                        photo.exif.aperture != null ? `f/${photo.exif.aperture}` : null,
-                      ].filter(Boolean).join(' · ')
-                    : null
-
-                  return (
-                    <div
-                      key={photo.id}
-                      style={isFeatured ? s.photoCellFeaturedFull : s.photoCell}
-                      onMouseEnter={() => setHoveredId(photo.id)}
-                      onMouseLeave={() => setHoveredId(null)}
-                      onClick={() => navigate(`/photos/${photo.id}`)}
-                    >
-                      {thumbSrc
-                        ? <SafeImage src={thumbSrc} alt={photo.caption ?? ''} style={s.photoImg} />
-                        : <div style={s.photoPlaceholder}>{photo.id.slice(-4).toUpperCase()}</div>
-                      }
-                      {isFeatured && loc && (
-                        <div style={s.overlayTop}>{loc.name} · {relativeTime(photo.created_at)}</div>
-                      )}
-                      {isFeatured && (
+                    return (
+                      <div
+                        style={s.photoCellFeaturedFull}
+                        onClick={() => navigate(`/photos/${fp.id}`)}
+                      >
+                        {thumbSrc
+                          ? <SafeImage src={thumbSrc} alt={fp.caption ?? ''} style={s.photoImg} />
+                          : <div style={s.photoPlaceholder}>{fp.id.slice(-4).toUpperCase()}</div>
+                        }
+                        {loc && (
+                          <div style={s.overlayTop}>{loc.name} · {relativeTime(fp.created_at)}</div>
+                        )}
                         <div style={s.overlayBottom}>
                           <span style={s.exifBadge}>{exifLabel || '—'}</span>
                           <span style={s.likeBadge}>♡ 0</span>
                         </div>
-                      )}
-                      {!isFeatured && isHovered && photo.caption && (
-                        <div style={s.photoCaptionHover}>{photo.caption}</div>
+                        {/* 沒有鎖頭按鈕，純粹輪播顯示用 */}
+                      </div>
+                    )
+                  })()
+                )}
+
+                {/* 剩下的普通照片（包含原本第一張，現在獨立出來） */}
+                {visiblePhotos.map((photo) => {
+                  const p = photo
+                  const thumbSrc = p.thumb_url || p.url
+                  const isHovered = hoveredId === p.id
+                  const isPending = pendingPhoto?.id === p.id
+
+                  return (
+                    <div
+                      key={p.id}
+                      style={s.photoCell}
+                      onMouseEnter={() => setHoveredId(p.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                      onClick={() => navigate(`/photos/${p.id}`)}
+                    >
+                      {thumbSrc
+                        ? <SafeImage src={thumbSrc} alt={p.caption ?? ''} style={s.photoImg} />
+                        : <div style={s.photoPlaceholder}>{p.id.slice(-4).toUpperCase()}</div>
+                      }
+                      {isHovered && p.caption && (
+                        <div style={s.photoCaptionHover}>{p.caption}</div>
                       )}
                       <button
                         type="button"
-                        style={photo.is_public
-                          ? (isPending ? s.lockPublicPend  : s.lockPublic)
+                        style={p.is_public
+                          ? (isPending ? s.lockPublicPend : s.lockPublic)
                           : (isPending ? s.lockPrivatePend : s.lockPrivate)}
-                        title={photo.is_public ? '點擊設為私人' : '點擊設為公開'}
-                        onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(photo) }}
+                        title={p.is_public ? '點擊設為私人' : '點擊設為公開'}
+                        onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(p) }}
                       >
-                        {photo.is_public ? '🔓 公開' : '🔒 私人'}
+                        {p.is_public ? '🔓 公開' : '🔒 私人'}
                       </button>
                     </div>
                   )
@@ -1096,6 +1080,13 @@ const Profile: React.FC = () => {
               </div>
             )}
           </>
+        )}
+
+        {/* ── Albums tab ── */}
+        {activeTab === 'albums' && (
+          <div style={s.listWrap}>
+            <div style={s.emptyNote}>尚無專輯</div>
+          </div>
         )}
 
         {/* ── Locations tab ── */}
