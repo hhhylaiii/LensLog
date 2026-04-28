@@ -66,6 +66,7 @@ class PhotoResponse(BaseModel):
 class PresignResponse(BaseModel):
     presigned_url: str
     s3_key: str
+    upload_headers: dict[str, str] = Field(default_factory=dict)
 
 
 # ─── Location Schemas ─────────────────────────────────────────────────────────
