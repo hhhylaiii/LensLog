@@ -89,7 +89,6 @@ async def presign_upload(
         fields=data.get("fields"),
         max_size_mb=settings.PHOTO_UPLOAD_MAX_SIZE_MB,
     )
-
 @router.post("", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
 async def create_photo(
     data: PhotoCreate,
