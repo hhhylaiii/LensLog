@@ -172,6 +172,7 @@ backend/
 - Reads and exposes application settings from environment variables.
 - `DEBUG` also accepts common non-boolean values like `release` / `production` and treats them as `False` to avoid startup failures from globally-set environment variables.
 - `PHOTO_UPLOAD_MAX_SIZE_MB` controls the maximum allowed direct-upload size for photo presigned POST policies.
+- `PHOTO_PRESIGN_EXPIRE_SECONDS` controls how long a presigned upload URL is valid and is also used as the TTL for Redis `s3_key` ownership tracking (required by `POST /photos`).
 
 `app/core/database.py`
 - SQLAlchemy database engine and session setup.
@@ -210,6 +211,10 @@ backend/
 `app/services/storage_service.py`
 - S3-compatible storage helpers (MinIO / Cloudflare R2 / AWS S3).
 - Generates presigned upload URLs / POST policies (with size limits), uploads/downloads objects, and builds public object URLs.
+
+`app/services/presign_service.py`
+- Redis helpers for photo upload security.
+- Registers `(s3_key -> user_id)` at presign time and consumes it at `POST /photos` to prevent clients from forging `s3_key` ownership.
 
 `app/services/s3_service.py`
 - Legacy compatibility shim kept for backward compatibility; new code should use `storage_service.py`.
@@ -294,6 +299,12 @@ backend/
 
 `tests/test_photos_presign_post_size.py`
 - Regression tests for `POST /api/v1/photos/presign` returning a presigned POST and enforcing a max upload size.
+
+`tests/test_photos.py`
+- Photo endpoint tests for presign headers and photo record creation behavior.
+
+`tests/test_photos_s3_key_ownership.py`
+- Security tests for `POST /api/v1/photos` verifying `s3_key` ownership and one-time use (Redis-backed).
 
 ## Images Folder
 

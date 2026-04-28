@@ -1,4 +1,5 @@
 import uuid
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -7,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.filenames import sanitize_filename
+from app.core.redis import get_redis
 from app.models.models import Photo, User
 from app.schemas import PhotoCreate, PhotoUpdate, PhotoResponse, PresignResponse
 from app.services.storage_service import (
@@ -15,6 +17,7 @@ from app.services.storage_service import (
     get_object_url,
     put_object_tags,
 )
+from app.services.presign_service import consume_presign, register_presign
 from app.api.deps import get_current_active_user
 
 # 【新增】匯入 Celery 任務模組
@@ -54,6 +57,7 @@ async def list_photos(
 async def presign_upload(
     filename: str,
     content_type: str | None = None,
+    redis: aioredis.Redis = Depends(get_redis),
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -67,7 +71,13 @@ async def presign_upload(
 
     if isinstance(current_user, User):
         pending_tagging = "upload_state=pending"
-        url = generate_presigned_url(s3_key, content_type=content_type, tagging=pending_tagging)
+        url = generate_presigned_url(
+            s3_key,
+            expiration=settings.PHOTO_PRESIGN_EXPIRE_SECONDS,
+            content_type=content_type,
+            tagging=pending_tagging,
+        )
+        await register_presign(redis, s3_key, current_user.id)
         upload_headers = {"x-amz-tagging": pending_tagging}
         if content_type:
             upload_headers["Content-Type"] = content_type
@@ -80,6 +90,7 @@ async def presign_upload(
 
     data = generate_presigned_post(
         s3_key,
+        expiration=settings.PHOTO_PRESIGN_EXPIRE_SECONDS,
         content_type=content_type,
         max_size_mb=settings.PHOTO_UPLOAD_MAX_SIZE_MB,
     )
@@ -93,6 +104,7 @@ async def presign_upload(
 async def create_photo(
     data: PhotoCreate,
     db: AsyncSession = Depends(get_db),
+    redis: aioredis.Redis = Depends(get_redis),
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -103,6 +115,10 @@ async def create_photo(
     2. 呼叫 process_exif_task.delay 處理元數據。
     3. 呼叫 generate_thumbnail_task.delay 處理縮圖。
     """
+    ok = await consume_presign(redis, data.s3_key, current_user.id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid s3_key")
+
     photo = Photo(**data.model_dump(), user_id=current_user.id)
     db.add(photo)
 

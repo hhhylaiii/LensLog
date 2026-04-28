@@ -25,6 +25,7 @@ async def test_presign_upload_returns_presigned_post_with_size_limit(monkeypatch
     resp = await photos_api.presign_upload(
         filename="test.jpg",
         content_type="image/jpeg",
+        redis=object(),
         current_user=object(),
     )
 
