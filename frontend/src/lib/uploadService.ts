@@ -14,6 +14,18 @@ export async function uploadOne(
     const { data } = await api.post<PresignResponse>(
       `/photos/presign?filename=${encodeURIComponent(item.file.name)}&content_type=${encodeURIComponent(contentType)}`
     )
+    if (typeof data.max_size_mb === 'number') {
+      const maxBytes = data.max_size_mb * 1024 * 1024
+      if (item.file.size > maxBytes) {
+        updateItem(index, {
+          status: 'error',
+          error: `檔案大小超過上限 (${data.max_size_mb} MB)`,
+          progress: 0,
+        })
+        return
+      }
+    }
+
     await axios.put(data.presigned_url, item.file, {
       headers: data.upload_headers,
       onUploadProgress: (e) => {

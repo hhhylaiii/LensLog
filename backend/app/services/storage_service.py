@@ -92,6 +92,42 @@ def generate_presigned_url(
     return _rewrite_presigned_url_host(url)
 
 
+def generate_presigned_post(
+    key: str,
+    expiration: int = 3600,
+    content_type: str | None = None,
+    max_size_mb: int | None = None,
+) -> dict:
+    """
+    Generate a presigned POST policy for direct uploads with a strict size limit.
+
+    The returned dict contains:
+    - url: POST destination
+    - fields: form fields to include (plus the file field named "file")
+
+    Size enforcement uses the "content-length-range" condition.
+    """
+    s3 = get_storage_client()
+
+    limit_mb = max_size_mb if max_size_mb is not None else settings.PHOTO_UPLOAD_MAX_SIZE_MB
+    max_bytes = int(limit_mb) * 1024 * 1024
+
+    fields: dict[str, str] = {}
+    conditions: list = [["content-length-range", 1, max_bytes]]
+    if content_type:
+        fields["Content-Type"] = content_type
+        conditions.append({"Content-Type": content_type})
+
+    data = s3.generate_presigned_post(
+        Bucket=settings.STORAGE_BUCKET_NAME,
+        Key=key,
+        Fields=fields,
+        Conditions=conditions,
+        ExpiresIn=expiration,
+    )
+    data["url"] = _rewrite_presigned_url_host(data["url"])
+    return data
+
 def put_object_tags(key: str, tags: dict[str, str]) -> None:
     """更新既有物件的 tags，供 lifecycle 與狀態管理使用。"""
     s3 = get_storage_client()

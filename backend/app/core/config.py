@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from functools import lru_cache
 
 
@@ -37,6 +38,9 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     CORS_ORIGINS: str = ""  # comma-separated extra allowed origins
 
+    # Upload limits (for presigned POST policies)
+    PHOTO_UPLOAD_MAX_SIZE_MB: int = 20
+
     # Email
     MAIL_USERNAME: str = ""
     MAIL_PASSWORD: str = ""
@@ -48,6 +52,15 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = True
         extra = "ignore"
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def _parse_debug(cls, value):
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"release", "prod", "production"}:
+                return False
+        return value
 
 
 @lru_cache()

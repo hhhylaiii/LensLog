@@ -142,4 +142,7 @@ export interface PresignResponse {
   presigned_url: string
   s3_key: string
   upload_headers: Record<string, string>
+  // Optional metadata for client-side size checks or alternate upload flows.
+  max_size_mb?: number
+  fields?: Record<string, string>
 }

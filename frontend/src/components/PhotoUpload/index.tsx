@@ -145,6 +145,17 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onSuccess }) => {
       const { data } = await api.post<PresignResponse>(
         `/photos/presign?filename=${encodeURIComponent(item.file.name)}&content_type=${encodeURIComponent(contentType)}`
       )
+      if (typeof data.max_size_mb === 'number') {
+        const maxBytes = data.max_size_mb * 1024 * 1024
+        if (item.file.size > maxBytes) {
+          updateFile(index, {
+            status: 'error',
+            error: `File too large (max ${data.max_size_mb} MB)`,
+            progress: 0,
+          })
+          return
+        }
+      }
       // 2. PUT directly to storage (no auth header — use plain axios)
       await axios.put(data.presigned_url, item.file, {
         headers: data.upload_headers,
