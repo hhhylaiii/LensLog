@@ -57,6 +57,31 @@ async def test_presign_upload_returns_pending_upload_headers(client, active_user
 
 
 @pytest.mark.asyncio
+async def test_presign_upload_rejects_unsupported_content_type(client, active_user):
+    app.dependency_overrides[get_current_active_user] = lambda: active_user
+
+    response = await client.post(
+        "/api/v1/photos/presign",
+        params={"filename": "payload.html", "content_type": "text/html"},
+    )
+
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == "Unsupported file type"
+
+
+@pytest.mark.asyncio
+async def test_presign_upload_requires_content_type(client, active_user):
+    app.dependency_overrides[get_current_active_user] = lambda: active_user
+
+    response = await client.post(
+        "/api/v1/photos/presign",
+        params={"filename": "test.jpg"},
+    )
+
+    assert response.status_code == 422, response.text
+
+
+@pytest.mark.asyncio
 async def test_create_photo_marks_object_confirmed(client, db_session, active_user, monkeypatch):
     generate_presigned_url = Mock(return_value="http://storage.local/upload")
     monkeypatch.setattr(photos_api, "generate_presigned_url", generate_presigned_url)

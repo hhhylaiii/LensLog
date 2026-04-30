@@ -13,7 +13,7 @@ def test_generate_presigned_url_includes_content_type_and_rewrites_host(monkeypa
 
     url = storage_service.generate_presigned_url(
         "photos/test.jpg",
-        content_type="image/jpeg",
+        "image/jpeg",
         tagging="upload_state=pending",
     )
 
