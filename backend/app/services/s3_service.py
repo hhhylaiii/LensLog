@@ -16,9 +16,13 @@ from app.services.storage_service import get_object_url as _get_object_url
 from app.services.storage_service import get_storage_client
 
 
-def generate_presigned_url(s3_key: str, expiration: int = 3600) -> str:
+def generate_presigned_url(
+    s3_key: str,
+    content_type: str,
+    expiration: int = 3600,
+) -> str:
     """產生 Presigned URL 供前端直接上傳（delegates to storage_service）。"""
-    return _generate_presigned_url(s3_key, expiration=expiration)
+    return _generate_presigned_url(s3_key, content_type=content_type, expiration=expiration)
 
 
 def generate_presigned_post(
