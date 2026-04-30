@@ -24,6 +24,7 @@ from app.api.deps import get_current_active_user
 from app.tasks.exif_tasks import process_exif_task, generate_thumbnail_task
 
 router = APIRouter(prefix="/photos", tags=["photos"])
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 def _with_url(photo: Photo) -> PhotoResponse:
     """輔助函式：將資料庫模型轉為 Response 並附上完整 URL"""
@@ -56,7 +57,7 @@ async def list_photos(
 @router.post("/presign", response_model=PresignResponse)
 async def presign_upload(
     filename: str,
-    content_type: str | None = None,
+    content_type: str,
     redis: aioredis.Redis = Depends(get_redis),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -66,6 +67,9 @@ async def presign_upload(
     - API 路由：回傳 presigned PUT URL + `upload_headers`（支援 `x-amz-tagging`）。
     - 單元測試/替代流程：回傳 presigned POST policy（含 `fields` 與 `max_size_mb`）。
     """
+    if content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+
     safe_filename = sanitize_filename(filename)
     s3_key = f"photos/{uuid.uuid4()}/{safe_filename}"
 
@@ -78,9 +82,10 @@ async def presign_upload(
             tagging=pending_tagging,
         )
         await register_presign(redis, s3_key, current_user.id)
-        upload_headers = {"x-amz-tagging": pending_tagging}
-        if content_type:
-            upload_headers["Content-Type"] = content_type
+        upload_headers = {
+            "x-amz-tagging": pending_tagging,
+            "Content-Type": content_type,
+        }
         return PresignResponse(
             presigned_url=url,
             s3_key=s3_key,
@@ -100,6 +105,7 @@ async def presign_upload(
         fields=data.get("fields"),
         max_size_mb=settings.PHOTO_UPLOAD_MAX_SIZE_MB,
     )
+
 @router.post("", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
 async def create_photo(
     data: PhotoCreate,
