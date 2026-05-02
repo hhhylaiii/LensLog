@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LensLog — Toggle Location Desktop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ========= TOKENS ========= */
+  :root {
+    --ink:         #1a2942;
+    --ink-soft:    #4a5773;
+    --ink-mute:    #7d88a0;
+    --line:        #dde3ee;
+    --line-soft:   #e9eef5;
+    --paper:       #eef2f8;
+    --paper-2:     #dfe6f0;
+    --card:        #ffffff;
+    --card-elev:   #ffffff;
+    --accent:      #1e5fb3;
+    --accent-soft: #e3edfa;
+    --accent-ink:  #143e77;
+    --gold:        #d97706;
+    --gold-soft:   #fef3e2;
+    --map-bg-1:    #d7e0ec;
+    --map-bg-2:    #dfe4ee;
+    --map-bg-3:    #d6dde8;
+    --map-line:    rgba(15, 30, 56, 0.06);
+  }
+  .dark {
+    --ink:         #e6ecf4;
+    --ink-soft:    #a4afc4;
+    --ink-mute:    #6f7d96;
+    --line:        rgba(255,255,255,0.10);
+    --line-soft:   rgba(255,255,255,0.06);
+    --paper:       #0c1424;
+    --paper-2:     #14203a;
+    --card:        #14213a;
+    --card-elev:   #1c2c4a;
+    --accent:      #4a90e2;
+    --accent-soft: rgba(96,165,250,0.14);
+    --accent-ink:  #82b6f7;
+    --gold:        #f59e0b;
+    --gold-soft:   rgba(245,158,11,0.15);
+    --map-bg-1:    #1f3358;
+    --map-bg-2:    #28406b;
+    --map-bg-3:    #1a2a4d;
+    --map-line:    rgba(255,255,255,0.05);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter','Noto Sans TC',-apple-system,sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    line-height: 1.5;
+  }
+
+  /* ===== Page scaffold ===== */
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 56px 40px 96px; }
+
+  .step-title { margin: 0 0 4px; display: flex; align-items: baseline; gap: 14px; }
+  .step-title .step-num {
+    font-family: 'IBM Plex Mono',monospace;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 4px 10px; border-radius: 12px; border: 1px solid #c8dcef;
+  }
+  .step-title h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+  .step-sub { color: var(--ink-soft); margin: 0 0 28px; font-size: 14px; line-height: 1.55; max-width: 720px; }
+
+  .stage-tag-row { margin: 0 0 28px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .stage-tag {
+    font-family: 'IBM Plex Mono',monospace; font-size: 10.5px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 4px;
+    padding: 3px 8px; color: var(--ink-soft);
+  }
+  .stage-tag b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+
+  /* ===== Stage (mockup viewport) ===== */
+  .stage { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); margin-bottom: 16px; }
+  .stage-bar {
+    height: 38px; border-bottom: 1px solid var(--line); background: var(--paper-2);
+    display: flex; align-items: center; gap: 8px; padding: 0 14px;
+    font-family: 'IBM Plex Mono',monospace; font-size: 11px; color: var(--ink-mute);
+  }
+  .stage-bar .dots { display: flex; gap: 6px; }
+  .stage-bar .dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .stage-bar .label { margin-left: 8px; color: var(--ink-soft); }
+  .stage-bar .url {
+    flex: 1; height: 22px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 4px; display: flex; align-items: center; padding: 0 10px; font-size: 10.5px;
+  }
+
+  /* ===== Map canvas ===== */
+  .map-canvas {
+    position: relative; height: 640px;
+    background:
+      radial-gradient(ellipse 280px 180px at 28% 36%, var(--map-bg-1) 40%, transparent 72%),
+      radial-gradient(ellipse 320px 200px at 76% 60%, var(--map-bg-2) 30%, transparent 72%),
+      var(--map-bg-3);
+    overflow: hidden;
+  }
+  .map-canvas::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, var(--map-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--map-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .map-canvas::after {
+    content: ''; position: absolute; left: -10%; right: -10%; top: 38%; height: 1.5px;
+    background: rgba(15,30,56,0.12); transform: rotate(-3deg);
+    box-shadow: 0 80px 0 -0.5px rgba(15,30,56,0.10), 0 180px 0 -0.5px rgba(15,30,56,0.08), 0 -90px 0 -0.5px rgba(15,30,56,0.10);
+  }
+
+  .map-controls { position: absolute; top: 16px; left: 16px; display: flex; gap: 8px; z-index: 5; }
+  .map-search {
+    width: 260px; height: 38px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 8px; padding: 0 12px; display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-mute); box-shadow: 0 4px 12px rgba(15,30,56,0.08);
+  }
+  .map-zoom {
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+    display: flex; flex-direction: column; box-shadow: 0 4px 12px rgba(15,30,56,0.08);
+    position: absolute; right: 16px; top: 16px; z-index: 5;
+  }
+  .map-zoom button {
+    width: 36px; height: 36px; background: transparent; border: 0; color: var(--ink);
+    cursor: pointer; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .map-zoom button:last-child { border-bottom: 0; }
+  .map-zoom button:hover { background: var(--paper-2); }
+
+  .map-pin {
+    position: absolute; width: 22px; height: 28px; background: var(--accent);
+    border: 2px solid var(--card); border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg); box-shadow: 0 4px 10px rgba(15,30,56,0.35); z-index: 4; cursor: pointer;
+  }
+  .map-pin.active { background: var(--gold); width: 28px; height: 36px; z-index: 6; }
+  .map-pin.active::after {
+    content: ''; position: absolute; inset: -8px; border: 2px solid var(--gold);
+    border-radius: 50% 50% 50% 0; opacity: 0.4; animation: pin-pulse 2s ease-out infinite;
+  }
+  @keyframes pin-pulse {
+    0%   { transform: scale(0.85); opacity: 0.5; }
+    100% { transform: scale(1.4);  opacity: 0; }
+  }
+  .map-pin.cluster {
+    background: var(--card); border-radius: 50%; transform: none;
+    width: 36px; height: 36px; color: var(--ink);
+    font-family: 'Inter',sans-serif; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; border: 1px solid var(--line);
+  }
+
+  /* ===== Info card ===== */
+  .info-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(15,30,56,0.04), 0 24px 48px -12px rgba(15,30,56,0.25), 0 8px 16px -4px rgba(15,30,56,0.12);
+    overflow: hidden; color: var(--ink);
+  }
+  .dark .info-card {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 24px 48px -12px rgba(0,0,0,0.6), 0 8px 16px -4px rgba(0,0,0,0.4);
+  }
+
+  .info-card .drag-handle {
+    height: 20px; display: flex; align-items: center; justify-content: center;
+    cursor: grab; border-bottom: 1px solid var(--line-soft); user-select: none;
+    background: linear-gradient(180deg,transparent,rgba(15,30,56,0.015));
+  }
+  .info-card .drag-handle::after {
+    content: ''; width: 36px; height: 4px; border-radius: 2px; background: var(--line);
+  }
+  .dark .info-card .drag-handle::after { background: rgba(255,255,255,0.18); }
+
+  .ic-hero {
+    position: relative; height: 140px;
+    background: linear-gradient(160deg,#6b82a8 0%,#4c6590 28%,#334a75 52%,#22355b 78%,#1a2942 100%);
+    overflow: hidden;
+  }
+  .ic-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 110%, rgba(255,200,130,0.30), transparent 60%),
+      radial-gradient(ellipse 60% 30% at 20% 30%, rgba(180,200,220,0.18), transparent 60%);
+  }
+  .ic-hero .ic-overlay { position: absolute; inset: 0; background: linear-gradient(180deg,rgba(15,30,56,0) 50%,rgba(15,30,56,0.65) 100%); }
+  .ic-hero .ic-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 2; }
+  .ic-hero .ic-actions button {
+    width: 30px; height: 30px; border-radius: 7px;
+    background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.3);
+    color: #fff; backdrop-filter: blur(8px); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ic-hero .ic-actions button:hover { background: rgba(255,255,255,0.32); }
+  .ic-hero .ic-title-area { position: absolute; left: 18px; right: 18px; bottom: 14px; color: #fff; z-index: 2; }
+  .ic-hero .ic-difficulty {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'IBM Plex Mono',monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+    padding: 3px 8px; border-radius: 12px; backdrop-filter: blur(6px); margin-bottom: 8px;
+  }
+  .ic-hero h2 { margin: 0 0 2px; font-size: 20px; font-weight: 600; letter-spacing: -0.015em; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.3); }
+  .ic-hero .ic-subtitle { font-size: 12.5px; color: rgba(255,255,255,0.85); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .ic-hero .ic-subtitle .dot { width: 3px; height: 3px; border-radius: 50%; background: rgba(255,255,255,0.6); }
+  .ic-hero .ic-subtitle .mono { font-family: 'IBM Plex Mono',monospace; font-size: 11px; }
+
+  .ic-body { padding: 16px 18px 0; }
+
+  /* Sun timing */
+  .sun-timing {
+    background: linear-gradient(135deg,var(--gold-soft),var(--card));
+    border: 1px solid var(--gold); border-radius: 10px;
+    padding: 14px 16px; margin-bottom: 14px; position: relative; overflow: hidden;
+  }
+  .dark .sun-timing { background: linear-gradient(135deg,var(--gold-soft),var(--card-elev)); border-color: rgba(245,158,11,0.4); }
+  .sun-timing .label {
+    font-family: 'IBM Plex Mono',monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--gold); font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .sun-timing .label .pulse {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--gold);
+    box-shadow: 0 0 8px rgba(217,119,6,0.6); animation: pulse 2s ease-out infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(217,119,6,0.5); }
+    70%  { box-shadow: 0 0 0 6px rgba(217,119,6,0); }
+    100% { box-shadow: 0 0 0 0 rgba(217,119,6,0); }
+  }
+  .sun-timing .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: end; }
+  .sun-timing .col .k { font-size: 11px; color: var(--ink-soft); margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+  .sun-timing .col .v { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
+  .sun-timing .col.golden .v { color: var(--gold); font-size: 22px; }
+  .sun-timing .col.golden .v em { font-style: normal; font-weight: 700; }
+  .sun-timing .col.golden .v small { font-size: 13px; font-weight: 500; margin-left: 1px; }
+
+  /* Weather grid */
+  .weather-grid {
+    display: grid; grid-template-columns: repeat(2,1fr); gap: 1px;
+    background: var(--line); border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--line); margin-bottom: 14px;
+  }
+  .wx-cell { background: var(--card); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .wx-cell .wx-icon {
+    width: 32px; height: 32px; border-radius: 8px; background: var(--paper-2); color: var(--ink-soft);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .dark .wx-cell .wx-icon { background: rgba(255,255,255,0.06); }
+  .wx-cell.primary .wx-icon { background: var(--accent-soft); color: var(--accent-ink); }
+  .wx-cell .wx-text { flex: 1; min-width: 0; }
+  .wx-cell .wx-k { font-size: 10.5px; color: var(--ink-mute); font-family: 'IBM Plex Mono',monospace; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1px; }
+  .wx-cell .wx-v { font-size: 14.5px; font-weight: 600; letter-spacing: -0.005em; line-height: 1.2; }
+  .wx-cell .wx-v small { font-size: 11px; font-weight: 500; color: var(--ink-soft); margin-left: 2px; }
+
+  /* Stats */
+  .ic-stats {
+    display: flex; padding: 12px 0; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);
+    margin: 0 -18px 14px; padding-left: 18px; padding-right: 18px;
+  }
+  .ic-stats .stat { flex: 1; border-right: 1px solid var(--line-soft); padding: 0 14px 0 0; }
+  .ic-stats .stat:first-child { padding-left: 0; }
+  .ic-stats .stat:last-child { border-right: 0; padding-right: 0; }
+  .ic-stats .stat .n { font-size: 16px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.1; }
+  .ic-stats .stat .l { font-size: 10.5px; color: var(--ink-mute); font-family: 'IBM Plex Mono',monospace; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+  /* Footer */
+  .ic-foot { padding: 14px 18px 16px; display: flex; gap: 8px; }
+  .ic-foot .btn {
+    height: 36px; padding: 0 14px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; transition: background 0.12s, border-color 0.12s;
+  }
+  .ic-foot .btn:hover { background: var(--paper-2); }
+  .ic-foot .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ic-foot .btn.primary:hover { background: var(--accent-ink); border-color: var(--accent-ink); }
+  .ic-foot .btn.flex { flex: 1; justify-content: center; }
+  .ic-foot .btn.icon { width: 36px; padding: 0; justify-content: center; }
+
+  /* Expand handle */
+  .ic-expand {
+    border-top: 1px solid var(--line-soft); padding: 10px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12.5px; color: var(--ink-soft); cursor: pointer; background: var(--card); transition: background 0.12s;
+  }
+  .ic-expand:hover { background: var(--paper-2); }
+  .ic-expand .left { display: flex; align-items: center; gap: 8px; }
+  .ic-expand .photos { display: flex; margin-left: 4px; }
+  .ic-expand .photos .ph { width: 22px; height: 22px; border-radius: 4px; border: 2px solid var(--card); margin-left: -6px; background: linear-gradient(160deg,#6b82a8,#1a2942); }
+  .ic-expand .photos .ph:nth-child(2) { background: linear-gradient(160deg,#d9927d,#4a4670); }
+  .ic-expand .photos .ph:nth-child(3) { background: linear-gradient(160deg,#8fb4cc,#2a5878); }
+  .ic-expand .arrow { width: 24px; height: 24px; border-radius: 50%; background: var(--paper-2); display: flex; align-items: center; justify-content: center; }
+
+  /* ===== Desktop floating card — RIGHT ===== */
+  .desktop-card { position: absolute; top: 24px; right: 24px; width: 360px; z-index: 7; }
+
+  /* ===== Desktop expanded side panel — RIGHT ===== */
+  .side-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 420px;
+    background: var(--card); border-left: 1px solid var(--line); z-index: 8;
+    display: flex; flex-direction: column;
+    box-shadow: -8px 0 32px rgba(15,30,56,0.12), 0 0 0 1px rgba(15,30,56,0.04);
+  }
+  .dark .side-panel { box-shadow: -8px 0 32px rgba(0,0,0,0.5); }
+  .side-panel .ic-hero { height: 180px; }
+  .side-panel .ic-body { overflow-y: auto; flex: 1; padding-bottom: 16px; }
+
+  /* Photo wall */
+  .photo-wall { margin: 0 -18px; padding: 16px 18px; border-top: 1px solid var(--line-soft); }
+  .photo-wall h4 { font-size: 13px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; }
+  .photo-wall h4 .more { font-size: 11px; color: var(--accent); font-weight: 500; cursor: pointer; }
+  .pw-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
+  .pw-grid .pw { aspect-ratio: 1; border-radius: 4px; background: linear-gradient(160deg,#6b82a8,#1a2942); overflow: hidden; }
+  .pw-grid .pw:nth-child(2) { background: linear-gradient(160deg,#d9927d,#4a4670); }
+  .pw-grid .pw:nth-child(3) { background: linear-gradient(160deg,#8fb4cc,#2a5878); }
+  .pw-grid .pw:nth-child(4) { background: linear-gradient(160deg,#6b82a8,#334a75); }
+  .pw-grid .pw:nth-child(5) { background: linear-gradient(160deg,#d99277,#6b5a7a); }
+  .pw-grid .pw:nth-child(6) { background: linear-gradient(160deg,#4a7390,#1a3858); }
+  .pw-grid .pw:nth-child(7) { background: linear-gradient(160deg,#6b5a7a,#1a2d50); }
+  .pw-grid .pw:nth-child(8) { background: linear-gradient(160deg,#2b4670,#0f1e38); }
+  .pw-grid .pw:nth-child(9) { background: linear-gradient(160deg,#a8c4d8,#2a5878); }
+
+  /* Hourly forecast */
+  .hourly { margin-bottom: 14px; }
+  .hourly h4 { font-size: 13px; font-weight: 600; margin: 0 0 8px; }
+  .hourly-row { display: flex; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .hourly-cell { flex: 1 0 56px; text-align: center; padding: 10px 4px; border-right: 1px solid var(--line-soft); font-size: 11px; }
+  .hourly-cell:last-child { border-right: 0; }
+  .hourly-cell .hour { color: var(--ink-mute); font-family: 'IBM Plex Mono',monospace; font-size: 10.5px; }
+  .hourly-cell .ico { display: flex; align-items: center; justify-content: center; margin: 5px 0; }
+  .hourly-cell .t { font-weight: 600; font-size: 12px; }
+  .hourly-cell.now { background: var(--accent-soft); border-radius: 8px; }
+  .hourly-cell.now .hour { color: var(--accent-ink); font-weight: 600; }
+  .hourly-cell.golden { background: var(--gold-soft); }
+  .hourly-cell.golden .hour { color: var(--gold); font-weight: 600; }
+
+  /* Device label */
+  .device-label {
+    font-family: 'IBM Plex Mono',monospace; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--ink-mute); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .device-label .mode-pill { background: var(--card); border: 1px solid var(--line); padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+  .device-label .mode-pill.dark-pill { background: #14213a; color: #e6ecf4; border-color: rgba(255,255,255,0.1); }
+
+  /* Icon utility */
+  .ic { display: inline-block; flex-shrink: 0; }
+</style>
+
+<!-- ===== Heroicons SVG symbols ===== -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="hi-search" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21 21L15.8033 15.8033M15.8033 15.8033C17.1605 14.4461 18 12.5711 18 10.5C18 6.35786 14.6421 3 10.5 3C6.35786 3 3 6.35786 3 10.5C3 14.6421 6.35786 18 10.5 18C12.5711 18 14.4461 17.1605 15.8033 15.8033Z"/>
+  </symbol>
+  <symbol id="hi-heart" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21 8.25C21 5.76472 18.9013 3.75 16.3125 3.75C14.3769 3.75 12.7153 4.87628 12 6.48342C11.2847 4.87628 9.62312 3.75 7.6875 3.75C5.09867 3.75 3 5.76472 3 8.25C3 15.4706 12 20.25 12 20.25C12 20.25 21 15.4706 21 8.25Z"/>
+  </symbol>
+  <symbol id="hi-share" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25C4.00736 6 3 7.00736 3 8.25V18.75C3 19.9926 4.00736 21 5.25 21H15.75C16.9926 21 18 19.9926 18 18.75V10.5M7.5 16.5L21 3M21 3L15.75 3M21 3V8.25"/>
+  </symbol>
+  <symbol id="hi-xmark" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6L18 18"/>
+  </symbol>
+  <symbol id="hi-chevron-down" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25L12 15.75L4.5 8.25"/>
+  </symbol>
+  <symbol id="hi-chevron-up" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75L12 8.25L19.5 15.75"/>
+  </symbol>
+  <symbol id="hi-sun" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 3V5.25M18.364 5.63604L16.773 7.22703M21 12H18.75M18.364 18.364L16.773 16.773M12 18.75V21M7.22703 16.773L5.63604 18.364M5.25 12H3M7.22703 7.22703L5.63604 5.63604M15.75 12C15.75 14.0711 14.0711 15.75 12 15.75C9.92893 15.75 8.25 14.0711 8.25 12C8.25 9.92893 9.92893 8.25 12 8.25C14.0711 8.25 15.75 9.92893 15.75 12Z"/>
+  </symbol>
+  <symbol id="hi-clock" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 6V12H16.5M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"/>
+  </symbol>
+  <symbol id="hi-moon" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21.7519 15.0021C20.597 15.484 19.3296 15.7501 18 15.7501C12.6152 15.7501 8.25 11.3849 8.25 6.00011C8.25 4.67052 8.51614 3.40308 8.99806 2.24817C5.47566 3.71798 3 7.19493 3 11.2501C3 16.6349 7.36522 21.0001 12.75 21.0001C16.8052 21.0001 20.2821 18.5245 21.7519 15.0021Z"/>
+  </symbol>
+  <symbol id="hi-cloud" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M2.25 15C2.25 17.4853 4.26472 19.5 6.75 19.5H18C20.0711 19.5 21.75 17.8211 21.75 15.75C21.75 14.1479 20.7453 12.7805 19.3316 12.2433C19.4407 11.9324 19.5 11.5981 19.5 11.25C19.5 9.59315 18.1569 8.25 16.5 8.25C16.1767 8.25 15.8654 8.30113 15.5737 8.39575C14.9765 6.1526 12.9312 4.5 10.5 4.5C7.6005 4.5 5.25 6.85051 5.25 9.75C5.25 10.0832 5.28105 10.4092 5.3404 10.7252C3.54555 11.3167 2.25 13.0071 2.25 15Z"/>
+  </symbol>
+  <!-- Rain drop — custom heroicons-style -->
+  <symbol id="hi-drop" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 3C9.5 6.5 7.5 9.75 7.5 12.75a4.5 4.5 0 009 0C16.5 9.75 14.5 6.5 12 3z"/>
+  </symbol>
+  <!-- Wind — custom heroicons-style (3 tapered lines) -->
+  <symbol id="hi-wind" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 8.25h12.75a3 3 0 100-6 3 3 0 00-2.25 5.003M3 12h9M3 15.75h11.25a3 3 0 110 6 3 3 0 01-2.25-5.003"/>
+  </symbol>
+  <symbol id="hi-eye" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M2.03555 12.3224C1.96647 12.1151 1.9664 11.8907 2.03536 11.6834C3.42372 7.50972 7.36079 4.5 12.0008 4.5C16.6387 4.5 20.5742 7.50692 21.9643 11.6776C22.0334 11.8849 22.0335 12.1093 21.9645 12.3166C20.5761 16.4903 16.6391 19.5 11.9991 19.5C7.36119 19.5 3.42564 16.4931 2.03555 12.3224Z"/>
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z"/>
+  </symbol>
+  <symbol id="hi-arrow-right" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12M21 12L13.5 19.5M21 12H3"/>
+  </symbol>
+  <symbol id="hi-bookmark" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M17.5933 3.32241C18.6939 3.45014 19.5 4.399 19.5 5.50699V21L12 17.25L4.5 21V5.50699C4.5 4.399 5.30608 3.45014 6.40668 3.32241C8.24156 3.10947 10.108 3 12 3C13.892 3 15.7584 3.10947 17.5933 3.32241Z"/>
+  </symbol>
+  <symbol id="hi-plus" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 4.5V19.5M19.5 12L4.5 12"/>
+  </symbol>
+  <symbol id="hi-minus" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12H19"/>
+  </symbol>
+  <symbol id="hi-map-pin" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M15 10.5C15 12.1569 13.6569 13.5 12 13.5C10.3431 13.5 9 12.1569 9 10.5C9 8.84315 10.3431 7.5 12 7.5C13.6569 7.5 15 8.84315 15 10.5Z"/>
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5C19.5 17.6421 12 21.75 12 21.75C12 21.75 4.5 17.6421 4.5 10.5C4.5 6.35786 7.85786 3 12 3C16.1421 3 19.5 6.35786 19.5 10.5Z"/>
+  </symbol>
+  <symbol id="hi-building" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3.75 21H20.25M4.5 3H19.5M5.25 3V21M18.75 3V21M9 6.75H10.5M9 9.75H10.5M9 12.75H10.5M13.5 6.75H15M13.5 9.75H15M13.5 12.75H15M9 21V17.625C9 17.0037 9.50368 16.5 10.125 16.5H13.875C14.4963 16.5 15 17.0037 15 17.625V21"/>
+  </symbol>
+</svg>
+
+<body>
+<div class="wrap">
+
+  <!-- ============================================================ STEP 2 -->
+  <div class="step-title">
+    <h2>Toggle location Appearance</h2>
+  </div>
+  <!-- ============================================================ STAGE 1: Floating card · Light -->
+  <div class="device-label">
+    Floating card (default)
+    <span class="mode-pill">Light</span>
+  </div>
+
+  <div class="stage">
+    <div class="stage-bar">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="url">lenslog.app / map</div>
+      <span class="label">Light</span>
+    </div>
+
+    <div class="map-canvas">
+      <!-- Search: top-left -->
+      <div class="map-controls">
+        <div class="map-search">
+          <svg class="ic" width="16" height="16"><use href="#hi-search"/></svg>
+          搜尋景點、城市…
+        </div>
+      </div>
+
+      <!-- Zoom: top-right (behind card, correct layering) -->
+      <div class="map-zoom">
+        <button title="放大"><svg class="ic" width="18" height="18"><use href="#hi-plus"/></svg></button>
+        <button title="縮小"><svg class="ic" width="18" height="18"><use href="#hi-minus"/></svg></button>
+      </div>
+
+      <!-- Pins: left/centre of map (card on right) -->
+      <div class="map-pin cluster" style="top:22%;left:28%;">8</div>
+      <div class="map-pin" style="top:56%;left:32%;"></div>
+      <div class="map-pin" style="top:70%;left:22%;"></div>
+      <div class="map-pin" style="top:36%;left:48%;"></div>
+      <div class="map-pin active" style="top:44%;left:38%;"></div>
+
+      <!-- Floating card: RIGHT -->
+      <div class="info-card desktop-card">
+        <div class="drag-handle"></div>
+
+        <div class="ic-hero">
+          <div class="ic-overlay"></div>
+          <div class="ic-actions">
+            <button title="收藏"><svg class="ic" width="16" height="16"><use href="#hi-heart"/></svg></button>
+            <button title="分享"><svg class="ic" width="16" height="16"><use href="#hi-share"/></svg></button>
+            <button title="關閉"><svg class="ic" width="16" height="16"><use href="#hi-xmark"/></svg></button>
+          </div>
+          <div class="ic-title-area">
+            <div class="ic-difficulty">難度 · 簡易</div>
+            <h2>象山六巨石</h2>
+            <div class="ic-subtitle">
+              <span>夜景</span><span class="dot"></span>
+              <span>★ 4.8</span><span class="dot"></span>
+              <span class="mono">1.8 km 步道</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ic-body">
+          <div class="sun-timing">
+            <div class="label"><span class="pulse"></span>黃金時刻 · 進行中</div>
+            <div class="row">
+              <div class="col">
+                <div class="k"><svg class="ic" width="13" height="13"><use href="#hi-sun"/></svg> 日出</div>
+                <div class="v">05:32</div>
+              </div>
+              <div class="col golden">
+                <div class="k"><svg class="ic" width="13" height="13"><use href="#hi-clock"/></svg> 剩餘</div>
+                <div class="v"><em>40</em><small> 分</small></div>
+              </div>
+              <div class="col">
+                <div class="k"><svg class="ic" width="13" height="13"><use href="#hi-moon"/></svg> 日落</div>
+                <div class="v">18:42</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="weather-grid">
+            <div class="wx-cell primary">
+              <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-cloud"/></svg></div>
+              <div class="wx-text">
+                <div class="wx-k">天氣</div>
+                <div class="wx-v">22°<small>C · 多雲時晴</small></div>
+              </div>
+            </div>
+            <div class="wx-cell">
+              <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-drop"/></svg></div>
+              <div class="wx-text">
+                <div class="wx-k">降雨機率</div>
+                <div class="wx-v">15<small>%</small></div>
+              </div>
+            </div>
+            <div class="wx-cell">
+              <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-wind"/></svg></div>
+              <div class="wx-text">
+                <div class="wx-k">風速</div>
+                <div class="wx-v">3 級<small> · 微風</small></div>
+              </div>
+            </div>
+            <div class="wx-cell">
+              <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-eye"/></svg></div>
+              <div class="wx-text">
+                <div class="wx-k">能見度</div>
+                <div class="wx-v">良好</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ic-stats">
+            <div class="stat"><div class="n">1,284</div><div class="l">作品</div></div>
+            <div class="stat"><div class="n">428</div><div class="l">攝影師</div></div>
+            <div class="stat"><div class="n">★ 4.8</div><div class="l">評分</div></div>
+          </div>
+        </div>
+
+        <div class="ic-foot">
+          <button class="btn flex primary">
+            <svg class="ic" width="16" height="16"><use href="#hi-map-pin"/></svg> 導航
+          </button>
+          <button class="btn flex">
+            <svg class="ic" width="16" height="16"><use href="#hi-bookmark"/></svg> 加入收藏
+          </button>
+        </div>
+
+        <div class="ic-expand">
+          <div class="left">
+            <span>展開查看作品牆與 24 小時預報</span>
+            <div class="photos"><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+          </div>
+          <div class="arrow"><svg class="ic" width="14" height="14"><use href="#hi-chevron-up"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ STAGE 2: Expanded side panel · Light -->
+  <div class="device-label" style="margin-top:24px;">
+    Desktop — Expanded side panel
+    <span class="mode-pill">Light</span>
+  </div>
+
+  <div class="stage">
+    <div class="stage-bar">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="url">lenslog.app / map / spots / elephant-six-stones</div>
+      <span class="label">Expanded</span>
+    </div>
+
+    <div class="map-canvas">
+      <!-- Zoom: top-left (panel covers right) -->
+      <div class="map-zoom" style="right:auto;left:16px;">
+        <button title="放大"><svg class="ic" width="18" height="18"><use href="#hi-plus"/></svg></button>
+        <button title="縮小"><svg class="ic" width="18" height="18"><use href="#hi-minus"/></svg></button>
+      </div>
+
+      <!-- Pins: left of map (panel on right) -->
+      <div class="map-pin cluster" style="top:22%;left:28%;">8</div>
+      <div class="map-pin" style="top:56%;left:22%;"></div>
+      <div class="map-pin" style="top:70%;left:38%;"></div>
+      <div class="map-pin active" style="top:44%;left:32%;"></div>
+
+      <!-- Side panel: RIGHT -->
+      <div class="info-card side-panel">
+        <div class="ic-hero">
+          <div class="ic-overlay"></div>
+          <div class="ic-actions">
+            <button title="收藏"><svg class="ic" width="16" height="16"><use href="#hi-heart"/></svg></button>
+            <button title="分享"><svg class="ic" width="16" height="16"><use href="#hi-share"/></svg></button>
+            <button title="收合"><svg class="ic" width="16" height="16"><use href="#hi-chevron-down"/></svg></button>
+          </div>
+          <div class="ic-title-area">
+            <div class="ic-difficulty">難度 · 簡易</div>
+            <h2>象山六巨石</h2>
+            <div class="ic-subtitle">
+              <span>夜景</span><span class="dot"></span>
+              <span>★ 4.8 (428 評)</span><span class="dot"></span>
+              <span class="mono">25.027°N · 121.571°E</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ic-body">
+          <div class="sun-timing">
+            <div class="label"><span class="pulse"></span>黃金時刻 · 進行中</div>
+            <div class="row">
+              <div class="col">
+                <div class="k"><svg class="ic" width="13" height="13"><use href="#hi-sun"/></svg> 日出</div>
+                <div class="v">05:32</div>
+              </div>
+              <div class="col golden">
+                <div class="k"><svg class="ic" width="13" height="13"><use href="#hi-clock"/></svg> 剩餘</div>
+                <div class="v"><em>40</em><small> 分</small></div>
+              </div>
+              <div class="col">
+                <div class="k"><svg class="ic" width="13" height="13"><use href="#hi-moon"/></svg> 日落</div>
+                <div class="v">18:42</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="weather-grid">
+            <div class="wx-cell primary">
+              <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-cloud"/></svg></div>
+              <div class="wx-text">
+                <div class="wx-k">天氣</div>
+                <div class="wx-v">22°<small>C · 多雲時晴</small></div>
+              </div>
+            </div>
+            <div class="wx-cell">
+              <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-drop"/></svg></div>
+              <div class="wx-text">
+                <div class="wx-k">降雨機率</div>
+                <div class="wx-v">15<small>%</small></div>
+              </div>
+            </div>
+            <div class="wx-cell">
+              <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-wind"/></svg></div>
+              <div class="wx-text">
+                <div class="wx-k">風速</div>
+                <div class="wx-v">3 級<small> · 微風</small></div>
+              </div>
+            </div>
+            <div class="wx-cell">
+              <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-eye"/></svg></div>
+              <div class="wx-text">
+                <div class="wx-k">能見度</div>
+                <div class="wx-v">良好</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hourly">
+            <h4>24 小時預報</h4>
+            <div class="hourly-row">
+              <div class="hourly-cell now">
+                <div class="hour">現在</div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--accent-ink)"><use href="#hi-cloud"/></svg></div>
+                <div class="t">22°</div>
+              </div>
+              <div class="hourly-cell">
+                <div class="hour">17:00</div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--ink-mute)"><use href="#hi-cloud"/></svg></div>
+                <div class="t">21°</div>
+              </div>
+              <div class="hourly-cell golden">
+                <div class="hour">18:00</div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--gold)"><use href="#hi-sun"/></svg></div>
+                <div class="t">19°</div>
+              </div>
+              <div class="hourly-cell golden">
+                <div class="hour">19:00</div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--gold)"><use href="#hi-building"/></svg></div>
+                <div class="t">17°</div>
+              </div>
+              <div class="hourly-cell">
+                <div class="hour">20:00</div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--ink-soft)"><use href="#hi-moon"/></svg></div>
+                <div class="t">16°</div>
+              </div>
+              <div class="hourly-cell">
+                <div class="hour">21:00</div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--ink-soft)"><use href="#hi-moon"/></svg></div>
+                <div class="t">15°</div>
+              </div>
+              <div class="hourly-cell">
+                <div class="hour">22:00</div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--ink-mute)"><use href="#hi-cloud"/></svg></div>
+                <div class="t">14°</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ic-stats">
+            <div class="stat"><div class="n">1,284</div><div class="l">作品</div></div>
+            <div class="stat"><div class="n">428</div><div class="l">攝影師</div></div>
+            <div class="stat"><div class="n">42</div><div class="l">本月新增</div></div>
+          </div>
+
+          <div class="photo-wall">
+            <h4>社群作品 <span class="more">查看全部 1,284 →</span></h4>
+            <div class="pw-grid">
+              <div class="pw"></div><div class="pw"></div><div class="pw"></div>
+              <div class="pw"></div><div class="pw"></div><div class="pw"></div>
+              <div class="pw"></div><div class="pw"></div><div class="pw"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ic-foot">
+          <button class="btn primary flex">
+            <svg class="ic" width="16" height="16"><use href="#hi-map-pin"/></svg> 導航
+          </button>
+          <button class="btn icon" title="收藏"><svg class="ic" width="16" height="16"><use href="#hi-heart"/></svg></button>
+          <button class="btn icon" title="分享"><svg class="ic" width="16" height="16"><use href="#hi-share"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!---->
+  <!-- <!-- ============================================================ STAGE 3: Floating card · Dark --> -->
+  <!-- <div class="device-label" style="margin-top:24px;"> -->
+  <!--   Desktop — Floating card -->
+  <!--   <span class="mode-pill dark-pill">Dark</span> -->
+  <!-- </div> -->
+  <!---->
+  <!-- <div class="stage dark" style="background:#0c1424;"> -->
+  <!--   <div class="stage-bar" style="background:#14213a;border-color:rgba(255,255,255,0.08);color:#a4afc4;"> -->
+  <!--     <div class="dots"> -->
+  <!--       <span style="background:rgba(255,255,255,0.15);"></span> -->
+  <!--       <span style="background:rgba(255,255,255,0.15);"></span> -->
+  <!--       <span style="background:rgba(255,255,255,0.15);"></span> -->
+  <!--     </div> -->
+  <!--     <div class="url" style="background:#1c2c4a;border-color:rgba(255,255,255,0.1);color:#a4afc4;">lenslog.app / map</div> -->
+  <!--     <span class="label">Dark</span> -->
+  <!--   </div> -->
+  <!---->
+  <!--   <div class="map-canvas"> -->
+  <!--     <div class="map-controls"> -->
+  <!--       <div class="map-search"> -->
+  <!--         <svg class="ic" width="16" height="16"><use href="#hi-search"/></svg> -->
+  <!--         搜尋景點、城市… -->
+  <!--       </div> -->
+  <!--     </div> -->
+  <!--     <div class="map-zoom"> -->
+  <!--       <button title="放大"><svg class="ic" width="18" height="18"><use href="#hi-plus"/></svg></button> -->
+  <!--       <button title="縮小"><svg class="ic" width="18" height="18"><use href="#hi-minus"/></svg></button> -->
+  <!--     </div> -->
+  <!---->
+  <!--     <div class="map-pin cluster" style="top:22%;left:28%;">8</div> -->
+  <!--     <div class="map-pin" style="top:56%;left:32%;"></div> -->
+  <!--     <div class="map-pin" style="top:70%;left:22%;"></div> -->
+  <!--     <div class="map-pin" style="top:36%;left:48%;"></div> -->
+  <!--     <div class="map-pin active" style="top:44%;left:38%;"></div> -->
+  <!---->
+  <!--     <div class="info-card desktop-card"> -->
+  <!--       <div class="drag-handle"></div> -->
+  <!---->
+  <!--       <div class="ic-hero"> -->
+  <!--         <div class="ic-overlay"></div> -->
+  <!--         <div class="ic-actions"> -->
+  <!--           <button title="收藏"><svg class="ic" width="16" height="16"><use href="#hi-heart"/></svg></button> -->
+  <!--           <button title="分享"><svg class="ic" width="16" height="16"><use href="#hi-share"/></svg></button> -->
+  <!--           <button title="關閉"><svg class="ic" width="16" height="16"><use href="#hi-xmark"/></svg></button> -->
+  <!--         </div> -->
+  <!--         <div class="ic-title-area"> -->
+  <!--           <div class="ic-difficulty">難度 · 簡易</div> -->
+  <!--           <h2>象山六巨石</h2> -->
+  <!--           <div class="ic-subtitle"> -->
+  <!--             <span>夜景</span><span class="dot"></span> -->
+  <!--             <span>★ 4.8</span><span class="dot"></span> -->
+  <!--             <span class="mono">1.8 km 步道</span> -->
+  <!--           </div> -->
+  <!--         </div> -->
+  <!--       </div> -->
+  <!---->
+  <!--       <div class="ic-body"> -->
+  <!--         <div class="sun-timing"> -->
+  <!--           <div class="label"><span class="pulse"></span>黃金時刻 · 進行中</div> -->
+  <!--           <div class="row"> -->
+  <!--             <div class="col"> -->
+  <!--               <div class="k"><svg class="ic" width="13" height="13"><use href="#hi-sun"/></svg> 日出</div> -->
+  <!--               <div class="v">05:32</div> -->
+  <!--             </div> -->
+  <!--             <div class="col golden"> -->
+  <!--               <div class="k"><svg class="ic" width="13" height="13"><use href="#hi-clock"/></svg> 剩餘</div> -->
+  <!--               <div class="v"><em>40</em><small> 分</small></div> -->
+  <!--             </div> -->
+  <!--             <div class="col"> -->
+  <!--               <div class="k"><svg class="ic" width="13" height="13"><use href="#hi-moon"/></svg> 日落</div> -->
+  <!--               <div class="v">18:42</div> -->
+  <!--             </div> -->
+  <!--           </div> -->
+  <!--         </div> -->
+  <!---->
+  <!--         <div class="weather-grid"> -->
+  <!--           <div class="wx-cell primary"> -->
+  <!--             <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-cloud"/></svg></div> -->
+  <!--             <div class="wx-text"> -->
+  <!--               <div class="wx-k">天氣</div> -->
+  <!--               <div class="wx-v">22°<small>C · 多雲時晴</small></div> -->
+  <!--             </div> -->
+  <!--           </div> -->
+  <!--           <div class="wx-cell"> -->
+  <!--             <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-drop"/></svg></div> -->
+  <!--             <div class="wx-text"> -->
+  <!--               <div class="wx-k">降雨機率</div> -->
+  <!--               <div class="wx-v">15<small>%</small></div> -->
+  <!--             </div> -->
+  <!--           </div> -->
+  <!--           <div class="wx-cell"> -->
+  <!--             <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-wind"/></svg></div> -->
+  <!--             <div class="wx-text"> -->
+  <!--               <div class="wx-k">風速</div> -->
+  <!--               <div class="wx-v">3 級<small> · 微風</small></div> -->
+  <!--             </div> -->
+  <!--           </div> -->
+  <!--           <div class="wx-cell"> -->
+  <!--             <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-eye"/></svg></div> -->
+  <!--             <div class="wx-text"> -->
+  <!--               <div class="wx-k">能見度</div> -->
+  <!--               <div class="wx-v">良好</div> -->
+  <!--             </div> -->
+  <!--           </div> -->
+  <!--         </div> -->
+  <!---->
+  <!--         <div class="ic-stats"> -->
+  <!--           <div class="stat"><div class="n">1,284</div><div class="l">作品</div></div> -->
+  <!--           <div class="stat"><div class="n">428</div><div class="l">攝影師</div></div> -->
+  <!--           <div class="stat"><div class="n">★ 4.8</div><div class="l">評分</div></div> -->
+  <!--         </div> -->
+  <!--       </div> -->
+  <!---->
+  <!--       <div class="ic-foot"> -->
+  <!--         <button class="btn flex primary"> -->
+  <!--           <svg class="ic" width="16" height="16"><use href="#hi-map-pin"/></svg> 導航 -->
+  <!--         </button> -->
+  <!--         <button class="btn flex"> -->
+  <!--           <svg class="ic" width="16" height="16"><use href="#hi-bookmark"/></svg> 加入收藏 -->
+  <!--         </button> -->
+  <!--       </div> -->
+  <!---->
+  <!--       <div class="ic-expand"> -->
+  <!--         <div class="left"> -->
+  <!--           <span>展開查看作品牆與 24 小時預報</span> -->
+  <!--           <div class="photos"><div class="ph"></div><div class="ph"></div><div class="ph"></div></div> -->
+  <!--         </div> -->
+  <!--         <div class="arrow"><svg class="ic" width="14" height="14"><use href="#hi-chevron-up"/></svg></div> -->
+  <!--       </div> -->
+  <!--     </div> -->
+  <!--   </div> -->
+  <!-- </div> -->
+  <!---->
+
+            </div>
+</body>
+</html>
