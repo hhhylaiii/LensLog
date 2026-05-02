@@ -242,21 +242,38 @@
 
   /* Weather grid */
   .weather-grid {
-    display: grid; grid-template-columns: repeat(2,1fr); gap: 1px;
-    background: var(--line); border-radius: 10px; overflow: hidden;
+    display: grid; grid-template-columns: repeat(2,1fr); gap: 2px;
+    background: var(--line); border-radius: 14px; overflow: hidden;
     border: 1px solid var(--line); margin-bottom: 14px;
   }
-  .wx-cell { background: var(--card); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .wx-cell { padding: 13px 14px; display: flex; align-items: center; gap: 11px; }
   .wx-cell .wx-icon {
-    width: 32px; height: 32px; border-radius: 8px; background: var(--paper-2); color: var(--ink-soft);
+    width: 36px; height: 36px; border-radius: 10px; color: #fff;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-  .dark .wx-cell .wx-icon { background: rgba(255,255,255,0.06); }
-  .wx-cell.primary .wx-icon { background: var(--accent-soft); color: var(--accent-ink); }
   .wx-cell .wx-text { flex: 1; min-width: 0; }
-  .wx-cell .wx-k { font-size: 10.5px; color: var(--ink-mute); font-family: 'IBM Plex Mono',monospace; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1px; }
+  .wx-cell .wx-k { font-size: 10.5px; color: var(--ink-mute); font-family: 'IBM Plex Mono',monospace; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
   .wx-cell .wx-v { font-size: 14.5px; font-weight: 600; letter-spacing: -0.005em; line-height: 1.2; }
   .wx-cell .wx-v small { font-size: 11px; font-weight: 500; color: var(--ink-soft); margin-left: 2px; }
+
+  /* Weather cell — muted, wabi-sabi palette */
+  /* 天氣: misty mountain blue */
+  .wx-cell.wx-weather { background: linear-gradient(150deg, #edf0f5 0%, #d8e2ec 100%); }
+  .wx-cell.wx-weather .wx-icon { background: linear-gradient(135deg, #7896b2, #4a6882); box-shadow: 0 4px 14px rgba(74,104,130,0.22); }
+  /* 降雨: rain on cold stone */
+  .wx-cell.wx-rain    { background: linear-gradient(150deg, #eaecf3 0%, #d4d8e8 100%); }
+  .wx-cell.wx-rain .wx-icon    { background: linear-gradient(135deg, #7e90b6, #546082); box-shadow: 0 4px 14px rgba(84,96,130,0.22); }
+  /* 風速: celadon — bamboo forest */
+  .wx-cell.wx-wind    { background: linear-gradient(150deg, #edf2ec 0%, #d4e0d2 100%); }
+  .wx-cell.wx-wind .wx-icon    { background: linear-gradient(135deg, #789878, #4c6e4c); box-shadow: 0 4px 14px rgba(76,110,76,0.22); }
+  /* 能見度: warm washi paper */
+  .wx-cell.wx-vis     { background: linear-gradient(150deg, #f0ece6 0%, #dfd6cb 100%); }
+  .wx-cell.wx-vis .wx-icon     { background: linear-gradient(135deg, #9e8c7a, #6c5c4c); box-shadow: 0 4px 14px rgba(108,92,76,0.22); }
+
+  .dark .wx-cell.wx-weather { background: linear-gradient(150deg, rgba(74,104,130,0.15) 0%, rgba(74,104,130,0.04) 100%); }
+  .dark .wx-cell.wx-rain    { background: linear-gradient(150deg, rgba(84,96,130,0.15) 0%, rgba(84,96,130,0.04) 100%); }
+  .dark .wx-cell.wx-wind    { background: linear-gradient(150deg, rgba(76,110,76,0.15) 0%, rgba(76,110,76,0.04) 100%); }
+  .dark .wx-cell.wx-vis     { background: linear-gradient(150deg, rgba(108,92,76,0.15) 0%, rgba(108,92,76,0.04) 100%); }
 
   /* Stats */
   .ic-stats {
@@ -325,19 +342,61 @@
   .pw-grid .pw:nth-child(8) { background: linear-gradient(160deg,#2b4670,#0f1e38); }
   .pw-grid .pw:nth-child(9) { background: linear-gradient(160deg,#a8c4d8,#2a5878); }
 
-  /* Hourly forecast */
+  /* Hourly forecast — sky-gradient track */
   .hourly { margin-bottom: 14px; }
   .hourly h4 { font-size: 13px; font-weight: 600; margin: 0 0 8px; }
-  .hourly-row { display: flex; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
-  .hourly-cell { flex: 1 0 56px; text-align: center; padding: 10px 4px; border-right: 1px solid var(--line-soft); font-size: 11px; }
+  .hourly-row {
+    position: relative; display: flex; overflow: hidden; border-radius: 14px;
+    /* ink-wash sky: morning mist → warm sand → terracotta dusk → sumi night */
+    background: linear-gradient(90deg,
+      #bfcdd8  0%,
+      #c4cdd5 14%,
+      #c8bca4 29%,
+      #b89272  43%,
+      #9a8898  57%,
+      #4e5470  72%,
+      #252d48  86%,
+      #161b2e 100%
+    );
+  }
+  /* subtle ink horizon line */
+  .hourly-row::after {
+    content: ''; pointer-events: none;
+    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg,
+      rgba(120,150,176,0.55) 0%,  rgba(120,150,176,0.55) 14%,
+      rgba(184,146,114,0.55) 29%, rgba(154,108,80,0.55)  43%,
+      rgba(138,120,144,0.55) 57%, rgba(78,84,112,0.55)   72%,
+      rgba(50,58,90,0.55)    86%, rgba(30,36,62,0.55)   100%
+    );
+  }
+  .hourly-cell {
+    flex: 1 0 0; text-align: center; padding: 11px 4px 13px;
+    border-right: 1px solid rgba(255,255,255,0.14); font-size: 11px;
+    background: rgba(255,255,255,0.18);
+  }
   .hourly-cell:last-child { border-right: 0; }
-  .hourly-cell .hour { color: var(--ink-mute); font-family: 'IBM Plex Mono',monospace; font-size: 10.5px; }
-  .hourly-cell .ico { display: flex; align-items: center; justify-content: center; margin: 5px 0; }
-  .hourly-cell .t { font-weight: 600; font-size: 12px; }
-  .hourly-cell.now { background: var(--accent-soft); border-radius: 8px; }
-  .hourly-cell.now .hour { color: var(--accent-ink); font-weight: 600; }
-  .hourly-cell.golden { background: var(--gold-soft); }
-  .hourly-cell.golden .hour { color: var(--gold); font-weight: 600; }
+  .hourly-cell .hour { color: rgba(22,28,48,0.62); font-family: 'IBM Plex Mono',monospace; font-size: 10.5px; font-weight: 500; }
+  .hourly-cell .ico  { display: flex; align-items: center; justify-content: center; margin: 5px 0; }
+  .hourly-cell .t    { font-weight: 700; font-size: 13px; color: var(--ink); }
+
+  /* now — frosted rice paper */
+  .hourly-cell.now {
+    background: rgba(255,255,255,0.68);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.50);
+  }
+  .hourly-cell.now .hour { color: #4a6882; font-weight: 600; }
+  .hourly-cell.now .t   { color: var(--ink); }
+
+  /* golden hour — let terracotta breathe */
+  .hourly-cell.golden { background: rgba(255,255,255,0.08); }
+  .hourly-cell.golden .hour { color: rgba(255,245,235,0.85); font-weight: 600; }
+  .hourly-cell.golden .t   { color: rgba(255,245,235,0.96); font-weight: 700; }
+
+  /* night — ink glass */
+  .hourly-cell.night { background: rgba(0,0,0,0.20); }
+  .hourly-cell.night .hour { color: rgba(200,210,228,0.55); }
+  .hourly-cell.night .t   { color: rgba(210,220,235,0.88); font-weight: 700; }
 
   /* Device label */
   .device-label {
@@ -349,6 +408,43 @@
 
   /* Icon utility */
   .ic { display: inline-block; flex-shrink: 0; }
+
+  /* ===== Weather state scale section ===== */
+  .wx-states { margin-bottom: 56px; }
+  .wx-state-group { margin-bottom: 20px; }
+  .wx-state-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-mute);
+    font-weight: 500;
+  }
+  .wx-state-header .ws-hico {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: #fff;
+  }
+  .wx-state-row { display: flex; gap: 6px; }
+  .wx-state-chip {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 7px; padding: 12px 8px 10px;
+    border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);
+    min-width: 0; text-align: center;
+    transition: transform 0.12s;
+  }
+  .wx-state-chip:hover { transform: translateY(-2px); }
+  .wx-state-ico {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: #fff;
+  }
+  .ws-label {
+    font-size: 12px; font-weight: 600; color: var(--ink);
+    letter-spacing: -0.01em; line-height: 1.2;
+  }
+  .ws-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--ink-mute); line-height: 1;
+  }
 </style>
 
 <!-- ===== Heroicons SVG symbols ===== -->
@@ -413,6 +509,25 @@
   </symbol>
   <symbol id="hi-building" viewBox="0 0 24 24" fill="none">
     <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3.75 21H20.25M4.5 3H19.5M5.25 3V21M18.75 3V21M9 6.75H10.5M9 9.75H10.5M9 12.75H10.5M13.5 6.75H15M13.5 9.75H15M13.5 12.75H15M9 21V17.625C9 17.0037 9.50368 16.5 10.125 16.5H13.875C14.4963 16.5 15 17.0037 15 17.625V21"/>
+  </symbol>
+  <symbol id="hi-fire" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214C18.243 6.501 20.25 9.391 20.25 12.75c0 4.556-3.694 8.25-8.25 8.25S3.75 17.306 3.75 12.75c0-2.212.87-4.221 2.288-5.703C6.804 8.118 7.82 8.997 9.001 9.6c.045-2.775 1.348-5.245 3.361-6.866 .764 1.024 1.776 1.884 3 2.48z"/>
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 18c2.071 0 3.75-1.679 3.75-3.75 0-1.903-1.418-3.475-3.255-3.718-1.008.905-1.709 2.146-1.924 3.547-.783-.191-1.505-.536-2.134-1.001A3.713 3.713 0 008.25 14.25C8.25 16.321 9.929 18 12 18z"/>
+  </symbol>
+  <symbol id="hi-bolt" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5L14.25 2.25L12 10.5H20.25L9.75 21.75L12 13.5H3.75Z"/>
+  </symbol>
+  <symbol id="hi-cloud-arrow-down" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 9.75V16.5M12 16.5L9 13.5M12 16.5L15 13.5M6.75 19.5C4.26472 19.5 2.25 17.4853 2.25 15C2.25 13.0071 3.54555 11.3167 5.3404 10.7252C5.28105 10.4092 5.25 10.0832 5.25 9.75C5.25 6.85051 7.60051 4.5 10.5 4.5C12.9312 4.5 14.9765 6.1526 15.5737 8.39575C15.8654 8.30113 16.1767 8.25 16.5 8.25C18.1569 8.25 19.5 9.59315 19.5 11.25C19.5 11.5981 19.4407 11.9324 19.3316 12.2433C20.7453 12.7805 21.75 14.1479 21.75 15.75C21.75 17.8211 20.0711 19.5 18 19.5H6.75Z"/>
+  </symbol>
+  <symbol id="hi-arrows-right-left" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5M3 16.5L7.5 12M3 16.5H16.5M16.5 3L21 7.5M21 7.5L16.5 12M21 7.5L7.5 7.5"/>
+  </symbol>
+  <symbol id="hi-eye-slash" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223C3.057 9.314 2.352 10.596 1.934 12.002 3.226 16.338 7.243 19.5 11.999 19.5c.992 0 1.952-.138 2.862-.395M6.228 6.228C7.884 5.136 9.868 4.5 12 4.5c4.756 0 8.773 3.162 10.065 7.498-.712 2.393-2.254 4.429-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65M17.772 17.772 21 21m-3.228-3.228-3.65-3.65m0 0A3 3 0 009.879 9.879m4.243 4.243A3 3 0 019.88 9.88"/>
+  </symbol>
+  <symbol id="hi-snowflake" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364M12 3l-2 3m2-3 2 3M12 21l-2-3m2 3 2-3M3 12l3-2M3 12l3 2m15-2-3-2m3 2-3 2"/>
   </symbol>
 </svg>
 
@@ -500,28 +615,28 @@
           </div>
 
           <div class="weather-grid">
-            <div class="wx-cell primary">
+            <div class="wx-cell wx-weather">
               <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-cloud"/></svg></div>
               <div class="wx-text">
                 <div class="wx-k">天氣</div>
                 <div class="wx-v">22°<small>C · 多雲時晴</small></div>
               </div>
             </div>
-            <div class="wx-cell">
+            <div class="wx-cell wx-rain">
               <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-drop"/></svg></div>
               <div class="wx-text">
                 <div class="wx-k">降雨機率</div>
                 <div class="wx-v">15<small>%</small></div>
               </div>
             </div>
-            <div class="wx-cell">
+            <div class="wx-cell wx-wind">
               <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-wind"/></svg></div>
               <div class="wx-text">
                 <div class="wx-k">風速</div>
                 <div class="wx-v">3 級<small> · 微風</small></div>
               </div>
             </div>
-            <div class="wx-cell">
+            <div class="wx-cell wx-vis">
               <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-eye"/></svg></div>
               <div class="wx-text">
                 <div class="wx-k">能見度</div>
@@ -624,28 +739,28 @@
           </div>
 
           <div class="weather-grid">
-            <div class="wx-cell primary">
+            <div class="wx-cell wx-weather">
               <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-cloud"/></svg></div>
               <div class="wx-text">
                 <div class="wx-k">天氣</div>
                 <div class="wx-v">22°<small>C · 多雲時晴</small></div>
               </div>
             </div>
-            <div class="wx-cell">
+            <div class="wx-cell wx-rain">
               <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-drop"/></svg></div>
               <div class="wx-text">
                 <div class="wx-k">降雨機率</div>
                 <div class="wx-v">15<small>%</small></div>
               </div>
             </div>
-            <div class="wx-cell">
+            <div class="wx-cell wx-wind">
               <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-wind"/></svg></div>
               <div class="wx-text">
                 <div class="wx-k">風速</div>
                 <div class="wx-v">3 級<small> · 微風</small></div>
               </div>
             </div>
-            <div class="wx-cell">
+            <div class="wx-cell wx-vis">
               <div class="wx-icon"><svg class="ic" width="20" height="20"><use href="#hi-eye"/></svg></div>
               <div class="wx-text">
                 <div class="wx-k">能見度</div>
@@ -659,37 +774,37 @@
             <div class="hourly-row">
               <div class="hourly-cell now">
                 <div class="hour">現在</div>
-                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--accent-ink)"><use href="#hi-cloud"/></svg></div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:#4a6882"><use href="#hi-cloud"/></svg></div>
                 <div class="t">22°</div>
               </div>
               <div class="hourly-cell">
                 <div class="hour">17:00</div>
-                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--ink-mute)"><use href="#hi-cloud"/></svg></div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:rgba(22,28,48,0.50)"><use href="#hi-cloud"/></svg></div>
                 <div class="t">21°</div>
               </div>
               <div class="hourly-cell golden">
                 <div class="hour">18:00</div>
-                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--gold)"><use href="#hi-sun"/></svg></div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:rgba(255,255,255,0.92)"><use href="#hi-sun"/></svg></div>
                 <div class="t">19°</div>
               </div>
               <div class="hourly-cell golden">
                 <div class="hour">19:00</div>
-                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--gold)"><use href="#hi-building"/></svg></div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:rgba(255,255,255,0.92)"><use href="#hi-building"/></svg></div>
                 <div class="t">17°</div>
               </div>
-              <div class="hourly-cell">
+              <div class="hourly-cell night">
                 <div class="hour">20:00</div>
-                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--ink-soft)"><use href="#hi-moon"/></svg></div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:rgba(255,255,255,0.70)"><use href="#hi-moon"/></svg></div>
                 <div class="t">16°</div>
               </div>
-              <div class="hourly-cell">
+              <div class="hourly-cell night">
                 <div class="hour">21:00</div>
-                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--ink-soft)"><use href="#hi-moon"/></svg></div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:rgba(255,255,255,0.70)"><use href="#hi-moon"/></svg></div>
                 <div class="t">15°</div>
               </div>
-              <div class="hourly-cell">
+              <div class="hourly-cell night">
                 <div class="hour">22:00</div>
-                <div class="ico"><svg class="ic" width="20" height="20" style="color:var(--ink-mute)"><use href="#hi-cloud"/></svg></div>
+                <div class="ico"><svg class="ic" width="20" height="20" style="color:rgba(255,255,255,0.60)"><use href="#hi-cloud"/></svg></div>
                 <div class="t">14°</div>
               </div>
             </div>
@@ -858,5 +973,219 @@
   <!---->
 
             </div>
+
+
+  <!-- ============================================================ WEATHER STATE SCALES -->
+  <div class="step-title" style="margin-top:72px;">
+    <h2>Weather</h2>
+  </div>
+            <p class="step-sub">每個氣象指標按強度分為五至六個等級。</p>
+
+  <div class="wx-states">
+
+    <!-- ── 溫度 ── -->
+    <div class="wx-state-group">
+      <div class="wx-state-header">
+        <div class="ws-hico" style="background:linear-gradient(135deg,#9a8c72,#7a6c54)">
+          <svg class="ic" width="14" height="14"><use href="#hi-sun"/></svg>
+        </div>
+        溫度
+      </div>
+      <div class="wx-state-row">
+        <!-- 極寒 -->
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#e8f4f8,#d0e4f0);border-color:rgba(90,146,176,0.12)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#8abcda,#5a92b0);box-shadow:0 4px 12px rgba(90,146,176,0.28)">
+            <svg class="ic" width="20" height="20"><use href="#hi-snowflake"/></svg>
+          </div>
+          <div class="ws-label">極寒</div>
+          <div class="ws-val">0° 以下</div>
+        </div>
+        <!-- 涼 -->
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#edf0f5,#d8e2ec);border-color:rgba(74,104,130,0.12)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#7896b2,#4a6882);box-shadow:0 4px 12px rgba(74,104,130,0.26)">
+            <svg class="ic" width="20" height="20"><use href="#hi-cloud"/></svg>
+          </div>
+          <div class="ws-label">涼爽</div>
+          <div class="ws-val">0 – 15°</div>
+        </div>
+        <!-- 宜人 -->
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#eeeae0,#e0d8cc);border-color:rgba(122,108,84,0.12)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#9a8c72,#7a6c54);box-shadow:0 4px 12px rgba(122,108,84,0.26)">
+            <svg class="ic" width="20" height="20"><use href="#hi-sun"/></svg>
+          </div>
+          <div class="ws-label">宜人</div>
+          <div class="ws-val">16 – 24°</div>
+        </div>
+        <!-- 暖 -->
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#f0e4d4,#e4d0b8);border-color:rgba(160,96,56,0.12)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#c4845a,#a06038);box-shadow:0 4px 12px rgba(160,96,56,0.28)">
+            <svg class="ic" width="20" height="20"><use href="#hi-sun"/></svg>
+          </div>
+          <div class="ws-label">溫暖</div>
+          <div class="ws-val">25 – 30°</div>
+        </div>
+        <!-- 熱 -->
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#f0d8c8,#e4c0a8);border-color:rgba(168,68,40,0.14)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#c86848,#a04428);box-shadow:0 4px 12px rgba(168,68,40,0.30)">
+            <svg class="ic" width="20" height="20"><use href="#hi-sun"/></svg>
+          </div>
+          <div class="ws-label">炎熱</div>
+          <div class="ws-val">31 – 36°</div>
+        </div>
+        <!-- 酷熱 -->
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#edd0c0,#e0b498);border-color:rgba(140,48,32,0.16)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#c05838,#8c3020);box-shadow:0 4px 12px rgba(140,48,32,0.32)">
+            <svg class="ic" width="20" height="20"><use href="#hi-fire"/></svg>
+          </div>
+          <div class="ws-label">酷熱</div>
+          <div class="ws-val">37° 以上</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 降雨 ── -->
+    <div class="wx-state-group">
+      <div class="wx-state-header">
+        <div class="ws-hico" style="background:linear-gradient(135deg,#7e90b6,#546082)">
+          <svg class="ic" width="14" height="14"><use href="#hi-drop"/></svg>
+        </div>
+        降雨機率
+      </div>
+      <div class="wx-state-row">
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#eef3f6,#dde8f0);border-color:rgba(78,136,168,0.10)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#7cb0ca,#4e88a8);box-shadow:0 4px 12px rgba(78,136,168,0.26)">
+            <svg class="ic" width="20" height="20"><use href="#hi-cloud"/></svg>
+          </div>
+          <div class="ws-label">無雨</div>
+          <div class="ws-val">0 %</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#e8eef5,#d4dcea);border-color:rgba(62,104,146,0.12)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#6896b4,#3e6892);box-shadow:0 4px 12px rgba(62,104,146,0.26)">
+            <svg class="ic" width="20" height="20"><use href="#hi-drop"/></svg>
+          </div>
+          <div class="ws-label">微雨</div>
+          <div class="ws-val">1 – 30 %</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#dfe8f2,#c8d6e6);border-color:rgba(44,80,128,0.14)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#547ea4,#2c5080);box-shadow:0 4px 12px rgba(44,80,128,0.28)">
+            <svg class="ic" width="20" height="20"><use href="#hi-drop"/></svg>
+          </div>
+          <div class="ws-label">小雨</div>
+          <div class="ws-val">30 – 60 %</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#d4dce8,#bccada);border-color:rgba(30,62,96,0.16)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#3e6488,#1e3e60);box-shadow:0 4px 12px rgba(30,62,96,0.28)">
+            <svg class="ic" width="20" height="20"><use href="#hi-cloud-arrow-down"/></svg>
+          </div>
+          <div class="ws-label">中雨</div>
+          <div class="ws-val">60 – 85 %</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#c8d2de,#aab6c8);border-color:rgba(16,30,56,0.18)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#2a4868,#101e38);box-shadow:0 4px 12px rgba(16,30,56,0.32)">
+            <svg class="ic" width="20" height="20"><use href="#hi-bolt"/></svg>
+          </div>
+          <div class="ws-label">暴雨</div>
+          <div class="ws-val">85 – 100 %</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 風速 ── -->
+    <div class="wx-state-group">
+      <div class="wx-state-header">
+        <div class="ws-hico" style="background:linear-gradient(135deg,#789878,#4c6e4c)">
+          <svg class="ic" width="14" height="14"><use href="#hi-wind"/></svg>
+        </div>
+        風速
+      </div>
+      <div class="wx-state-row">
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#edf2ea,#d8e6d4);border-color:rgba(92,138,88,0.10)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#8ab286,#5c8a58);box-shadow:0 4px 12px rgba(92,138,88,0.24)">
+            <svg class="ic" width="20" height="20"><use href="#hi-wind"/></svg>
+          </div>
+          <div class="ws-label">無風</div>
+          <div class="ws-val">0 – 1 級</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#e4ede0,#cdddc8);border-color:rgba(68,126,64,0.12)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#72a06e,#447e40);box-shadow:0 4px 12px rgba(68,126,64,0.26)">
+            <svg class="ic" width="20" height="20"><use href="#hi-wind"/></svg>
+          </div>
+          <div class="ws-label">微風</div>
+          <div class="ws-val">2 – 3 級</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#d8e4d4,#c0d2ba);border-color:rgba(52,112,48,0.14)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#5c9058,#347030);box-shadow:0 4px 12px rgba(52,112,48,0.26)">
+            <svg class="ic" width="20" height="20"><use href="#hi-wind"/></svg>
+          </div>
+          <div class="ws-label">輕風</div>
+          <div class="ws-val">4 – 5 級</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#c8d8c4,#aabcaa);border-color:rgba(40,92,36,0.16)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#487c44,#285c24);box-shadow:0 4px 12px rgba(40,92,36,0.28)">
+            <svg class="ic" width="20" height="20"><use href="#hi-arrows-right-left"/></svg>
+          </div>
+          <div class="ws-label">強風</div>
+          <div class="ws-val">6 – 8 級</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#b8c8b4,#9aac96);border-color:rgba(20,60,16,0.18)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#2c6028,#104010);box-shadow:0 4px 12px rgba(20,60,16,0.30)">
+            <svg class="ic" width="20" height="20"><use href="#hi-bolt"/></svg>
+          </div>
+          <div class="ws-label">暴風</div>
+          <div class="ws-val">9 級以上</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 能見度 ── -->
+    <div class="wx-state-group">
+      <div class="wx-state-header">
+        <div class="ws-hico" style="background:linear-gradient(135deg,#9e8c7a,#6c5c4c)">
+          <svg class="ic" width="14" height="14"><use href="#hi-eye"/></svg>
+        </div>
+        能見度
+      </div>
+      <div class="wx-state-row">
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#f0ece6,#dfd6cb);border-color:rgba(108,92,76,0.10)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#a08a6e,#7a6450);box-shadow:0 4px 12px rgba(108,92,76,0.22)">
+            <svg class="ic" width="20" height="20"><use href="#hi-eye"/></svg>
+          </div>
+          <div class="ws-label">極佳</div>
+          <div class="ws-val">&gt; 20 km</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#e8e2da,#d6cec4);border-color:rgba(96,80,64,0.12)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#8e7a62,#6a5a46);box-shadow:0 4px 12px rgba(96,80,64,0.22)">
+            <svg class="ic" width="20" height="20"><use href="#hi-eye"/></svg>
+          </div>
+          <div class="ws-label">良好</div>
+          <div class="ws-val">10 – 20 km</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#dedad4,#ccc4ba);border-color:rgba(84,70,56,0.14)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#7e6e5a,#5c5040);box-shadow:0 4px 12px rgba(84,70,56,0.22)">
+            <svg class="ic" width="20" height="20"><use href="#hi-eye"/></svg>
+          </div>
+          <div class="ws-label">普通</div>
+          <div class="ws-val">4 – 10 km</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#d2ceca,#c0bcb4);border-color:rgba(72,60,52,0.16)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#6e6058,#504844);box-shadow:0 4px 12px rgba(72,60,52,0.22)">
+            <svg class="ic" width="20" height="20"><use href="#hi-eye-slash"/></svg>
+          </div>
+          <div class="ws-label">不佳</div>
+          <div class="ws-val">1 – 4 km</div>
+        </div>
+        <div class="wx-state-chip" style="background:linear-gradient(150deg,#c8c4c0,#b4b0ac);border-color:rgba(58,50,48,0.18)">
+          <div class="wx-state-ico" style="background:linear-gradient(135deg,#5e5856,#484040);box-shadow:0 4px 12px rgba(58,50,48,0.22)">
+            <svg class="ic" width="20" height="20"><use href="#hi-cloud"/></svg>
+          </div>
+          <div class="ws-label">霧</div>
+          <div class="ws-val">&lt; 1 km</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /wx-states -->
+
+</div>
 </body>
 </html>
