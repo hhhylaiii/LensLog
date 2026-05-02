@@ -307,21 +307,38 @@
   .ic-foot .btn.icon { width: 36px; padding: 0; justify-content: center; }
 
   /* Expand handle */
+  /* Expand button — full-width, below ic-foot */
   .ic-expand {
-    border-top: 1px solid var(--line-soft); padding: 10px 18px;
-    display: flex; align-items: center; justify-content: space-between;
-    font-size: 12.5px; color: var(--ink-soft); cursor: pointer; background: var(--card); transition: background 0.12s;
+    padding: 10px 18px 16px;
   }
-  .ic-expand:hover { background: var(--paper-2); }
-  .ic-expand .left { display: flex; align-items: center; gap: 8px; }
-  .ic-expand .photos { display: flex; margin-left: 4px; }
-  .ic-expand .photos .ph { width: 22px; height: 22px; border-radius: 4px; border: 2px solid var(--card); margin-left: -6px; background: linear-gradient(160deg,#6b82a8,#1a2942); }
-  .ic-expand .photos .ph:nth-child(2) { background: linear-gradient(160deg,#d9927d,#4a4670); }
-  .ic-expand .photos .ph:nth-child(3) { background: linear-gradient(160deg,#8fb4cc,#2a5878); }
-  .ic-expand .arrow { width: 24px; height: 24px; border-radius: 50%; background: var(--paper-2); display: flex; align-items: center; justify-content: center; }
+  .ic-expand-btn {
+    width: 100%; height: 38px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--paper); border: 1.5px solid var(--line);
+    border-radius: 10px; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 500; color: var(--ink-soft);
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .ic-expand-btn:hover {
+    background: var(--accent-soft); border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .ic-expand-btn .ph-row { display: flex; margin-left: 2px; }
+  .ic-expand-btn .ph-row .ph {
+    width: 18px; height: 18px; border-radius: 3px;
+    border: 1.5px solid var(--card); margin-left: -5px;
+    background: linear-gradient(160deg,#6b82a8,#1a2942);
+  }
+  .ic-expand-btn .ph-row .ph:nth-child(2) { background: linear-gradient(160deg,#d9927d,#4a4670); }
+  .ic-expand-btn .ph-row .ph:nth-child(3) { background: linear-gradient(160deg,#8fb4cc,#2a5878); }
 
   /* ===== Desktop floating card — RIGHT ===== */
-  .desktop-card { position: absolute; top: 24px; right: 24px; width: 360px; z-index: 7; }
+  .desktop-card {
+    position: absolute; top: 24px; right: 24px; width: 360px; z-index: 7;
+    max-height: calc(100% - 48px);
+    display: flex; flex-direction: column;
+  }
+  .desktop-card .ic-body { flex: 1; overflow-y: auto; }
 
   /* ===== Desktop expanded side panel — RIGHT ===== */
   .side-panel {
@@ -1163,11 +1180,13 @@
         </div>
 
         <div class="ic-expand">
-          <div class="left">
-            <span>展開查看作品牆與 24 小時預報</span>
-            <div class="photos"><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
-          </div>
-          <div class="arrow"><svg class="ic" width="14" height="14"><use href="#hi-chevron-up"/></svg></div>
+          <button class="ic-expand-btn">
+            <svg class="ic" width="15" height="15"><use href="#hi-chevron-up"/></svg>
+            展開完整資訊
+            <div class="ph-row">
+              <div class="ph"></div><div class="ph"></div><div class="ph"></div>
+            </div>
+          </button>
         </div>
       </div><!-- /info-card.desktop-card -->
           </div><!-- /app-map -->
@@ -1187,7 +1206,7 @@
     <div class="stage-bar">
       <div class="dots"><span></span><span></span><span></span></div>
       <div class="url">lenslog.app / map / spots / elephant-six-stones</div>
-      <span class="label">Light · Expanded</span>
+      <span class="label">Light</span>
     </div>
 
     <!-- Full app layout (sidebar collapsed to save space) -->
@@ -1447,7 +1466,7 @@
   </div><!-- /stage -->
 
   <!---->
-  <!-- <!-- ============================================================ STAGE 3: Floating card · Dark --> -->
+  <!-- ============================================================ STAGE 3: Floating card · Dark (commented out) -->
   <!-- <div class="device-label" style="margin-top:24px;"> -->
   <!--   Desktop — Floating card -->
   <!--   <span class="mode-pill dark-pill">Dark</span> -->
