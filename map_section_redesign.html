@@ -28,6 +28,13 @@
     --map-bg-2:    #dfe4ee;
     --map-bg-3:    #d6dde8;
     --map-line:    rgba(15, 30, 56, 0.06);
+
+    /* sidebar */
+    --side-bg:     #1a2942;
+    --side-bg-2:   #253655;
+    --side-line:   #2d4068;
+    --side-text:   #e3edfa;
+    --side-mute:   #8a9bba;
   }
   .dark {
     --ink:         #e6ecf4;
@@ -327,6 +334,28 @@
   .side-panel .ic-hero { height: 180px; }
   .side-panel .ic-body { overflow-y: auto; flex: 1; padding-bottom: 16px; }
 
+  /* Resize / drag handle on left edge of side panel */
+  .sp-drag {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 8px;
+    cursor: ew-resize; z-index: 20;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sp-drag::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 100%;
+    background: transparent;
+    transition: background 0.15s;
+    border-radius: 0 4px 4px 0;
+  }
+  .sp-drag:hover::before { background: rgba(30,95,179,0.10); }
+  .sp-drag::after {
+    content: '';
+    width: 3px; height: 28px; border-radius: 2px;
+    background: var(--line);
+    transition: background 0.15s, height 0.15s;
+  }
+  .sp-drag:hover::after { background: var(--accent); height: 44px; }
+
   /* Photo wall */
   .photo-wall { margin: 0 -18px; padding: 16px 18px; border-top: 1px solid var(--line-soft); }
   .photo-wall h4 { font-size: 13px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; }
@@ -409,8 +438,245 @@
   /* Icon utility */
   .ic { display: inline-block; flex-shrink: 0; }
 
+  /* ================================================================
+     APP SHELL — browser-frame mockup
+     ================================================================ */
+  .app-browser {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden; margin-bottom: 64px;
+    box-shadow: 0 1px 3px rgba(26,41,66,0.06), 0 20px 48px rgba(26,41,66,0.12);
+  }
+  .app-chrome {
+    height: 38px; background: var(--paper-2); border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 7px; padding: 0 14px;
+  }
+  .app-chrome .c-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .app-chrome .c-url {
+    flex: 1; margin-left: 12px; height: 22px; background: var(--card);
+    border: 1px solid var(--line); border-radius: 4px;
+    font-family: 'IBM Plex Mono',monospace; font-size: 10.5px;
+    display: flex; align-items: center; padding: 0 10px; color: var(--ink-mute);
+  }
+
+  /* Grid: sidebar | main */
+  .app-shell {
+    display: grid; grid-template-columns: 60px 1fr; height: 680px;
+    transition: grid-template-columns 0.22s ease;
+  }
+  .app-shell.expanded { grid-template-columns: 220px 1fr; }
+
+  /* ---- Sidebar ---- */
+  .app-sidebar {
+    background: var(--card); border-right: 1px solid var(--line);
+    padding: 20px 10px; display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+  .app-shell.expanded .app-sidebar { padding: 24px 14px; }
+
+  .sb-toggle {
+    position: absolute; top: 22px; right: -11px; z-index: 20;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--ink-soft);
+    box-shadow: 0 1px 4px rgba(26,41,66,0.14);
+  }
+  .sb-toggle svg { transition: transform 0.22s ease; }
+  .app-shell.expanded .sb-toggle svg { transform: rotate(180deg); }
+
+  .sb-brand {
+    display: flex; align-items: center; gap: 10px; justify-content: center;
+    margin-bottom: 20px; color: var(--ink);
+    font-size: 15px; font-weight: 600; letter-spacing: -0.015em;
+    white-space: nowrap; overflow: hidden;
+    cursor: pointer; border-radius: 8px;
+    padding: 7px 8px; margin-left: -8px; margin-right: -8px;
+    transition: background 0.12s;
+    user-select: none;
+  }
+  .sb-brand:hover { background: var(--paper-2); }
+  .app-shell.expanded .sb-brand { justify-content: flex-start; }
+  .sb-logo {
+    width: 26px; height: 26px; flex-shrink: 0; border-radius: 6px;
+    background: var(--accent);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zm0 1.8a7.7 7.7 0 016.33 3.32l-4.82 2.78-1.51-5.64a7.72 7.72 0 010-.46zm-1.96.21l1.51 5.64-5.64-1.51a7.72 7.72 0 014.13-4.13zm-4.79 5.56l5.64 1.51-4.13 4.13A7.7 7.7 0 014.3 12a7.7 7.7 0 01.95-3.93zm12.54.22A7.7 7.7 0 0119.7 12a7.7 7.7 0 01-.95 3.93l-4.13-4.13 4.17-1.12zM12 10.2a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zm-4.13 3.93l4.13-1.11 1.51 5.64a7.72 7.72 0 01-5.64-4.53zm8.26 0a7.72 7.72 0 01-4.13 4.13l1.51-5.64 2.62 1.51z'/></svg>") center/contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zm0 1.8a7.7 7.7 0 016.33 3.32l-4.82 2.78-1.51-5.64a7.72 7.72 0 010-.46zm-1.96.21l1.51 5.64-5.64-1.51a7.72 7.72 0 014.13-4.13zm-4.79 5.56l5.64 1.51-4.13 4.13A7.7 7.7 0 014.3 12a7.7 7.7 0 01.95-3.93zm12.54.22A7.7 7.7 0 0119.7 12a7.7 7.7 0 01-.95 3.93l-4.13-4.13 4.17-1.12zM12 10.2a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zm-4.13 3.93l4.13-1.11 1.51 5.64a7.72 7.72 0 01-5.64-4.53zm8.26 0a7.72 7.72 0 01-4.13 4.13l1.51-5.64 2.62 1.51z'/></svg>") center/contain no-repeat;
+  }
+  .sb-name { display: none; }
+  .app-shell.expanded .sb-name { display: inline; }
+
+  .sb-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .sb-nav a {
+    display: flex; gap: 10px; align-items: center; padding: 9px 10px;
+    border-radius: 8px; color: var(--ink-mute); font-size: 13px;
+    text-decoration: none; cursor: pointer; justify-content: center;
+    white-space: nowrap; overflow: hidden;
+    transition: background 0.12s, color 0.12s;
+  }
+  .app-shell.expanded .sb-nav a { justify-content: flex-start; }
+  .sb-nav a:hover { background: var(--paper-2); color: var(--ink); }
+  .sb-nav a.active {
+    background: var(--accent); color: #fff; font-weight: 500;
+  }
+  .sb-nav-ic { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .sb-nav-lbl { display: none; }
+  .app-shell.expanded .sb-nav-lbl { display: inline; }
+
+  .sb-foot { margin-top: auto; }
+  .sb-notif {
+    display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-radius: 6px; color: var(--ink-mute); font-size: 12px;
+    justify-content: center; white-space: nowrap; overflow: hidden;
+  }
+  .app-shell.expanded .sb-notif { justify-content: flex-start; }
+  .sb-notif-dot {
+    width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 6px rgba(30,95,179,0.35);
+  }
+  .sb-notif-txt { display: none; }
+  .app-shell.expanded .sb-notif-txt { display: inline; }
+
+  /* ---- Main area ---- */
+  .app-main { display: flex; flex-direction: column; overflow: hidden; }
+
+  .app-topbar {
+    height: 56px; flex-shrink: 0; padding: 0 20px;
+    background: var(--card); border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .app-topbar h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.015em; margin: 0; white-space: nowrap; }
+  .app-search {
+    flex: 1; max-width: 340px; height: 34px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    padding: 0 12px; display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-mute);
+  }
+  .app-chips { display: flex; gap: 5px; overflow: hidden; }
+  .app-chip {
+    display: inline-flex; align-items: center; padding: 3px 10px;
+    border: 1px solid var(--line); border-radius: 14px; background: var(--card);
+    font-size: 12px; color: var(--ink-soft); white-space: nowrap; cursor: pointer;
+  }
+  .app-chip.active { background: var(--ink); border-color: var(--ink); color: #fff; font-weight: 500; }
+  .app-add {
+    margin-left: auto; height: 32px; padding: 0 14px;
+    background: var(--accent); border: 1px solid var(--accent); border-radius: 8px;
+    color: #fff; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .app-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--paper-2); border: 1px solid var(--line); flex-shrink: 0;
+  }
+
+  /* ---- Map + spot-list row ---- */
+  .app-body { flex: 1; display: flex; overflow: hidden; }
+
+  /* Spot list panel — hidden by default, slides in */
+  .spot-list {
+    width: 0; flex-shrink: 0; overflow: hidden;
+    background: var(--card); border-right: 0;
+    display: flex; flex-direction: column;
+    transition: width 0.24s ease, border-color 0.24s ease;
+  }
+  .spot-list.open {
+    width: 268px; border-right: 1px solid var(--line);
+  }
+  .spot-list-inner { width: 268px; display: flex; flex-direction: column; height: 100%; }
+  .spot-list-head {
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--line-soft);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .spot-list-head span {
+    font-family: 'IBM Plex Mono',monospace; font-size: 10.5px;
+    color: var(--ink-mute); text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .spot-items { flex: 1; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+  .spot-item {
+    display: flex; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer;
+    transition: background 0.12s; border: 1px solid transparent;
+  }
+  .spot-item:hover { background: var(--paper); }
+  .spot-item.active { background: var(--accent-soft); border-color: #c6dbf3; }
+  .spot-thumb {
+    width: 44px; height: 44px; border-radius: 7px; flex-shrink: 0;
+    background: linear-gradient(160deg,#6b82a8 0%,#4c6590 28%,#1a2942 100%);
+  }
+  .spot-thumb.t2 { background: linear-gradient(160deg,#8fb4cc,#334a75); }
+  .spot-thumb.t3 { background: linear-gradient(160deg,#d9927d,#4a4670); }
+  .spot-thumb.t4 { background: linear-gradient(160deg,#9aadbe,#3d5c75); }
+  .spot-info { flex: 1; min-width: 0; }
+  .spot-name { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
+  .spot-meta { font-size: 11px; color: var(--ink-soft); margin: 1px 0; }
+  .spot-loc  { font-family: 'IBM Plex Mono',monospace; font-size: 10px; color: var(--ink-mute); }
+
+  /* Full-width map */
+  .app-map {
+    flex: 1; position: relative; overflow: hidden;
+    background:
+      radial-gradient(ellipse 320px 200px at 30% 38%, var(--map-bg-1) 40%, transparent 72%),
+      radial-gradient(ellipse 360px 220px at 76% 62%, var(--map-bg-2) 30%, transparent 72%),
+      var(--map-bg-3);
+  }
+  .app-map::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(to right, var(--map-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--map-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .app-map::after {
+    content: ''; pointer-events: none;
+    position: absolute; left: -10%; right: -10%; top: 38%; height: 1.5px;
+    background: rgba(15,30,56,0.10); transform: rotate(-2.5deg);
+    box-shadow: 0 90px 0 -0.5px rgba(15,30,56,0.09), 0 -80px 0 -0.5px rgba(15,30,56,0.08);
+  }
+  .app-zoom {
+    position: absolute; right: 16px; top: 16px; z-index: 5;
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+    overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 4px 12px rgba(15,30,56,0.10);
+  }
+  .app-zoom button {
+    width: 36px; height: 36px; background: transparent; border: 0; color: var(--ink);
+    cursor: pointer; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .app-zoom button:last-child { border-bottom: 0; }
+  .app-zoom button:hover { background: var(--paper-2); }
+
+  /* Panel toggle button — below zoom */
+  .map-panel-btn {
+    position: absolute; right: 16px; top: 100px; z-index: 5;
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--card); border: 1px solid var(--line);
+    box-shadow: 0 4px 12px rgba(15,30,56,0.10);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--ink-soft);
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .map-panel-btn:hover { background: var(--paper-2); color: var(--ink); }
+  .map-panel-btn.active {
+    background: var(--accent-soft); color: var(--accent-ink);
+    border-color: var(--accent); border-width: 1.5px;
+  }
+  .app-scale {
+    position: absolute; bottom: 14px; left: 16px;
+    font-family: 'IBM Plex Mono',monospace; font-size: 10px; color: var(--ink-mute);
+    background: rgba(255,255,255,0.82); padding: 3px 7px; border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+
   /* ===== Weather state scale section ===== */
-  .wx-states { margin-bottom: 56px; }
+  .wx-states {
+    margin-bottom: 56px;
+    padding: 44px 56px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+  }
   .wx-state-group { margin-bottom: 20px; }
   .wx-state-header {
     display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
@@ -507,6 +773,25 @@
     <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M15 10.5C15 12.1569 13.6569 13.5 12 13.5C10.3431 13.5 9 12.1569 9 10.5C9 8.84315 10.3431 7.5 12 7.5C13.6569 7.5 15 8.84315 15 10.5Z"/>
     <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5C19.5 17.6421 12 21.75 12 21.75C12 21.75 4.5 17.6421 4.5 10.5C4.5 6.35786 7.85786 3 12 3C16.1421 3 19.5 6.35786 19.5 10.5Z"/>
   </symbol>
+  <symbol id="hi-list" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75H20.25M8.25 12H20.25M8.25 17.25H20.25M3.75 6.75h.008v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.008v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.008v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+  </symbol>
+  <!-- nav icons -->
+  <symbol id="hi-photo" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+  </symbol>
+  <symbol id="hi-upload" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+  </symbol>
+  <symbol id="hi-wrench" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75a4.5 4.5 0 01-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 11-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 016.336-4.486l-3.276 3.276a3.004 3.004 0 002.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852z"/>
+  </symbol>
+  <symbol id="hi-chart-bar" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+  </symbol>
+  <symbol id="hi-user-circle" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/>
+  </symbol>
   <symbol id="hi-building" viewBox="0 0 24 24" fill="none">
     <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3.75 21H20.25M4.5 3H19.5M5.25 3V21M18.75 3V21M9 6.75H10.5M9 9.75H10.5M9 12.75H10.5M13.5 6.75H15M13.5 9.75H15M13.5 12.75H15M9 21V17.625C9 17.0037 9.50368 16.5 10.125 16.5H13.875C14.4963 16.5 15 17.0037 15 17.625V21"/>
   </symbol>
@@ -533,6 +818,192 @@
 
 <body>
 <div class="wrap">
+  <div class="step-title">
+    <h2>Map Redesign Appearance</h2>
+  </div>
+  <div class="device-label">
+    Floating card (default)
+    <span class="mode-pill">Light</span>
+  </div>
+  <!-- ============================================================ MAP EXPLORE APP -->
+  <div class="app-browser">
+
+    <!-- Browser chrome -->
+    <div class="app-chrome">
+      <span class="c-dot"></span><span class="c-dot"></span><span class="c-dot"></span>
+      <div class="c-url">lenslog.app / map</div>
+    </div>
+
+    <!-- App shell -->
+    <div class="app-shell expanded" id="appShell">
+
+      <!-- ── Sidebar ── -->
+      <aside class="app-sidebar">
+        <!-- Brand — click to expand/collapse -->
+        <div class="sb-brand" onclick="toggleSidebar()" title="展開 / 收合">
+          <span class="sb-logo"></span>
+          <span class="sb-name">LensLog</span>
+        </div>
+
+        <!-- Nav -->
+        <nav class="sb-nav">
+          <a class="active" title="攝影地圖">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-map-pin"/></svg></span>
+            <span class="sb-nav-lbl">攝影地圖</span>
+          </a>
+          <a title="動態牆">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-photo"/></svg></span>
+            <span class="sb-nav-lbl">動態牆</span>
+          </a>
+          <a title="上傳照片">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-upload"/></svg></span>
+            <span class="sb-nav-lbl">上傳照片</span>
+          </a>
+          <a title="器材庫">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-wrench"/></svg></span>
+            <span class="sb-nav-lbl">器材庫</span>
+          </a>
+          <a title="統計">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-chart-bar"/></svg></span>
+            <span class="sb-nav-lbl">統計</span>
+          </a>
+          <a title="個人頁">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-user-circle"/></svg></span>
+            <span class="sb-nav-lbl">個人頁</span>
+          </a>
+        </nav>
+
+        <!-- Footer -->
+        <div class="sb-foot">
+          <div class="sb-notif">
+            <span class="sb-notif-dot"></span>
+            <span class="sb-notif-txt">3 則通知</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ── Main ── -->
+      <div class="app-main">
+
+        <!-- Topbar -->
+        <div class="app-topbar">
+          <h2>探索攝影地圖</h2>
+          <div class="app-search">
+            <svg class="ic" width="15" height="15"><use href="#hi-search"/></svg>
+            搜尋景點、城市、標籤…
+          </div>
+          <div class="app-chips">
+            <span class="app-chip active">全部</span>
+            <span class="app-chip">雲海日出</span>
+            <span class="app-chip">高山星空</span>
+            <span class="app-chip">百萬夜景</span>
+            <span class="app-chip">海岸線</span>
+            <span class="app-chip">老街</span>
+          </div>
+          <button class="app-add">
+            <svg class="ic" width="14" height="14"><use href="#hi-plus"/></svg>
+            新增景點
+          </button>
+          <div class="app-avatar"></div>
+        </div>
+
+        <!-- Body: spot list + map -->
+        <div class="app-body">
+
+          <!-- Spot list — hidden by default, toggle via map button -->
+          <div class="spot-list" id="spotList">
+           <div class="spot-list-inner">
+            <div class="spot-list-head">
+              <span>全台 482 處 · 排序：距離</span>
+            </div>
+            <div class="spot-items">
+              <div class="spot-item active">
+                <div class="spot-thumb"></div>
+                <div class="spot-info">
+                  <div class="spot-name">象山六巨石</div>
+                  <div class="spot-meta">夜景 · ★ 4.8 · 簡易</div>
+                  <div class="spot-loc">台北信義 · 1.8 km</div>
+                </div>
+              </div>
+              <div class="spot-item">
+                <div class="spot-thumb t2"></div>
+                <div class="spot-info">
+                  <div class="spot-name">阿里山祝山</div>
+                  <div class="spot-meta">雲海日出 · ★ 4.9 · 中等</div>
+                  <div class="spot-loc">嘉義 · 海拔 2,489 m</div>
+                </div>
+              </div>
+              <div class="spot-item">
+                <div class="spot-thumb t3"></div>
+                <div class="spot-info">
+                  <div class="spot-name">太魯閣燕子口</div>
+                  <div class="spot-meta">峽谷 · ★ 4.7 · 簡易</div>
+                  <div class="spot-loc">花蓮 · 1.4 km</div>
+                </div>
+              </div>
+              <div class="spot-item">
+                <div class="spot-thumb t4"></div>
+                <div class="spot-info">
+                  <div class="spot-name">九份老街</div>
+                  <div class="spot-meta">老街 · ★ 4.4</div>
+                  <div class="spot-loc">新北瑞芳 · 常霧</div>
+                </div>
+              </div>
+              <div class="spot-item">
+                <div class="spot-thumb t2"></div>
+                <div class="spot-info">
+                  <div class="spot-name">清境農場</div>
+                  <div class="spot-meta">雲海 · ★ 4.6 · 中等</div>
+                  <div class="spot-loc">南投仁愛 · 海拔 1,748 m</div>
+                </div>
+              </div>
+              <div class="spot-item">
+                <div class="spot-thumb t3"></div>
+                <div class="spot-info">
+                  <div class="spot-name">福隆海岸</div>
+                  <div class="spot-meta">海岸線 · ★ 4.3</div>
+                  <div class="spot-loc">新北貢寮 · 日出</div>
+                </div>
+              </div>
+            </div>
+           </div><!-- /spot-list-inner -->
+          </div><!-- /spot-list -->
+
+          <!-- Map canvas (no info card) -->
+          <div class="app-map">
+            <!-- Pins spread across map -->
+            <div class="map-pin cluster" style="top:18%;left:22%;">5</div>
+            <div class="map-pin" style="top:32%;left:14%;"></div>
+            <div class="map-pin" style="top:52%;left:30%;"></div>
+            <div class="map-pin cluster" style="top:62%;left:55%;">12</div>
+            <div class="map-pin" style="top:38%;left:48%;"></div>
+            <div class="map-pin" style="top:72%;left:40%;"></div>
+            <div class="map-pin" style="top:25%;left:65%;"></div>
+            <div class="map-pin" style="top:48%;left:75%;"></div>
+            <div class="map-pin" style="top:78%;left:70%;"></div>
+            <!-- Active pin -->
+            <div class="map-pin active" style="top:44%;left:20%;"></div>
+
+            <!-- Zoom control -->
+            <div class="app-zoom">
+              <button title="放大"><svg class="ic" width="16" height="16"><use href="#hi-plus"/></svg></button>
+              <button title="縮小"><svg class="ic" width="16" height="16"><use href="#hi-minus"/></svg></button>
+            </div>
+
+            <!-- Spot list toggle button -->
+            <button class="map-panel-btn" id="panelBtn" onclick="toggleSpotList()" title="景點清單">
+              <svg class="ic" width="18" height="18"><use href="#hi-list"/></svg>
+            </button>
+
+            <!-- Scale -->
+            <div class="app-scale">1 km ├───────┤</div>
+          </div>
+
+        </div><!-- /app-body -->
+      </div><!-- /app-main -->
+    </div><!-- /app-shell -->
+  </div><!-- /app-browser -->
+
 
   <!-- ============================================================ STEP 2 -->
   <div class="step-title">
@@ -551,20 +1022,50 @@
       <span class="label">Light</span>
     </div>
 
-    <div class="map-canvas">
-      <!-- Search: top-left -->
-      <div class="map-controls">
-        <div class="map-search">
-          <svg class="ic" width="16" height="16"><use href="#hi-search"/></svg>
-          搜尋景點、城市…
+    <div class="app-shell" style="height:640px;">
+      <aside class="app-sidebar">
+        <div class="sb-brand"><span class="sb-logo"></span></div>
+        <nav class="sb-nav">
+          <a class="active" title="攝影地圖"><span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-map-pin"/></svg></span></a>
+          <a title="動態牆"><span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-photo"/></svg></span></a>
+          <a title="上傳照片"><span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-upload"/></svg></span></a>
+          <a title="器材庫"><span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-wrench"/></svg></span></a>
+          <a title="統計"><span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-chart-bar"/></svg></span></a>
+          <a title="個人頁"><span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-user-circle"/></svg></span></a>
+        </nav>
+        <div class="sb-foot"><div class="sb-notif"><span class="sb-notif-dot"></span></div></div>
+      </aside>
+      <div class="app-main">
+        <div class="app-topbar">
+          <h2>探索攝影地圖</h2>
+          <div class="app-search"><svg class="ic" width="15" height="15"><use href="#hi-search"/></svg> 搜尋景點、城市、標籤…</div>
+          <div class="app-chips">
+            <span class="app-chip active">全部</span>
+            <span class="app-chip">雲海日出</span>
+            <span class="app-chip">百萬夜景</span>
+          </div>
+          <button class="app-add"><svg class="ic" width="14" height="14"><use href="#hi-plus"/></svg> 新增景點</button>
+          <div class="app-avatar"></div>
         </div>
-      </div>
-
-      <!-- Zoom: top-right (behind card, correct layering) -->
-      <div class="map-zoom">
-        <button title="放大"><svg class="ic" width="18" height="18"><use href="#hi-plus"/></svg></button>
-        <button title="縮小"><svg class="ic" width="18" height="18"><use href="#hi-minus"/></svg></button>
-      </div>
+        <div class="app-body">
+          <div class="spot-list" id="spotList1">
+            <div class="spot-list-inner">
+              <div class="spot-list-head"><span>全台 482 處 · 距離</span></div>
+              <div class="spot-items">
+                <div class="spot-item active"><div class="spot-thumb"></div><div class="spot-info"><div class="spot-name">象山六巨石</div><div class="spot-meta">夜景 · ★ 4.8</div><div class="spot-loc">台北信義 · 1.8 km</div></div></div>
+                <div class="spot-item"><div class="spot-thumb t2"></div><div class="spot-info"><div class="spot-name">阿里山祝山</div><div class="spot-meta">雲海日出 · ★ 4.9</div><div class="spot-loc">嘉義 · 2,489 m</div></div></div>
+                <div class="spot-item"><div class="spot-thumb t3"></div><div class="spot-info"><div class="spot-name">太魯閣燕子口</div><div class="spot-meta">峽谷 · ★ 4.7</div><div class="spot-loc">花蓮 · 1.4 km</div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="app-map">
+            <div class="app-zoom">
+              <button title="放大"><svg class="ic" width="16" height="16"><use href="#hi-plus"/></svg></button>
+              <button title="縮小"><svg class="ic" width="16" height="16"><use href="#hi-minus"/></svg></button>
+            </div>
+            <button class="map-panel-btn" id="panelBtn1" onclick="toggleSpotList1()" title="景點清單">
+              <svg class="ic" width="18" height="18"><use href="#hi-list"/></svg>
+            </button>
 
       <!-- Pins: left/centre of map (card on right) -->
       <div class="map-pin cluster" style="top:22%;left:28%;">8</div>
@@ -668,14 +1169,17 @@
           </div>
           <div class="arrow"><svg class="ic" width="14" height="14"><use href="#hi-chevron-up"/></svg></div>
         </div>
-      </div>
-    </div>
-  </div>
+      </div><!-- /info-card.desktop-card -->
+          </div><!-- /app-map -->
+        </div><!-- /app-body -->
+      </div><!-- /app-main -->
+    </div><!-- /app-shell -->
+  </div><!-- /stage -->
 
 
   <!-- ============================================================ STAGE 2: Expanded side panel · Light -->
   <div class="device-label" style="margin-top:24px;">
-    Expanded side panel
+    Expanded floating card
     <span class="mode-pill">Light</span>
   </div>
 
@@ -683,24 +1187,126 @@
     <div class="stage-bar">
       <div class="dots"><span></span><span></span><span></span></div>
       <div class="url">lenslog.app / map / spots / elephant-six-stones</div>
-      <span class="label">Light</span>
+      <span class="label">Light · Expanded</span>
     </div>
 
-    <div class="map-canvas">
-      <!-- Zoom: top-left (panel covers right) -->
-      <div class="map-zoom" style="right:auto;left:16px;">
-        <button title="放大"><svg class="ic" width="18" height="18"><use href="#hi-plus"/></svg></button>
-        <button title="縮小"><svg class="ic" width="18" height="18"><use href="#hi-minus"/></svg></button>
-      </div>
+    <!-- Full app layout (sidebar collapsed to save space) -->
+    <div class="app-shell" style="height:640px;">
 
-      <!-- Pins: left of map (panel on right) -->
-      <div class="map-pin cluster" style="top:22%;left:28%;">8</div>
-      <div class="map-pin" style="top:56%;left:22%;"></div>
-      <div class="map-pin" style="top:70%;left:38%;"></div>
-      <div class="map-pin active" style="top:44%;left:32%;"></div>
+      <!-- Sidebar -->
+      <aside class="app-sidebar">
+        <div class="sb-brand">
+          <span class="sb-logo"></span>
+        </div>
+        <nav class="sb-nav">
+          <a class="active" title="攝影地圖">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-map-pin"/></svg></span>
+          </a>
+          <a title="動態牆">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-photo"/></svg></span>
+          </a>
+          <a title="上傳照片">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-upload"/></svg></span>
+          </a>
+          <a title="器材庫">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-wrench"/></svg></span>
+          </a>
+          <a title="統計">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-chart-bar"/></svg></span>
+          </a>
+          <a title="個人頁">
+            <span class="sb-nav-ic"><svg class="ic" width="18" height="18"><use href="#hi-user-circle"/></svg></span>
+          </a>
+        </nav>
+        <div class="sb-foot">
+          <div class="sb-notif"><span class="sb-notif-dot"></span></div>
+        </div>
+      </aside>
 
-      <!-- Side panel: RIGHT -->
+      <!-- Main -->
+      <div class="app-main">
+        <div class="app-topbar">
+          <h2>象山六巨石</h2>
+          <div class="app-search">
+            <svg class="ic" width="15" height="15"><use href="#hi-search"/></svg>
+            搜尋景點、城市、標籤…
+          </div>
+          <div class="app-chips">
+            <span class="app-chip active">全部</span>
+            <span class="app-chip">夜景</span>
+            <span class="app-chip">百萬夜景</span>
+          </div>
+          <button class="app-add">
+            <svg class="ic" width="14" height="14"><use href="#hi-plus"/></svg>
+            新增景點
+          </button>
+          <div class="app-avatar"></div>
+        </div>
+
+        <div class="app-body">
+
+          <!-- Spot list (toggleable) -->
+          <div class="spot-list" id="spotList2">
+            <div class="spot-list-inner">
+              <div class="spot-list-head"><span>全台 482 處 · 距離</span></div>
+              <div class="spot-items">
+                <div class="spot-item active">
+                  <div class="spot-thumb"></div>
+                  <div class="spot-info">
+                    <div class="spot-name">象山六巨石</div>
+                    <div class="spot-meta">夜景 · ★ 4.8 · 簡易</div>
+                    <div class="spot-loc">台北信義 · 1.8 km</div>
+                  </div>
+                </div>
+                <div class="spot-item">
+                  <div class="spot-thumb t2"></div>
+                  <div class="spot-info">
+                    <div class="spot-name">阿里山祝山</div>
+                    <div class="spot-meta">雲海日出 · ★ 4.9</div>
+                    <div class="spot-loc">嘉義 · 2,489 m</div>
+                  </div>
+                </div>
+                <div class="spot-item">
+                  <div class="spot-thumb t3"></div>
+                  <div class="spot-info">
+                    <div class="spot-name">太魯閣燕子口</div>
+                    <div class="spot-meta">峽谷 · ★ 4.7</div>
+                    <div class="spot-loc">花蓮 · 1.4 km</div>
+                  </div>
+                </div>
+                <div class="spot-item">
+                  <div class="spot-thumb t4"></div>
+                  <div class="spot-info">
+                    <div class="spot-name">九份老街</div>
+                    <div class="spot-meta">老街 · ★ 4.4</div>
+                    <div class="spot-loc">新北瑞芳</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Map area -->
+          <div class="app-map">
+            <div class="map-pin cluster" style="top:22%;left:22%;">8</div>
+            <div class="map-pin" style="top:56%;left:18%;"></div>
+            <div class="map-pin" style="top:70%;left:32%;"></div>
+            <div class="map-pin active" style="top:44%;left:28%;"></div>
+
+            <!-- Zoom -->
+            <div class="app-zoom">
+              <button title="放大"><svg class="ic" width="16" height="16"><use href="#hi-plus"/></svg></button>
+              <button title="縮小"><svg class="ic" width="16" height="16"><use href="#hi-minus"/></svg></button>
+            </div>
+
+            <!-- Spot list toggle -->
+            <button class="map-panel-btn" id="panelBtn2" onclick="toggleSpotList2()" title="景點清單">
+              <svg class="ic" width="18" height="18"><use href="#hi-list"/></svg>
+            </button>
+
+            <!-- Side panel: RIGHT -->
       <div class="info-card side-panel">
+        <div class="sp-drag" title="拖曳調整寬度"></div>
         <div class="ic-hero">
           <div class="ic-overlay"></div>
           <div class="ic-actions">
@@ -833,9 +1439,12 @@
           <button class="btn icon" title="收藏"><svg class="ic" width="16" height="16"><use href="#hi-heart"/></svg></button>
           <button class="btn icon" title="分享"><svg class="ic" width="16" height="16"><use href="#hi-share"/></svg></button>
         </div>
-      </div>
-    </div>
-  </div>
+      </div><!-- /info-card.side-panel -->
+          </div><!-- /app-map -->
+        </div><!-- /app-body -->
+      </div><!-- /app-main -->
+    </div><!-- /app-shell -->
+  </div><!-- /stage -->
 
   <!---->
   <!-- <!-- ============================================================ STAGE 3: Floating card · Dark --> -->
@@ -976,12 +1585,11 @@
 
 
   <!-- ============================================================ WEATHER STATE SCALES -->
-  <div class="step-title" style="margin-top:72px;">
-    <h2>Weather</h2>
-  </div>
-            <p class="step-sub">每個氣象指標按強度分為五至六個等級。</p>
-
   <div class="wx-states">
+    <div class="step-title" style="margin: 0 0 4px;">
+      <h2>Weather</h2>
+    </div>
+    <p class="step-sub" style="margin-bottom: 28px;">每個氣象指標按強度分為五至六個等級。</p>
 
     <!-- ── 溫度 ── -->
     <div class="wx-state-group">
@@ -1187,5 +1795,22 @@
   </div><!-- /wx-states -->
 
 </div>
+<script>
+  function toggleSidebar() {
+    document.getElementById('appShell').classList.toggle('expanded');
+  }
+  function toggleSpotList() {
+    document.getElementById('spotList').classList.toggle('open');
+    document.getElementById('panelBtn').classList.toggle('active');
+  }
+  function toggleSpotList1() {
+    document.getElementById('spotList1').classList.toggle('open');
+    document.getElementById('panelBtn1').classList.toggle('active');
+  }
+  function toggleSpotList2() {
+    document.getElementById('spotList2').classList.toggle('open');
+    document.getElementById('panelBtn2').classList.toggle('active');
+  }
+</script>
 </body>
 </html>
