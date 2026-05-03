@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LensLog — Other Functions Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ========= TOKENS ========= */
+  :root {
+    --ink:         #1a2942;
+    --ink-soft:    #4a5773;
+    --ink-mute:    #7d88a0;
+    --line:        #dde3ee;
+    --line-soft:   #e9eef5;
+    --paper:       #eef2f8;
+    --paper-2:     #dfe6f0;
+    --card:        #ffffff;
+    --accent:      #1e5fb3;
+    --accent-soft: #e3edfa;
+    --accent-ink:  #143e77;
+    --gold:        #d97706;
+    --gold-soft:   #fef3e2;
+    --warn:        #b45309;
+    --warn-soft:   #fef6e7;
+    --ok:          #15803d;
+    --ok-soft:     #e8f5ec;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter','Noto Sans TC',-apple-system,sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    line-height: 1.5;
+  }
+
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 56px 40px 96px; }
+
+  /* ---- DOC HEADER ---- */
+  .doc-head { max-width: 760px; margin-bottom: 56px; }
+  .doc-head h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .doc-head .meta {
+    display: inline-flex; gap: 14px; align-items: center;
+    font-family: 'IBM Plex Mono',monospace;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-mute); margin-bottom: 16px;
+  }
+  .doc-head .meta .pill {
+    background: var(--accent-soft); color: var(--accent-ink);
+    padding: 3px 8px; border-radius: 3px; border: 1px solid #c8dcef;
+  }
+  .doc-head p { margin: 0; color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; }
+
+  /* ---- SECTION ---- */
+  .section { margin-bottom: 80px; }
+  .step-title { margin: 0 0 6px; display: flex; align-items: baseline; gap: 14px; }
+  .step-title .step-num {
+    font-family: 'IBM Plex Mono',monospace;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 4px 10px; border-radius: 12px; border: 1px solid #c8dcef;
+  }
+  .step-title h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+  .step-sub { color: var(--ink-soft); margin: 0 0 28px; font-size: 14px; line-height: 1.55; max-width: 720px; }
+
+  /* ---- PHONE FRAME ---- */
+  .phone-pair {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .phone-cell { display: flex; flex-direction: column; align-items: center; }
+  .phone {
+    width: 100%; max-width: 360px;
+    aspect-ratio: 9 / 19.5;
+    background: #0a1424;
+    border-radius: 38px;
+    border: 1px solid var(--line);
+    box-shadow:
+      0 1px 2px rgba(15,30,56,0.06),
+      0 24px 48px -8px rgba(15,30,56,0.22),
+      inset 0 0 0 2px rgba(255,255,255,0.04);
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-screen {
+    position: absolute; inset: 9px;
+    border-radius: 30px; overflow: hidden;
+    background: var(--paper);
+  }
+
+  /* iOS dynamic island + status bar */
+  .island {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 96px; height: 26px;
+    background: #000; border-radius: 14px; z-index: 50;
+  }
+  .statusbar {
+    position: absolute; top: 14px; left: 0; right: 0;
+    height: 18px; z-index: 40;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 30px 0 28px; font-size: 12px; font-weight: 600; color: var(--ink);
+  }
+  .statusbar .right { display: flex; align-items: center; gap: 4px; font-size: 10.5px; }
+  .statusbar .signal { display: inline-flex; align-items: end; gap: 1.5px; height: 9px; }
+  .statusbar .signal i { display: inline-block; width: 2.5px; background: currentColor; border-radius: 0.5px; }
+  .statusbar .signal i:nth-child(1) { height: 3px; }
+  .statusbar .signal i:nth-child(2) { height: 5px; }
+  .statusbar .signal i:nth-child(3) { height: 7px; }
+  .statusbar .signal i:nth-child(4) { height: 9px; }
+  .statusbar .battery {
+    width: 22px; height: 11px; border: 1px solid currentColor;
+    border-radius: 3px; position: relative; padding: 1px; margin-left: 2px;
+  }
+  .statusbar .battery::before {
+    content: ''; position: absolute; right: -2.5px; top: 3px;
+    width: 1.5px; height: 4px; background: currentColor; border-radius: 0 1px 1px 0;
+  }
+  .statusbar .battery::after {
+    content: ''; display: block; width: 80%; height: 100%;
+    background: currentColor; border-radius: 1px;
+  }
+
+  /* Phone caption */
+  .phone-caption {
+    margin-top: 16px; text-align: center;
+    font-family: 'IBM Plex Mono',monospace; font-size: 11px;
+    letter-spacing: 0.04em; color: var(--ink-mute);
+  }
+  .phone-caption b {
+    color: var(--ink); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; display: block; margin-bottom: 4px;
+  }
+  .phone-caption .desc {
+    text-transform: none; letter-spacing: 0; line-height: 1.5;
+    color: var(--ink-soft); font-family: 'Inter','Noto Sans TC',sans-serif;
+    font-size: 12px; max-width: 280px; margin: 0 auto;
+  }
+
+  /* ---- TAB BAR ---- */
+  .tab-bar {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 78px; background: var(--card);
+    border-top: 1px solid var(--line);
+    display: flex; align-items: flex-start;
+    padding: 8px 0 24px; z-index: 35;
+  }
+  .tab-bar .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    color: var(--ink-mute); font-size: 10px; cursor: pointer;
+  }
+  .tab-bar .tab svg { width: 22px; height: 22px; }
+  .tab-bar .tab.active { color: var(--accent); }
+  .home-indicator {
+    position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+    width: 110px; height: 4px; background: var(--ink);
+    border-radius: 2px; z-index: 100; opacity: 0.9;
+  }
+
+  /* ---- PHOTO PLACEHOLDER ---- */
+  .photo-ph {
+    background: linear-gradient(160deg, #6b82a8 0%, #4c6590 28%, #334a75 52%, #22355b 78%, #1a2942 100%);
+    position: relative; overflow: hidden;
+  }
+  .photo-ph::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 110%, rgba(255,200,130,0.25), transparent 60%),
+      radial-gradient(ellipse 60% 30% at 20% 30%, rgba(200,220,200,0.15), transparent 60%);
+  }
+  .photo-ph.v2 { background: linear-gradient(160deg, #8fb4cc 0%, #334a75 100%); }
+  .photo-ph.v3 { background: linear-gradient(160deg, #d9927d 0%, #4a4670 100%); }
+  .photo-ph.v4 { background: linear-gradient(160deg, #9aadbe 0%, #3d5c75 100%); }
+  .photo-ph.v5 { background: linear-gradient(160deg, #a4c496 0%, #2d5c2d 100%); }
+
+  /* ---- INNER NAV CHIPS ---- */
+  .inner-nav {
+    position: absolute; left: 0; right: 0;
+    top: 46px;
+    display: flex; align-items: center; gap: 0;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    z-index: 20;
+  }
+  .inner-tab {
+    flex: 1; text-align: center; padding: 9px 4px 7px;
+    font-size: 11px; font-weight: 500; color: var(--ink-mute);
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .inner-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ---- PAGE HEADER (absolute inside screen) ---- */
+  .page-hd {
+    position: absolute; left: 0; right: 0; top: 46px;
+    background: var(--card);
+    border-bottom: 1px solid var(--line-soft);
+    padding: 10px 14px 8px; z-index: 20;
+  }
+  .page-hd h2 { margin: 0 0 1px; font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
+  .page-hd .sub { font-size: 10.5px; color: var(--ink-soft); }
+
+  /* ---- CHIPS ---- */
+  .chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 8px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--card);
+    font-size: 10px; color: var(--ink-soft); white-space: nowrap;
+  }
+  .chip.on { background: var(--ink); border-color: var(--ink); color: #fff; font-weight: 500; }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: #f5e1b8; }
+
+  /* ---- MOBILE BUTTON ---- */
+  .btn-mob {
+    height: 32px; padding: 0 12px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: var(--card); color: var(--ink);
+    font-family: inherit; font-size: 11.5px; font-weight: 500;
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    cursor: pointer;
+  }
+  .btn-mob.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-mob.sm { height: 26px; font-size: 10.5px; padding: 0 9px; }
+
+  /* ================================================
+     FEED SCREEN
+     ================================================ */
+  .feed-post {
+    background: var(--card);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .feed-post-hd {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px 7px;
+  }
+  .feed-av {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid var(--line); flex-shrink: 0;
+  }
+  .feed-name { font-size: 12px; font-weight: 600; line-height: 1.2; }
+  .feed-loc { font-size: 10px; color: var(--ink-mute); margin-top: 1px; }
+  .feed-exif {
+    display: flex; gap: 4px; padding: 7px 12px 0; flex-wrap: wrap;
+  }
+  .feed-text { padding: 5px 12px; font-size: 11px; line-height: 1.45; color: var(--ink); }
+  .feed-actions {
+    display: flex; gap: 14px; padding: 5px 12px 9px;
+    font-size: 11px; color: var(--ink-mute); align-items: center;
+  }
+  .feed-actions .ic-row { display: flex; align-items: center; gap: 3px; }
+  .feed-actions .liked { color: var(--accent); font-weight: 600; }
+
+  /* ================================================
+     UPLOAD SCREEN
+     ================================================ */
+  .upload-stepper {
+    position: absolute; left: 0; right: 0; top: 46px;
+    background: var(--card); border-bottom: 1px solid var(--line-soft);
+    padding: 9px 14px 7px; z-index: 20;
+    display: flex; align-items: center; gap: 0;
+  }
+  .u-step {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 10px; color: var(--ink-mute);
+  }
+  .u-step .d {
+    width: 16px; height: 16px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 8.5px; font-weight: 600; flex-shrink: 0;
+    border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-mute);
+  }
+  .u-step .d.done { background: var(--ok-soft); border-color: #86efac; color: var(--ok); }
+  .u-step .d.now  { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .u-line { flex: 1; height: 1px; background: var(--line); margin: 0 6px; }
+
+  .upload-body {
+    position: absolute; left: 0; right: 0;
+    top: 92px; bottom: 126px; /* stepper 46px, stepper-height 46px = 92; footer+tabbar */
+    overflow-y: auto;
+  }
+  .exif-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    background: var(--line); border-radius: 0;
+  }
+  .exif-cell {
+    background: var(--card); padding: 7px 10px;
+    border-right: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .exif-cell:nth-child(3n) { border-right: 0; }
+  .exif-k { font-family: 'IBM Plex Mono',monospace; font-size: 8px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-mute); margin-bottom: 2px; }
+  .exif-v { font-size: 11.5px; font-weight: 600; }
+  .loc-match {
+    margin: 8px 10px;
+    background: var(--accent-soft); border: 1px solid #c8dcef;
+    border-radius: 8px; padding: 8px 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .loc-ph { width: 36px; height: 36px; border-radius: 6px; flex-shrink: 0; }
+  .loc-info { flex: 1; min-width: 0; }
+  .loc-name { font-size: 12px; font-weight: 600; color: var(--accent-ink); }
+  .loc-sub { font-size: 9.5px; color: var(--accent-ink); opacity: 0.75; }
+  .cap-box {
+    margin: 0 10px 8px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 10px;
+  }
+  .cap-k { font-family: 'IBM Plex Mono',monospace; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-mute); margin-bottom: 4px; }
+  .cap-text { font-size: 11px; color: var(--ink); line-height: 1.45; }
+  .tag-row { padding: 0 10px 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+  .upload-footer {
+    position: absolute; bottom: 78px; left: 0; right: 0;
+    padding: 8px 12px; background: var(--card);
+    border-top: 1px solid var(--line-soft);
+    display: flex; gap: 6px; z-index: 10;
+  }
+
+  /* ================================================
+     GEAR SCREEN
+     ================================================ */
+  .gear-chips {
+    position: absolute; left: 0; right: 0; top: 90px;
+    background: var(--card); border-bottom: 1px solid var(--line-soft);
+    padding: 7px 10px; z-index: 20;
+    display: flex; gap: 5px; overflow: hidden;
+  }
+  .gear-body {
+    position: absolute; left: 0; right: 0;
+    top: 128px; bottom: 78px;
+    overflow-y: auto; background: var(--paper);
+  }
+  .gear-item {
+    display: flex; gap: 10px; padding: 10px 12px;
+    background: var(--card); border-bottom: 1px solid var(--line-soft);
+    align-items: center;
+  }
+  .gear-thumb { width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0; }
+  .gear-info { flex: 1; min-width: 0; }
+  .gear-name { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+  .gear-sub { font-size: 10px; color: var(--ink-soft); margin-top: 1px; }
+  .gear-bar {
+    height: 4px; background: var(--paper-2); border-radius: 2px;
+    overflow: hidden; margin-top: 5px;
+    border: 1px solid rgba(26,41,66,0.1);
+  }
+  .gear-fill { height: 100%; border-radius: 2px; }
+  .gear-add {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 14px; background: var(--card);
+    border-top: 1px dashed var(--line); color: var(--ink-mute);
+    font-size: 12px;
+  }
+
+  /* ================================================
+     PROFILE SCREEN
+     ================================================ */
+  .prof-banner {
+    position: absolute; left: 0; right: 0; top: 46px;
+    height: 76px; z-index: 10;
+    background:
+      radial-gradient(ellipse 200px 120px at 20% 30%, #e3edfa 35%, transparent 72%),
+      radial-gradient(ellipse 250px 140px at 80% 70%, #d6dde8 30%, transparent 72%),
+      #e0e6f0;
+  }
+  .prof-avrow {
+    position: absolute; left: 0; right: 0; top: 108px; /* banner 46+76 - 14 overlap */
+    background: var(--card);
+    padding: 0 14px 10px; z-index: 15;
+  }
+  .prof-av {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #d9e1ec; border: 3px solid var(--card);
+    box-shadow: 0 2px 8px rgba(16,24,40,0.1); margin-top: -26px;
+  }
+  .prof-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; margin: 3px 0 1px; }
+  .prof-handle { font-size: 10px; color: var(--ink-mute); font-family: 'IBM Plex Mono',monospace; }
+  .prof-bio { font-size: 10.5px; color: var(--ink-soft); margin-top: 3px; line-height: 1.4; }
+  .prof-stats {
+    position: absolute; left: 0; right: 0; top: 205px;
+    background: var(--card); z-index: 14;
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    display: flex;
+  }
+  .prof-stat {
+    flex: 1; text-align: center; padding: 7px 4px;
+    border-right: 1px solid var(--line-soft);
+  }
+  .prof-stat:last-child { border-right: 0; }
+  .prof-stat .n { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+  .prof-stat .l { font-size: 8.5px; color: var(--ink-mute); font-family: 'IBM Plex Mono',monospace; text-transform: uppercase; letter-spacing: 0.06em; }
+  .prof-tabs {
+    position: absolute; left: 0; right: 0; top: 253px;
+    background: var(--card); z-index: 14;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+  }
+  .prof-tab {
+    flex: 1; text-align: center; padding: 8px 4px;
+    font-size: 11px; color: var(--ink-mute);
+    border-bottom: 2px solid transparent;
+  }
+  .prof-tab.active { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+  .prof-grid {
+    position: absolute; left: 0; right: 0; top: 287px; bottom: 78px;
+    overflow-y: auto; background: var(--paper);
+  }
+  .photo-grid {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5px;
+    background: var(--line-soft);
+  }
+  .photo-grid .pg { aspect-ratio: 1; position: relative; overflow: hidden; }
+
+  /* edit profile button */
+  .edit-btn {
+    position: absolute; right: 14px; top: 6px;
+    height: 26px; padding: 0 10px;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: var(--card); color: var(--ink);
+    font-size: 10.5px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+</style>
+</head>
+
+<!-- ===== SVG SYMBOLS ===== -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="aperture" viewBox="0 0 24 24" fill="currentColor">
+    <path fill-rule="evenodd" d="M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zm0 1.8a7.7 7.7 0 016.33 3.32l-4.82 2.78-1.51-5.64a7.72 7.72 0 010-.46zm-1.96.21l1.51 5.64-5.64-1.51a7.72 7.72 0 014.13-4.13zm-4.79 5.56l5.64 1.51-4.13 4.13A7.7 7.7 0 014.3 12a7.7 7.7 0 01.95-3.93zm12.54.22A7.7 7.7 0 0119.7 12a7.7 7.7 0 01-.95 3.93l-4.13-4.13 4.17-1.12zM12 10.2a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zm-4.13 3.93l4.13-1.11 1.51 5.64a7.72 7.72 0 01-5.64-4.53zm8.26 0a7.72 7.72 0 01-4.13 4.13l1.51-5.64 2.62 1.51z"/>
+  </symbol>
+  <symbol id="hi-map-pin" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M15 10.5C15 12.1569 13.6569 13.5 12 13.5C10.3431 13.5 9 12.1569 9 10.5C9 8.84315 10.3431 7.5 12 7.5C13.6569 7.5 15 8.84315 15 10.5Z"/>
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5C19.5 17.6421 12 21.75 12 21.75C12 21.75 4.5 17.6421 4.5 10.5C4.5 6.35786 7.85786 3 12 3C16.1421 3 19.5 6.35786 19.5 10.5Z"/>
+  </symbol>
+  <symbol id="hi-photo" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+  </symbol>
+  <symbol id="hi-upload" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+  </symbol>
+  <symbol id="hi-wrench" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75a4.5 4.5 0 01-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 11-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 016.336-4.486l-3.276 3.276a3.004 3.004 0 002.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852z"/>
+  </symbol>
+  <symbol id="hi-user-circle" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/>
+  </symbol>
+  <symbol id="hi-heart" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21 8.25C21 5.76472 18.9013 3.75 16.3125 3.75C14.3769 3.75 12.7153 4.87628 12 6.48342C11.2847 4.87628 9.62312 3.75 7.6875 3.75C5.09867 3.75 3 5.76472 3 8.25C3 15.4706 12 20.25 12 20.25C12 20.25 21 15.4706 21 8.25Z"/>
+  </symbol>
+  <symbol id="hi-share" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25C4.00736 6 3 7.00736 3 8.25V18.75C3 19.9926 4.00736 21 5.25 21H15.75C16.9926 21 18 19.9926 18 18.75V10.5M7.5 16.5L21 3M21 3L15.75 3M21 3V8.25"/>
+  </symbol>
+  <symbol id="hi-plus" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 4.5V19.5M19.5 12L4.5 12"/>
+  </symbol>
+  <symbol id="hi-chat" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/>
+  </symbol>
+  <symbol id="hi-bookmark" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M17.5933 3.32241C18.6939 3.45014 19.5 4.399 19.5 5.50699V21L12 17.25L4.5 21V5.50699C4.5 4.399 5.30608 3.45014 6.40668 3.32241C8.24156 3.10947 10.108 3 12 3C13.892 3 15.7584 3.10947 17.5933 3.32241Z"/>
+  </symbol>
+</svg>
+
+<body>
+<div class="wrap">
+
+  <!-- DOC HEADER -->
+  <div class="doc-head">
+    <div class="meta">
+      <span class="pill">MOBILE · OTHER FUNCTIONS</span>
+  </div>
+
+
+  <!-- =====================================================
+       PAGE 1 · 動態 & 上傳
+       ===================================================== -->
+  <div class="section">
+    <div class="step-title">
+      <span class="step-num">動態牆、上傳</span> 
+    </div>
+
+    <div class="phone-pair">
+
+      <!-- ===== FEED SCREEN ===== -->
+      <div class="phone-cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"><i></i><i></i><i></i><i></i></span>
+              <span style="margin-left:4px;">5G</span>
+              <span class="battery"></span>
+            </span>
+          </div>
+          <div class="phone-screen">
+
+            <!-- inner nav -->
+            <div class="inner-nav" style="top:46px;">
+              <div class="inner-tab active">關注中</div>
+              <div class="inner-tab">附近</div>
+              <div class="inner-tab">探索</div>
+              <div class="inner-tab" style="color:var(--gold); font-weight:600;">精選</div>
+            </div>
+
+            <!-- feed scroll (absolute, below inner-nav 30px) -->
+            <div style="position:absolute; left:0; right:0; top:80px; bottom:78px; overflow-y:auto; background:var(--paper);">
+
+              <!-- Post 1 -->
+              <div class="feed-post">
+                <div class="feed-post-hd">
+                  <div class="feed-av" style="background:#d9e1ec;"></div>
+                  <div style="flex:1; min-width:0;">
+                    <div class="feed-name">林小哲 <span style="font-weight:400; color:var(--ink-mute);">@hertzlin</span></div>
+                    <div class="feed-loc">📍 象山六巨石 · 2 小時前</div>
+                  </div>
+                </div>
+                <div class="photo-ph" style="height:200px;"></div>
+                <div class="feed-exif">
+                  <span class="chip">FE 35mm f/1.4</span>
+                  <span class="chip" style="background:var(--paper-2); color:var(--ink);">f/2.8</span>
+                  <span class="chip">1/60s</span>
+                  <span class="chip">ISO 800</span>
+                </div>
+                <div class="feed-text">從六巨石走到觀景台大約 40 分鐘，正好趕上雲層散開的黃金時刻 🏔️</div>
+                <div class="feed-actions">
+                  <span class="ic-row">
+                    <svg width="14" height="14"><use href="#hi-heart"/></svg>
+                    <b class="liked">142</b>
+                  </span>
+                  <span class="ic-row">
+                    <svg width="14" height="14"><use href="#hi-chat"/></svg>
+                    18
+                  </span>
+                  <span class="ic-row">
+                    <svg width="14" height="14"><use href="#hi-share"/></svg>
+                    分享
+                  </span>
+                  <span style="margin-left:auto;" class="ic-row">
+                    <svg width="14" height="14"><use href="#hi-bookmark"/></svg>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Post 2 -->
+              <div class="feed-post">
+                <div class="feed-post-hd">
+                  <div class="feed-av" style="background:#f0e4e4;"></div>
+                  <div style="flex:1; min-width:0;">
+                    <div class="feed-name">Yuki <span style="font-weight:400; color:var(--ink-mute);">@yuki_alishan</span></div>
+                    <div class="feed-loc">📍 阿里山祝山 · 昨天</div>
+                  </div>
+                  <span class="chip" style="background:var(--paper-2); color:var(--ink-soft);">✓ 已追蹤</span>
+                </div>
+                <!-- multi-photo grid -->
+                <div style="display:grid; grid-template-columns:2fr 1fr; gap:2px; height:160px;">
+                  <div class="photo-ph v2" style="height:100%;"></div>
+                  <div style="display:grid; grid-template-rows:1fr 1fr; gap:2px;">
+                    <div class="photo-ph v3"></div>
+                    <div class="photo-ph v4" style="position:relative;">
+                      <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:#fff; background:rgba(0,0,0,0.32);">+3</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="feed-exif">
+                  <span class="chip">FE 24-70</span>
+                  <span class="chip" style="background:var(--paper-2); color:var(--ink);">f/8</span>
+                  <span class="chip">1/250s</span>
+                  <span class="chip">ISO 200</span>
+                </div>
+                <div class="feed-text">3 點半起床搭小火車上山，雲海剛好在日出前鋪開 🌄</div>
+                <div class="feed-actions">
+                  <span class="ic-row"><svg width="14" height="14"><use href="#hi-heart"/></svg><b class="liked">328</b></span>
+                  <span class="ic-row"><svg width="14" height="14"><use href="#hi-chat"/></svg>42</span>
+                  <span class="ic-row"><svg width="14" height="14"><use href="#hi-share"/></svg>分享</span>
+                </div>
+              </div>
+
+            </div><!-- /feed scroll -->
+
+            <!-- tab bar -->
+            <div class="tab-bar">
+              <a class="tab"><svg><use href="#hi-map-pin"/></svg>地圖</a>
+              <a class="tab active"><svg><use href="#hi-photo"/></svg>動態</a>
+              <a class="tab"><svg><use href="#hi-upload"/></svg>上傳</a>
+              <a class="tab"><svg><use href="#hi-wrench"/></svg>器材</a>
+              <a class="tab"><svg><use href="#hi-user-circle"/></svg>我</a>
+            </div>
+            <div class="home-indicator"></div>
+
+          </div><!-- /phone-screen -->
+        </div><!-- /phone -->
+      </div><!-- /phone-cell FEED -->
+
+
+      <!-- ===== UPLOAD SCREEN ===== -->
+      <div class="phone-cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"><i></i><i></i><i></i><i></i></span>
+              <span style="margin-left:4px;">5G</span>
+              <span class="battery"></span>
+            </span>
+          </div>
+          <div class="phone-screen">
+
+            <!-- page header -->
+            <div class="page-hd">
+              <h2>上傳照片</h2>
+              <div class="sub">3 張已選 · 步驟 2/3</div>
+            </div>
+
+            <!-- stepper -->
+            <div class="upload-stepper">
+              <div class="u-step">
+                <span class="d done">✓</span>
+                <span style="font-size:10px;">選擇</span>
+              </div>
+              <div class="u-line"></div>
+              <div class="u-step">
+                <span class="d now">2</span>
+                <span style="font-size:10px; color:var(--ink); font-weight:600;">檢閱</span>
+              </div>
+              <div class="u-line"></div>
+              <div class="u-step">
+                <span class="d">3</span>
+                <span style="font-size:10px;">發布</span>
+              </div>
+            </div>
+
+            <!-- scroll body -->
+            <div class="upload-body">
+
+              <!-- preview photo -->
+              <div class="photo-ph" style="height:168px; flex-shrink:0;">
+                <span style="position:absolute; inset:0; display:flex; align-items:flex-end; padding:8px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; background:rgba(255,255,255,0.9); color:var(--ink-mute); padding:2px 6px; border-radius:3px;">IMG_4821.ARW · 6000×4000</span>
+                </span>
+              </div>
+
+              <!-- file strip -->
+              <div style="display:flex; gap:5px; padding:8px 10px; background:var(--card); border-bottom:1px solid var(--line-soft);">
+                <div style="border:1.5px solid var(--accent); border-radius:5px; overflow:hidden; width:40px; height:40px; flex-shrink:0;">
+                  <div class="photo-ph" style="height:100%;"></div>
+                </div>
+                <div style="border:1px solid var(--line); border-radius:5px; overflow:hidden; width:40px; height:40px; flex-shrink:0;">
+                  <div class="photo-ph v2" style="height:100%;"></div>
+                </div>
+                <div style="border:1px solid var(--line); border-radius:5px; overflow:hidden; width:40px; height:40px; flex-shrink:0;">
+                  <div class="photo-ph v3" style="height:100%;"></div>
+                </div>
+                <div style="border:1px dashed var(--line); border-radius:5px; width:40px; height:40px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--ink-mute);">
+                  <svg width="16" height="16"><use href="#hi-plus"/></svg>
+                </div>
+              </div>
+
+              <!-- EXIF grid -->
+              <div style="margin:8px 10px 0; border:1px solid var(--line); border-radius:8px; overflow:hidden;">
+                <div style="padding:6px 10px 4px; background:var(--card); border-bottom:1px solid var(--line-soft); display:flex; align-items:center; justify-content:space-between;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:8.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-mute);">EXIF · 自動讀取</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--ok);">● 已偵測</span>
+                </div>
+                <div class="exif-grid">
+                  <div class="exif-cell"><div class="exif-k">機身</div><div class="exif-v">Sony A7 IV</div></div>
+                  <div class="exif-cell"><div class="exif-k">鏡頭</div><div class="exif-v">FE 35mm</div></div>
+                  <div class="exif-cell"><div class="exif-k">光圈</div><div class="exif-v">f/2.8</div></div>
+                  <div class="exif-cell"><div class="exif-k">快門</div><div class="exif-v">1/60s</div></div>
+                  <div class="exif-cell"><div class="exif-k">ISO</div><div class="exif-v">800</div></div>
+                  <div class="exif-cell"><div class="exif-k">焦距</div><div class="exif-v">35 mm</div></div>
+                </div>
+              </div>
+
+              <!-- location match -->
+              <div class="loc-match">
+                <div class="loc-ph photo-ph"></div>
+                <div class="loc-info">
+                  <div style="font-family:'IBM Plex Mono',monospace; font-size:8px; text-transform:uppercase; letter-spacing:0.04em; color:var(--accent-ink); margin-bottom:3px;">景點 · 自動配對 · 98%</div>
+                  <div class="loc-name">象山六巨石</div>
+                  <div class="loc-sub">台北信義 · 距離 12 m</div>
+                </div>
+              </div>
+
+              <!-- caption -->
+              <div class="cap-box">
+                <div class="cap-k">說明</div>
+                <div class="cap-text">從六巨石走到觀景台大約 40 分鐘，正好趕上雲層散開的黃金時刻 🏔️</div>
+              </div>
+
+              <!-- tags -->
+              <div class="tag-row">
+                <span class="chip">#夜景</span>
+                <span class="chip">#台北</span>
+                <span class="chip">#黃金時刻</span>
+                <span class="chip" style="border-style:dashed; color:var(--ink-mute);">＋ 標籤</span>
+              </div>
+
+              <!-- visibility -->
+              <div style="margin:0 10px 10px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px 10px; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:11px; font-weight:500;">🌐 公開</span>
+                <span style="font-size:10px; color:var(--ink-mute);">所有人可見</span>
+                <span style="font-size:10px; color:var(--accent); font-weight:500;">變更</span>
+              </div>
+
+            </div><!-- /upload-body -->
+
+            <!-- footer -->
+            <div class="upload-footer">
+              <button class="btn-mob" style="flex:1;">存草稿</button>
+              <button class="btn-mob primary" style="flex:2;">發布 3 張</button>
+            </div>
+
+            <!-- tab bar -->
+            <div class="tab-bar">
+              <a class="tab"><svg><use href="#hi-map-pin"/></svg>地圖</a>
+              <a class="tab"><svg><use href="#hi-photo"/></svg>動態</a>
+              <a class="tab active"><svg><use href="#hi-upload"/></svg>上傳</a>
+              <a class="tab"><svg><use href="#hi-wrench"/></svg>器材</a>
+              <a class="tab"><svg><use href="#hi-user-circle"/></svg>我</a>
+            </div>
+            <div class="home-indicator"></div>
+
+          </div><!-- /phone-screen -->
+        </div><!-- /phone -->
+      </div><!-- /phone-cell UPLOAD -->
+    </div><!-- /phone-pair -->
+  </div><!-- /section 1 -->
+
+
+  <!-- =====================================================
+       PAGE 2 · 器材 & 我
+       ===================================================== -->
+  <div class="section">
+    <div class="step-title">
+      <span class="step-num">器材庫、個人頁</span> 
+      <span class="stage-tag"><b>新增器材先沿用電腦版的新增介面</b></span>
+    </div>
+    <div class="phone-pair">
+      <!-- ===== GEAR SCREEN ===== -->
+      <div class="phone-cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"><i></i><i></i><i></i><i></i></span>
+              <span style="margin-left:4px;">5G</span>
+              <span class="battery"></span>
+            </span>
+          </div>
+          <div class="phone-screen">
+
+            <!-- page header -->
+            <div class="page-hd">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <h2>器材庫</h2>
+                <button class="btn-mob sm primary">＋ 新增</button>
+              </div>
+            </div>
+
+            <!-- filter chips -->
+            <div class="gear-chips">
+              <span class="chip on">全部 8</span>
+              <span class="chip">機身 2</span>
+              <span class="chip">鏡頭 4</span>
+              <span class="chip">閃燈 1</span>
+              <span class="chip warn">待保養 2</span>
+            </div>
+
+            <!-- gear list -->
+            <div class="gear-body">
+
+              <!-- item 1: Sony A7 IV -->
+              <div class="gear-item">
+                <div class="gear-thumb photo-ph v2"></div>
+                <div class="gear-info">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                    <div class="gear-name">Sony A7 IV</div>
+                    <span class="chip on" style="font-size:9px; padding:1px 6px;">機身</span>
+                  </div>
+                  <div class="gear-sub">快門 12,034 · 購入 2023/05</div>
+                  <div class="gear-bar">
+                    <div class="gear-fill" style="width:2.4%; background:var(--accent);"></div>
+                  </div>
+                  <div style="font-family:'IBM Plex Mono',monospace; font-size:8.5px; color:var(--ink-mute); margin-top:2px;">壽命剩 97.6% · 500k 快門</div>
+                </div>
+              </div>
+
+              <!-- item 2: FE 35mm (最常用) -->
+              <div class="gear-item">
+                <div class="gear-thumb photo-ph" style="background:linear-gradient(135deg,#c8d8e8,#8fa8c0);"></div>
+                <div class="gear-info">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                    <div class="gear-name">FE 35mm f/1.4</div>
+                    <span class="chip" style="font-size:9px; padding:1px 6px; background:var(--paper-2); color:var(--ink);">最常用</span>
+                  </div>
+                  <div class="gear-sub">Sony GM · 48 張關聯照片</div>
+                  <div style="font-size:10px; color:var(--ink-mute); margin-top:3px;">412 位用戶也有</div>
+                </div>
+              </div>
+
+              <!-- item 3: FE 70-200 (待保養) -->
+              <div class="gear-item" style="background:var(--warn-soft);">
+                <div class="gear-thumb photo-ph v3"></div>
+                <div class="gear-info">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                    <div class="gear-name">FE 70-200 GM</div>
+                    <span class="chip warn" style="font-size:9px; padding:1px 6px;">⚠ 待保養</span>
+                  </div>
+                  <div class="gear-sub" style="color:var(--warn);">逾期 6 天 — 建議清潔鏡片</div>
+                  <div class="gear-bar" style="background:rgba(255,255,255,0.5);">
+                    <div class="gear-fill" style="width:100%; background:var(--warn);"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- item 4: Godox V1 -->
+              <div class="gear-item">
+                <div class="gear-thumb photo-ph v5"></div>
+                <div class="gear-info">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                    <div class="gear-name">Godox V1</div>
+                    <span class="chip" style="font-size:9px; padding:1px 6px;">閃燈</span>
+                  </div>
+                  <div class="gear-sub">34 天未使用</div>
+                </div>
+              </div>
+
+              <!-- item 5: Peak Design -->
+              <div class="gear-item">
+                <div class="gear-thumb" style="background:linear-gradient(135deg,#b0b8c8,#6a7888); border-radius:8px;"></div>
+                <div class="gear-info">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                    <div class="gear-name">Peak Design</div>
+                    <span class="chip" style="font-size:9px; padding:1px 6px;">腳架</span>
+                  </div>
+                  <div class="gear-sub">Travel Tripod</div>
+                </div>
+              </div>
+
+              <!-- add item -->
+              <div class="gear-add">
+                <svg width="16" height="16"><use href="#hi-plus"/></svg>
+                <span>新增一件器材</span>
+              </div>
+
+            </div><!-- /gear-body -->
+
+            <!-- tab bar -->
+            <div class="tab-bar">
+              <a class="tab"><svg><use href="#hi-map-pin"/></svg>地圖</a>
+              <a class="tab"><svg><use href="#hi-photo"/></svg>動態</a>
+              <a class="tab"><svg><use href="#hi-upload"/></svg>上傳</a>
+              <a class="tab active"><svg><use href="#hi-wrench"/></svg>器材</a>
+              <a class="tab"><svg><use href="#hi-user-circle"/></svg>我</a>
+            </div>
+            <div class="home-indicator"></div>
+
+          </div><!-- /phone-screen -->
+        </div><!-- /phone -->
+      </div><!-- /phone-cell GEAR -->
+
+
+      <!-- ===== PROFILE SCREEN ===== -->
+      <div class="phone-cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"><i></i><i></i><i></i><i></i></span>
+              <span style="margin-left:4px;">5G</span>
+              <span class="battery"></span>
+            </span>
+          </div>
+          <div class="phone-screen">
+
+            <!-- banner -->
+            <div class="prof-banner"></div>
+
+            <!-- avatar + name row -->
+            <div class="prof-avrow">
+              <div class="prof-av"></div>
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-top:4px;">
+                <div>
+                  <div class="prof-name">林小哲
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; padding:1px 5px; background:var(--paper-2); border-radius:3px; vertical-align:middle;">PRO</span>
+                  </div>
+                  <div class="prof-handle">@hertzlin · 📍 台北</div>
+                  <div class="prof-bio">高山 / 雲海 / 海岸 · 相信最好的光線都在日出前 15 分鐘。</div>
+                </div>
+                <button class="edit-btn">編輯</button>
+              </div>
+            </div>
+
+            <!-- stats strip -->
+            <div class="prof-stats">
+              <div class="prof-stat">
+                <div class="n">284</div>
+                <div class="l">作品</div>
+              </div>
+              <div class="prof-stat">
+                <div class="n">47</div>
+                <div class="l">路線</div>
+              </div>
+              <div class="prof-stat">
+                <div class="n">8</div>
+                <div class="l">器材</div>
+              </div>
+              <div class="prof-stat">
+                <div class="n">1.2k</div>
+                <div class="l">追蹤者</div>
+              </div>
+              <div class="prof-stat">
+                <div class="n">312</div>
+                <div class="l">追蹤中</div>
+              </div>
+            </div>
+
+            <!-- profile tabs -->
+            <div class="prof-tabs">
+              <div class="prof-tab active">照片 <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--ink-mute); font-weight:400;">284</span></div>
+              <div class="prof-tab">景點 <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--ink-mute);">47</span></div>
+              <div class="prof-tab">器材 <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--ink-mute);">8</span></div>
+              <div class="prof-tab">收藏 <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--ink-mute);">126</span></div>
+            </div>
+
+            <!-- photo grid -->
+            <div class="prof-grid">
+              <div class="photo-grid">
+                <!-- feature 2x2 -->
+                <div class="pg photo-ph" style="grid-column:span 2; grid-row:span 2; aspect-ratio:auto; height:198px;">
+                  <div style="position:absolute; bottom:8px; left:8px; right:8px; display:flex; justify-content:space-between; align-items:flex-end;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; background:rgba(255,255,255,0.9); padding:2px 6px; border-radius:3px; color:var(--ink);">35mm · f/2.8</span>
+                    <span style="font-size:9px; background:rgba(255,255,255,0.9); padding:2px 6px; border-radius:3px; color:var(--ink-soft);">♡ 142</span>
+                  </div>
+                </div>
+                <div class="pg photo-ph v2"></div>
+                <div class="pg photo-ph v3"></div>
+                <div class="pg photo-ph v4"></div>
+                <div class="pg photo-ph v5"></div>
+                <div class="pg photo-ph" style="background:linear-gradient(160deg,#c8a898,#6a5060);"></div>
+                <div class="pg photo-ph v2" style="background:linear-gradient(160deg,#9ab8c8,#2a4878);"></div>
+              </div>
+            </div><!-- /prof-grid -->
+
+            <!-- tab bar -->
+            <div class="tab-bar">
+              <a class="tab"><svg><use href="#hi-map-pin"/></svg>地圖</a>
+              <a class="tab"><svg><use href="#hi-photo"/></svg>動態</a>
+              <a class="tab"><svg><use href="#hi-upload"/></svg>上傳</a>
+              <a class="tab"><svg><use href="#hi-wrench"/></svg>器材</a>
+              <a class="tab active"><svg><use href="#hi-user-circle"/></svg>我</a>
+            </div>
+            <div class="home-indicator"></div>
+          </div><!-- /phone-screen -->
+        </div><!-- /phone -->
+      </div><!-- /phone-cell PROFILE -->
+    </div><!-- /phone-pair -->
+  </div><!-- /section 2 -->
+
+</div><!-- /wrap -->
+</body>
+</html>
