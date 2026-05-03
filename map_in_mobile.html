@@ -1,0 +1,1952 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LensLog — Map Mobile Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ========= TOKENS (light only, per spec) ========= */
+  :root {
+    --ink:         #1a2942;
+    --ink-soft:    #4a5773;
+    --ink-mute:    #7d88a0;
+    --line:        #dde3ee;
+    --line-soft:   #e9eef5;
+    --paper:       #eef2f8;
+    --paper-2:     #dfe6f0;
+    --card:        #ffffff;
+    --accent:      #1e5fb3;
+    --accent-soft: #e3edfa;
+    --accent-ink:  #143e77;
+    --gold:        #d97706;
+    --gold-soft:   #fef3e2;
+    --map-bg-1:    #d7e0ec;
+    --map-bg-2:    #dfe4ee;
+    --map-bg-3:    #d6dde8;
+    --map-line:    rgba(15,30,56,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter','Noto Sans TC',-apple-system,sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    line-height: 1.5;
+  }
+
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 56px 40px 96px; }
+
+  .step-title { margin: 0 0 4px; display: flex; align-items: baseline; gap: 14px; }
+  .step-title .step-num {
+    font-family: 'IBM Plex Mono',monospace;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 4px 10px; border-radius: 12px; border: 1px solid #c8dcef;
+  }
+  .step-title h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+  .step-sub { color: var(--ink-soft); margin: 0 0 28px; font-size: 14px; line-height: 1.55; max-width: 720px; }
+
+  .stage-tag-row { margin: 0 0 28px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .stage-tag {
+    font-family: 'IBM Plex Mono',monospace; font-size: 10.5px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 4px;
+    padding: 3px 8px; color: var(--ink-soft);
+  }
+  .stage-tag b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+
+  .device-label {
+    font-family: 'IBM Plex Mono',monospace; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--ink-mute); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .device-label .mode-pill { background: var(--card); border: 1px solid var(--line); padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+
+  .doc-head { max-width: 760px; margin-bottom: 56px; }
+  .doc-head h1 {
+    font-size: 28px; font-weight: 600; letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  .doc-head .meta {
+    display: inline-flex; gap: 14px; align-items: center;
+    font-family: 'IBM Plex Mono',monospace;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-mute); margin-bottom: 16px;
+  }
+  .doc-head .meta .pill {
+    background: var(--accent-soft); color: var(--accent-ink);
+    padding: 3px 8px; border-radius: 3px; border: 1px solid #c8dcef;
+  }
+  .doc-head p { margin: 0; color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; }
+
+  .ic { display: inline-block; flex-shrink: 0; }
+
+
+  /* ============================================================
+     PHONE FRAME
+     ============================================================ */
+  .phone-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    margin-bottom: 16px;
+  }
+  .phone-cell {
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .phone {
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 9 / 19.5;
+    background: #0a1424;
+    border-radius: 38px;
+    border: 1px solid var(--line);
+    box-shadow:
+      0 1px 2px rgba(15,30,56,0.06),
+      0 24px 48px -8px rgba(15,30,56,0.22),
+      inset 0 0 0 2px rgba(255,255,255,0.04);
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-screen {
+    position: absolute;
+    inset: 9px;
+    border-radius: 30px;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 200px 130px at 30% 35%, var(--map-bg-1) 40%, transparent 72%),
+      radial-gradient(ellipse 240px 150px at 76% 65%, var(--map-bg-2) 30%, transparent 72%),
+      var(--map-bg-3);
+  }
+  .phone-screen::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, var(--map-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--map-line) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  .phone-screen::after {
+    content: ''; position: absolute; left: -10%; right: -10%; top: 38%; height: 1.5px;
+    background: rgba(15,30,56,0.10);
+    transform: rotate(-3deg);
+    box-shadow:
+      0 60px 0 -0.5px rgba(15,30,56,0.08),
+      0 -60px 0 -0.5px rgba(15,30,56,0.08);
+  }
+
+  /* iOS dynamic island */
+  .island {
+    position: absolute;
+    top: 10px; left: 50%; transform: translateX(-50%);
+    width: 96px; height: 26px;
+    background: #000;
+    border-radius: 14px;
+    z-index: 50;
+  }
+  /* iOS status bar */
+  .statusbar {
+    position: absolute;
+    top: 14px; left: 0; right: 0;
+    height: 18px;
+    z-index: 40;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 30px 0 28px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .statusbar .right { display: flex; align-items: center; gap: 4px; font-size: 10.5px; }
+  .statusbar .signal {
+    display: inline-flex; align-items: end; gap: 1.5px; height: 9px;
+  }
+  .statusbar .signal i {
+    display: inline-block; width: 2.5px; background: currentColor; border-radius: 0.5px;
+  }
+  .statusbar .signal i:nth-child(1) { height: 3px; }
+  .statusbar .signal i:nth-child(2) { height: 5px; }
+  .statusbar .signal i:nth-child(3) { height: 7px; }
+  .statusbar .signal i:nth-child(4) { height: 9px; }
+  .statusbar .battery {
+    width: 22px; height: 11px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    position: relative;
+    padding: 1px;
+    margin-left: 2px;
+  }
+  .statusbar .battery::before {
+    content: '';
+    position: absolute; right: -2.5px; top: 3px;
+    width: 1.5px; height: 4px;
+    background: currentColor; border-radius: 0 1px 1px 0;
+  }
+  .statusbar .battery::after {
+    content: '';
+    display: block;
+    width: 80%; height: 100%;
+    background: currentColor;
+    border-radius: 1px;
+  }
+
+  /* Phone state caption */
+  .phone-caption {
+    margin-top: 16px;
+    text-align: center;
+    font-family: 'IBM Plex Mono',monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-mute);
+  }
+  .phone-caption b {
+    color: var(--ink);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .phone-caption .desc {
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    font-family: 'Inter','Noto Sans TC', sans-serif;
+    font-size: 12px;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+
+  /* ============================================================
+     TOP SEARCH BAR (floating over map)
+     ============================================================ */
+  .top-search {
+    position: absolute;
+    top: 50px;        /* below status bar */
+    left: 12px; right: 12px;
+    height: 48px;
+    background: var(--card);
+    border-radius: 14px;
+    box-shadow:
+      0 1px 2px rgba(15,30,56,0.06),
+      0 6px 16px rgba(15,30,56,0.12);
+    display: flex;
+    align-items: center;
+    padding: 0 4px 0 4px;
+    z-index: 30;
+    gap: 4px;
+  }
+  /* Logo (mark only, on phone) */
+  .top-search .mark {
+    width: 40px; height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent), #0f3d80);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+    position: relative;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  /* Aperture mark inside logo */
+  .top-search .mark svg { width: 22px; height: 22px; }
+  /* mark::after removed — no accent dot */
+  .top-search .input {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 0; outline: 0; background: transparent;
+    font-family: inherit; font-size: 14px;
+    color: var(--ink-soft);
+    padding: 0 4px;
+    min-width: 0;
+  }
+  .top-search .input.placeholder { color: var(--ink-mute); }
+  .top-search .input .search-ic {
+    width: 13px; height: 13px;
+    flex-shrink: 0;
+    opacity: 0.55;
+  }
+  .top-search .right-action {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #d9927d, #6b5a7a);
+    flex-shrink: 0;
+    border: 2px solid var(--card);
+    box-shadow: 0 0 0 1px var(--line);
+    margin-right: 4px;
+    position: relative;
+  }
+  /* Notif dot on avatar */
+  .top-search .right-action::after {
+    content: '';
+    position: absolute;
+    top: -1px; right: -1px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid var(--card);
+  }
+
+  /* Filter chips row — below search */
+  .filter-row {
+    position: absolute;
+    top: 110px;
+    left: 0; right: 0;
+    padding: 0 12px;
+    display: flex;
+    gap: 6px;
+    overflow: hidden;
+    z-index: 25;
+    pointer-events: none;
+  }
+  .filter-chip {
+    height: 30px;
+    padding: 0 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    box-shadow: 0 2px 8px rgba(15,30,56,0.08);
+    white-space: nowrap;
+    flex-shrink: 0;
+    pointer-events: auto;
+  }
+  .filter-chip.active {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+  .filter-chip svg { width: 12px; height: 12px; }
+
+
+  /* ============================================================
+     MAP PINS
+     ============================================================ */
+  .phone-pin {
+    position: absolute;
+    width: 18px; height: 22px;
+    background: var(--accent);
+    border: 2px solid var(--card);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 3px 6px rgba(15,30,56,0.3);
+    z-index: 5;
+  }
+  .phone-pin.active {
+    background: var(--gold);
+    width: 24px; height: 28px;
+    z-index: 8;
+  }
+  .phone-pin.active::after {
+    content: '';
+    position: absolute; inset: -8px;
+    border: 2px solid var(--gold);
+    border-radius: 50% 50% 50% 0;
+    opacity: 0.45;
+    animation: pin-pulse 2s ease-out infinite;
+  }
+  @keyframes pin-pulse {
+    0%   { transform: scale(0.85); opacity: 0.5; }
+    100% { transform: scale(1.5);  opacity: 0; }
+  }
+  .phone-pin.cluster {
+    background: var(--card);
+    border-radius: 50%;
+    transform: none;
+    width: 28px; height: 28px;
+    color: var(--ink);
+    font-family: 'Inter',sans-serif;
+    font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+  }
+
+
+  /* ============================================================
+     MAP UTILITY (right side controls — floating)
+     ============================================================ */
+  .map-ufo {
+    /* "user-floating-overlays" stacked vertically on right side, above sheet */
+    position: absolute;
+    right: 12px;
+    z-index: 26;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .map-ufo .fab {
+    width: 44px; height: 44px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow:
+      0 1px 2px rgba(15,30,56,0.06),
+      0 6px 14px rgba(15,30,56,0.12);
+    color: var(--ink);
+  }
+  .map-ufo .fab svg { width: 18px; height: 18px; }
+  .map-ufo .fab.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow:
+      0 1px 2px rgba(15,30,56,0.10),
+      0 6px 14px rgba(30,95,179,0.28);
+  }
+  .fab-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .fab-label {
+    font-size: 7.5px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink-mute);
+    text-align: center;
+    background: rgba(255,255,255,0.90);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid rgba(221,227,238,0.9);
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(15,30,56,0.08);
+    backdrop-filter: blur(4px);
+  }
+  .fab-label.accent {
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border-color: #c8dcef;
+  }
+  /* FAB active state when spots sheet is open */
+  .map-ufo .fab.spots-active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow:
+      0 1px 2px rgba(15,30,56,0.10),
+      0 6px 14px rgba(30,95,179,0.28);
+  }
+  .map-ufo .fab.spots-active + .fab-label,
+  .fab-group.active .fab-label {
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border-color: #c8dcef;
+  }
+
+
+  /* ============================================================
+     SPOTS LIST SHEET (行動版「附近景點」bottom sheet)
+     ============================================================ */
+  .spots-sheet {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 78px;       /* sits right above the tab bar */
+    height: 63%;
+    background: var(--card);
+    border-radius: 22px 22px 0 0;
+    border: 1px solid var(--line);
+    border-bottom: 0;
+    box-shadow: 0 -10px 32px rgba(15,30,56,0.18);
+    z-index: 36;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transform: translateY(105%);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .spots-sheet.open {
+    transform: translateY(0);
+  }
+  .spots-sheet .sh-drag {
+    height: 22px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    cursor: grab;
+  }
+  .spots-sheet .sh-drag::after {
+    content: ''; width: 36px; height: 4px;
+    border-radius: 2px; background: var(--line);
+  }
+  .sh-head {
+    padding: 0 14px 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .sh-head .sh-title {
+    font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .sh-head .sh-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--accent-ink);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    background: var(--accent-soft); border: 1px solid #c8dcef;
+    padding: 2px 7px; border-radius: 10px;
+  }
+  .sh-head .sh-close {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--paper); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--ink-mute); flex-shrink: 0;
+  }
+  .sh-head .sh-close svg { width: 12px; height: 12px; }
+  .sh-chips {
+    display: flex; gap: 5px; padding: 8px 12px; overflow: hidden;
+    flex-shrink: 0; border-bottom: 1px solid var(--line-soft);
+  }
+  .sh-chip {
+    height: 26px; padding: 0 10px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 13px; font-size: 11px; color: var(--ink-soft);
+    white-space: nowrap; flex-shrink: 0;
+    display: inline-flex; align-items: center;
+  }
+  .sh-chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .sh-body {
+    flex: 1; overflow-y: auto; padding: 6px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .spt-item {
+    display: flex; gap: 10px; padding: 9px 10px;
+    border-radius: 10px; cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .spt-item.active { background: var(--accent-soft); border-color: #c6dbf3; }
+  .spt-thumb {
+    width: 42px; height: 42px; border-radius: 8px; flex-shrink: 0;
+    background: linear-gradient(160deg,#6b82a8,#1a2942);
+  }
+  .spt-thumb.t2 { background: linear-gradient(160deg,#8fb4cc,#334a75); }
+  .spt-thumb.t3 { background: linear-gradient(160deg,#d9927d,#4a4670); }
+  .spt-thumb.t4 { background: linear-gradient(160deg,#9aadbe,#3d5c75); }
+  .spt-thumb.t5 { background: linear-gradient(160deg,#a4c496,#2d5c2d); }
+  .spt-info { flex: 1; min-width: 0; }
+  .spt-name { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; }
+  .spt-meta { font-size: 11px; color: var(--ink-soft); margin: 1px 0; }
+  .spt-loc { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--ink-mute); }
+
+  /* Two-phone comparison layout */
+  .phone-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+
+  /* ============================================================
+     BOTTOM SHEET
+     ============================================================ */
+  .sheet {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: var(--card);
+    border-top: 1px solid var(--line);
+    border-radius: 22px 22px 0 0;
+    z-index: 35;
+    box-shadow: 0 -10px 32px rgba(15,30,56,0.18);
+    overflow: hidden;
+    color: var(--ink);
+    transition: height 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .sheet .drag-handle {
+    height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none;
+    cursor: grab;
+  }
+  .sheet .drag-handle::after {
+    content: '';
+    width: 36px; height: 4px;
+    border-radius: 2px;
+    background: var(--line);
+  }
+
+  /* ── Hero (photo + title) — shared ── */
+  .ic-hero {
+    position: relative;
+    background: linear-gradient(160deg,#6b82a8 0%,#4c6590 28%,#334a75 52%,#22355b 78%,#1a2942 100%);
+    overflow: hidden;
+  }
+  .ic-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 110%, rgba(255,200,130,0.30), transparent 60%),
+      radial-gradient(ellipse 60% 30% at 20% 30%, rgba(180,200,220,0.18), transparent 60%);
+  }
+  .ic-hero .ic-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(15,30,56,0) 50%, rgba(15,30,56,0.7) 100%);
+  }
+  .ic-hero .ic-actions {
+    position: absolute;
+    top: 10px; right: 10px;
+    display: flex; gap: 6px;
+    z-index: 2;
+  }
+  .ic-hero .ic-actions button {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ic-hero .ic-actions button svg { width: 13px; height: 13px; }
+
+  .ic-hero .ic-title-area {
+    position: absolute;
+    left: 14px; right: 14px; bottom: 12px;
+    color: #fff;
+    z-index: 2;
+  }
+  .ic-hero .ic-difficulty {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: 'IBM Plex Mono',monospace;
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 2px 7px;
+    border-radius: 10px;
+    backdrop-filter: blur(6px);
+    margin-bottom: 6px;
+  }
+  .ic-hero h2 {
+    margin: 0 0 1px;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.3);
+  }
+  .ic-hero .ic-subtitle {
+    font-size: 10.5px;
+    color: rgba(255,255,255,0.85);
+    display: flex; gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .ic-hero .ic-subtitle .dot {
+    width: 2.5px; height: 2.5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.6);
+  }
+
+
+  /* ── Sheet variants ── */
+
+  /* PEEK: small handle only — title + 3 quick stats */
+  .sheet.peek {
+    height: 168px;
+  }
+  .sheet.peek .ic-hero {
+    height: 88px;
+  }
+  .sheet.peek .ic-hero .ic-difficulty { display: none; }
+  .sheet.peek .ic-hero .ic-actions { top: 7px; right: 8px; }
+  .sheet.peek .ic-hero .ic-actions button { width: 26px; height: 26px; }
+  .sheet.peek .ic-hero .ic-title-area { bottom: 9px; }
+  .sheet.peek .ic-hero h2 { font-size: 16px; }
+  .sheet.peek .ic-hero .ic-subtitle { font-size: 10px; }
+  .sheet.peek .peek-strip {
+    padding: 8px 12px 0;
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .sheet.peek .peek-pill {
+    flex: 1;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 7px 9px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+  }
+  .sheet.peek .peek-pill.golden {
+    background: var(--gold-soft);
+    border-color: rgba(217, 119, 6, 0.3);
+  }
+  .sheet.peek .peek-pill .pp-ico {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+  }
+  .sheet.peek .peek-pill.golden .pp-ico {
+    background: linear-gradient(135deg, #f0a838, #c97816);
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.32);
+  }
+  .sheet.peek .peek-pill.weather .pp-ico {
+    background: linear-gradient(135deg, #7896b2, #4a6882);
+    box-shadow: 0 2px 8px rgba(74, 104, 130, 0.22);
+  }
+  .sheet.peek .peek-pill.rain .pp-ico {
+    background: linear-gradient(135deg, #7e90b6, #546082);
+    box-shadow: 0 2px 8px rgba(84, 96, 130, 0.22);
+  }
+  .sheet.peek .peek-pill .pp-ico svg { width: 14px; height: 14px; }
+  .sheet.peek .peek-pill .pp-text { min-width: 0; }
+  .sheet.peek .peek-pill .pp-v {
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .sheet.peek .peek-pill.golden .pp-v {
+    color: var(--gold);
+  }
+  .sheet.peek .peek-pill .pp-k {
+    font-size: 9px;
+    color: var(--ink-mute);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 1px;
+  }
+
+
+  /* HALF: hero + sun-timing + weather grid + stats + footer */
+  .sheet.half {
+    height: 62%;
+  }
+  .sheet.half .ic-hero {
+    height: 110px;
+  }
+  .sheet.half .ic-body {
+    padding: 12px 14px 0;
+    overflow-y: auto;
+    height: calc(100% - 110px - 22px - 60px);
+    /* sheet-height - hero - drag-handle - footer */
+  }
+  .sheet.half .ic-foot {
+    border-top: 1px solid var(--line-soft);
+    padding: 10px 14px;
+    display: flex;
+    gap: 8px;
+    background: var(--card);
+  }
+
+
+  /* FULL: full-screen — adds hourly forecast + photo wall */
+  .sheet.full {
+    top: 50px;
+    height: auto;
+    bottom: 0;
+    border-radius: 22px 22px 0 0;
+  }
+  .sheet.full .ic-hero {
+    height: 130px;
+  }
+  .sheet.full .ic-body {
+    padding: 12px 14px 0;
+    overflow-y: auto;
+    height: calc(100% - 130px - 22px - 60px);
+  }
+  .sheet.full .ic-foot {
+    border-top: 1px solid var(--line-soft);
+    padding: 10px 14px;
+    display: flex; gap: 8px;
+    background: var(--card);
+  }
+
+
+  /* ── Sun timing ── */
+  .sun-timing {
+    background: linear-gradient(135deg, var(--gold-soft), var(--card));
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .sun-timing .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .sun-timing .label .pulse {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 6px rgba(217,119,6,0.6);
+    animation: gpulse 2s ease-out infinite;
+  }
+  @keyframes gpulse {
+    0%   { box-shadow: 0 0 0 0 rgba(217,119,6,0.5); }
+    70%  { box-shadow: 0 0 0 5px rgba(217,119,6,0); }
+    100% { box-shadow: 0 0 0 0 rgba(217,119,6,0); }
+  }
+  .sun-timing .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: end;
+  }
+  .sun-timing .col .k {
+    font-size: 9.5px;
+    color: var(--ink-soft);
+    margin-bottom: 1px;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .sun-timing .col .k svg { width: 11px; height: 11px; }
+  .sun-timing .col .v {
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+  .sun-timing .col.golden .v {
+    color: var(--gold);
+    font-size: 18px;
+  }
+  .sun-timing .col.golden .v em {
+    font-style: normal;
+    font-weight: 700;
+  }
+  .sun-timing .col.golden .v small {
+    font-size: 11px; font-weight: 500;
+    margin-left: 1px;
+  }
+
+
+  /* ── Weather grid ── */
+  .weather-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    background: var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    margin-bottom: 10px;
+  }
+  .wx-cell {
+    padding: 9px 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .wx-cell .wx-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .wx-cell .wx-icon svg { width: 15px; height: 15px; }
+  .wx-cell .wx-text { flex: 1; min-width: 0; }
+  .wx-cell .wx-k {
+    font-size: 8.5px;
+    color: var(--ink-mute);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1px;
+  }
+  .wx-cell .wx-v {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    line-height: 1.15;
+  }
+  .wx-cell .wx-v small {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-left: 1px;
+  }
+
+  /* Wabi-sabi cell colors — same as desktop */
+  .wx-cell.wx-weather { background: linear-gradient(150deg, #edf0f5 0%, #d8e2ec 100%); }
+  .wx-cell.wx-weather .wx-icon { background: linear-gradient(135deg, #7896b2, #4a6882); box-shadow: 0 4px 14px rgba(74,104,130,0.22); }
+  .wx-cell.wx-rain    { background: linear-gradient(150deg, #eaecf3 0%, #d4d8e8 100%); }
+  .wx-cell.wx-rain .wx-icon    { background: linear-gradient(135deg, #7e90b6, #546082); box-shadow: 0 4px 14px rgba(84,96,130,0.22); }
+  .wx-cell.wx-wind    { background: linear-gradient(150deg, #edf2ec 0%, #d4e0d2 100%); }
+  .wx-cell.wx-wind .wx-icon    { background: linear-gradient(135deg, #789878, #4c6e4c); box-shadow: 0 4px 14px rgba(76,110,76,0.22); }
+  .wx-cell.wx-vis     { background: linear-gradient(150deg, #f0ece6 0%, #dfd6cb 100%); }
+  .wx-cell.wx-vis .wx-icon     { background: linear-gradient(135deg, #9e8c7a, #6c5c4c); box-shadow: 0 4px 14px rgba(108,92,76,0.22); }
+
+
+  /* ── Stats ── */
+  .ic-stats {
+    display: flex;
+    padding: 10px 0;
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    margin: 0 -14px 10px;
+    padding-left: 14px; padding-right: 14px;
+  }
+  .ic-stats .stat {
+    flex: 1;
+    border-right: 1px solid var(--line-soft);
+    padding: 0 8px 0 0;
+  }
+  .ic-stats .stat:first-child { padding-left: 0; }
+  .ic-stats .stat:last-child { border-right: 0; padding-right: 0; }
+  .ic-stats .stat .n {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+  }
+  .ic-stats .stat .l {
+    font-size: 9px;
+    color: var(--ink-mute);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 1px;
+  }
+
+
+  /* ── Footer buttons ── */
+  .btn {
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .btn svg { width: 14px; height: 14px; }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn.flex { flex: 1; }
+  .btn.icon { width: 36px; padding: 0; flex-shrink: 0; }
+
+
+  /* ── Hourly (full state only) ── */
+  .hourly-row {
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    background: linear-gradient(90deg,
+      #bfcdd8  0%,
+      #c4cdd5 14%,
+      #c8bca4 29%,
+      #b89272  43%,
+      #9a8898  57%,
+      #4e5470  72%,
+      #252d48  86%,
+      #161b2e 100%
+    );
+  }
+  .hourly-cell {
+    flex: 1 0 0;
+    text-align: center;
+    padding: 8px 2px 9px;
+    border-right: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.18);
+  }
+  .hourly-cell:last-child { border-right: 0; }
+  .hourly-cell .hour {
+    color: rgba(22,28,48,0.62);
+    font-family: 'IBM Plex Mono',monospace;
+    font-size: 9px;
+    font-weight: 500;
+  }
+  .hourly-cell .ico { display: flex; align-items: center; justify-content: center; margin: 3px 0; }
+  .hourly-cell .ico svg { width: 13px; height: 13px; color: var(--ink); }
+  .hourly-cell .t {
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--ink);
+  }
+  .hourly-cell.now {
+    background: rgba(255,255,255,0.68);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.50);
+  }
+  .hourly-cell.now .hour { color: #4a6882; font-weight: 600; }
+  .hourly-cell.golden { background: rgba(255,255,255,0.08); }
+  .hourly-cell.golden .hour { color: rgba(255,245,235,0.85); font-weight: 600; }
+  .hourly-cell.golden .t { color: rgba(255,245,235,0.96); }
+  .hourly-cell.golden .ico svg { color: rgba(255,245,235,0.96); }
+  .hourly-cell.night { background: rgba(0,0,0,0.20); }
+  .hourly-cell.night .hour { color: rgba(200,210,228,0.55); }
+  .hourly-cell.night .t { color: rgba(210,220,235,0.88); }
+  .hourly-cell.night .ico svg { color: rgba(210,220,235,0.88); }
+
+
+  /* ── Photo wall (full only) ── */
+  .photo-wall {
+    margin: 0 -14px 0;
+    padding: 12px 14px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .photo-wall h4 {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .photo-wall h4 .more {
+    font-size: 10.5px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .pw-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+  .pw-grid .pw {
+    aspect-ratio: 1;
+    border-radius: 5px;
+    background: linear-gradient(160deg,#6b82a8,#1a2942);
+    overflow: hidden;
+  }
+  .pw-grid .pw:nth-child(2) { background: linear-gradient(160deg,#d9927d,#4a4670); }
+  .pw-grid .pw:nth-child(3) { background: linear-gradient(160deg,#8fb4cc,#2a5878); }
+  .pw-grid .pw:nth-child(4) { background: linear-gradient(160deg,#6b82a8,#334a75); }
+  .pw-grid .pw:nth-child(5) { background: linear-gradient(160deg,#d99277,#6b5a7a); }
+  .pw-grid .pw:nth-child(6) { background: linear-gradient(160deg,#4a7390,#1a3858); }
+
+
+  /* ============================================================
+     BOTTOM TAB BAR (default state, no spot selected)
+     ============================================================ */
+  .tab-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 78px;
+    background: var(--card);
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: flex-start;
+    padding: 8px 0 24px;
+    z-index: 35;
+  }
+  .tab-bar .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--ink-mute);
+    font-size: 10px;
+    cursor: pointer;
+  }
+  .tab-bar .tab svg { width: 22px; height: 22px; }
+  .tab-bar .tab.active { color: var(--accent); }
+  /* iOS home indicator */
+  .home-indicator {
+    position: absolute;
+    bottom: 6px; left: 50%; transform: translateX(-50%);
+    width: 110px; height: 4px;
+    background: var(--ink);
+    border-radius: 2px;
+    z-index: 100;
+    opacity: 0.9;
+  }
+
+
+  /* ============================================================
+     SECTION SCAFFOLDS
+     ============================================================ */
+  .section { margin-bottom: 80px; }
+  .annot-row {
+    margin-top: 8px;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .annot {
+    font-family: 'IBM Plex Mono',monospace;
+    font-size: 10.5px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--ink-soft);
+  }
+  .annot b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+
+
+  /* ============================================================
+     SOLO PHONE (centered single phone view, e.g. tab bar default)
+     ============================================================ */
+  .phone-solo {
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+
+  /* ============================================================
+     COMPONENT SPEC — search bar break-down
+     ============================================================ */
+  .spec-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+    align-items: start;
+    margin-bottom: 32px;
+  }
+  .spec-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .spec-card h4 {
+    margin: 0 0 14px;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: -0.01em;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .spec-card h4 .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-mute);
+    font-weight: 500;
+  }
+  .spec-row {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .spec-row:last-child { border-bottom: 0; }
+  .spec-row .k {
+    color: var(--ink-mute);
+    width: 96px;
+    flex-shrink: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding-top: 1px;
+  }
+  .spec-row .v { flex: 1; line-height: 1.55; }
+  .spec-row .v code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--paper);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+
+  /* ============================================================
+     INTERACTIONS DIAGRAM
+     ============================================================ */
+  .flow {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .flow-grid {
+    display: grid;
+    grid-template-columns: 1fr 24px 1fr 24px 1fr 24px 1fr;
+    gap: 0;
+    align-items: stretch;
+  }
+  .flow-step {
+    text-align: center;
+  }
+  .flow-step .ph-mini {
+    width: 56px; height: 100px;
+    margin: 0 auto 10px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 9px;
+    position: relative;
+    overflow: hidden;
+  }
+  .flow-step .ph-mini .pin {
+    position: absolute; top: 36%; left: 38%;
+    width: 5px; height: 6px;
+    background: var(--accent);
+    border: 1px solid #fff;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+  }
+  .flow-step .ph-mini .pin.gold { background: var(--gold); width: 6px; height: 7px; }
+  .flow-step .ph-mini .sht {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--card);
+    border-top: 1.5px solid var(--line);
+    border-radius: 4px 4px 0 0;
+  }
+  .flow-step .label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .flow-step .desc {
+    font-size: 11px;
+    color: var(--ink-soft);
+    line-height: 1.45;
+    margin-top: 4px;
+  }
+  .flow-arrow {
+    align-self: center;
+    color: var(--ink-mute);
+    text-align: center;
+    font-size: 14px;
+    line-height: 1;
+  }
+</style>
+
+
+<!-- ===== Heroicons SVG symbols ===== -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="hi-search" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21 21L15.8033 15.8033M15.8033 15.8033C17.1605 14.4461 18 12.5711 18 10.5C18 6.35786 14.6421 3 10.5 3C6.35786 3 3 6.35786 3 10.5C3 14.6421 6.35786 18 10.5 18C12.5711 18 14.4461 17.1605 15.8033 15.8033Z"/>
+  </symbol>
+  <symbol id="hi-heart" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21 8.25C21 5.76472 18.9013 3.75 16.3125 3.75C14.3769 3.75 12.7153 4.87628 12 6.48342C11.2847 4.87628 9.62312 3.75 7.6875 3.75C5.09867 3.75 3 5.76472 3 8.25C3 15.4706 12 20.25 12 20.25C12 20.25 21 15.4706 21 8.25Z"/>
+  </symbol>
+  <symbol id="hi-share" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25C4.00736 6 3 7.00736 3 8.25V18.75C3 19.9926 4.00736 21 5.25 21H15.75C16.9926 21 18 19.9926 18 18.75V10.5M7.5 16.5L21 3M21 3L15.75 3M21 3V8.25"/>
+  </symbol>
+  <symbol id="hi-xmark" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6L18 18"/>
+  </symbol>
+  <symbol id="hi-chevron-up" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75L12 8.25L19.5 15.75"/>
+  </symbol>
+  <symbol id="hi-sun" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 3V5.25M18.364 5.63604L16.773 7.22703M21 12H18.75M18.364 18.364L16.773 16.773M12 18.75V21M7.22703 16.773L5.63604 18.364M5.25 12H3M7.22703 7.22703L5.63604 5.63604M15.75 12C15.75 14.0711 14.0711 15.75 12 15.75C9.92893 15.75 8.25 14.0711 8.25 12C8.25 9.92893 9.92893 8.25 12 8.25C14.0711 8.25 15.75 9.92893 15.75 12Z"/>
+  </symbol>
+  <symbol id="hi-clock" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 6V12H16.5M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"/>
+  </symbol>
+  <symbol id="hi-moon" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21.7519 15.0021C20.597 15.484 19.3296 15.7501 18 15.7501C12.6152 15.7501 8.25 11.3849 8.25 6.00011C8.25 4.67052 8.51614 3.40308 8.99806 2.24817C5.47566 3.71798 3 7.19493 3 11.2501C3 16.6349 7.36522 21.0001 12.75 21.0001C16.8052 21.0001 20.2821 18.5245 21.7519 15.0021Z"/>
+  </symbol>
+  <symbol id="hi-cloud" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M2.25 15C2.25 17.4853 4.26472 19.5 6.75 19.5H18C20.0711 19.5 21.75 17.8211 21.75 15.75C21.75 14.1479 20.7453 12.7805 19.3316 12.2433C19.4407 11.9324 19.5 11.5981 19.5 11.25C19.5 9.59315 18.1569 8.25 16.5 8.25C16.1767 8.25 15.8654 8.30113 15.5737 8.39575C14.9765 6.1526 12.9312 4.5 10.5 4.5C7.6005 4.5 5.25 6.85051 5.25 9.75C5.25 10.0832 5.28105 10.4092 5.3404 10.7252C3.54555 11.3167 2.25 13.0071 2.25 15Z"/>
+  </symbol>
+  <symbol id="hi-drop" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 3C9.5 6.5 7.5 9.75 7.5 12.75a4.5 4.5 0 009 0C16.5 9.75 14.5 6.5 12 3z"/>
+  </symbol>
+  <symbol id="hi-wind" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 8.25h12.75a3 3 0 100-6 3 3 0 00-2.25 5.003M3 12h9M3 15.75h11.25a3 3 0 110 6 3 3 0 01-2.25-5.003"/>
+  </symbol>
+  <symbol id="hi-eye" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M2.03555 12.3224C1.96647 12.1151 1.9664 11.8907 2.03536 11.6834C3.42372 7.50972 7.36079 4.5 12.0008 4.5C16.6387 4.5 20.5742 7.50692 21.9643 11.6776C22.0334 11.8849 22.0335 12.1093 21.9645 12.3166C20.5761 16.4903 16.6391 19.5 11.9991 19.5C7.36119 19.5 3.42564 16.4931 2.03555 12.3224Z"/>
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z"/>
+  </symbol>
+  <symbol id="hi-bookmark" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M17.5933 3.32241C18.6939 3.45014 19.5 4.399 19.5 5.50699V21L12 17.25L4.5 21V5.50699C4.5 4.399 5.30608 3.45014 6.40668 3.32241C8.24156 3.10947 10.108 3 12 3C13.892 3 15.7584 3.10947 17.5933 3.32241Z"/>
+  </symbol>
+  <symbol id="hi-plus" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 4.5V19.5M19.5 12L4.5 12"/>
+  </symbol>
+  <symbol id="hi-minus" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12H19"/>
+  </symbol>
+  <symbol id="hi-map-pin" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M15 10.5C15 12.1569 13.6569 13.5 12 13.5C10.3431 13.5 9 12.1569 9 10.5C9 8.84315 10.3431 7.5 12 7.5C13.6569 7.5 15 8.84315 15 10.5Z"/>
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5C19.5 17.6421 12 21.75 12 21.75C12 21.75 4.5 17.6421 4.5 10.5C4.5 6.35786 7.85786 3 12 3C16.1421 3 19.5 6.35786 19.5 10.5Z"/>
+  </symbol>
+  <symbol id="hi-photo" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+  </symbol>
+  <symbol id="hi-upload" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+  </symbol>
+  <symbol id="hi-wrench" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75a4.5 4.5 0 01-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 11-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 016.336-4.486l-3.276 3.276a3.004 3.004 0 002.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852z"/>
+  </symbol>
+  <symbol id="hi-user-circle" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/>
+  </symbol>
+  <!-- Aperture (LensLog mark) — matches map_section_redesign sb-logo -->
+  <symbol id="aperture" viewBox="0 0 24 24" fill="currentColor">
+    <path fill-rule="evenodd" d="M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zm0 1.8a7.7 7.7 0 016.33 3.32l-4.82 2.78-1.51-5.64a7.72 7.72 0 010-.46zm-1.96.21l1.51 5.64-5.64-1.51a7.72 7.72 0 014.13-4.13zm-4.79 5.56l5.64 1.51-4.13 4.13A7.7 7.7 0 014.3 12a7.7 7.7 0 01.95-3.93zm12.54.22A7.7 7.7 0 0119.7 12a7.7 7.7 0 01-.95 3.93l-4.13-4.13 4.17-1.12zM12 10.2a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zm-4.13 3.93l4.13-1.11 1.51 5.64a7.72 7.72 0 01-5.64-4.53zm8.26 0a7.72 7.72 0 01-4.13 4.13l1.51-5.64 2.62 1.51z"/>
+  </symbol>
+  <!-- Locate me (crosshair) -->
+  <symbol id="hi-locate" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+  </symbol>
+  <!-- Layers -->
+  <symbol id="hi-layers" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3.75 12 12 16.5 20.25 12M3.75 16.5 12 21l8.25-4.5M12 3 3.75 7.5 12 12l8.25-4.5L12 3z"/>
+  </symbol>
+  <!-- Filter -->
+  <symbol id="hi-filter" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M6 12h12M10 18.75h4"/>
+  </symbol>
+  <!-- List (景點清單) — from map_section_redesign -->
+  <symbol id="hi-list" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75H20.25M8.25 12H20.25M8.25 17.25H20.25M3.75 6.75h.008v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.008v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.008v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+  </symbol>
+  <!-- Sort / sliders -->
+  <symbol id="hi-sort" viewBox="0 0 24 24" fill="none">
+    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3 7.5h18M6 12h12M10.5 16.5h3"/>
+  </symbol>
+</svg>
+
+
+<body>
+<div class="wrap">
+
+  <!-- ============================ DOC HEADER ============================ -->
+  <div class="doc-head">
+    <div class="meta">
+      <span class="pill">MOBILIE · MAP</span>
+      <span>Map Section RWD</span>
+    </div>
+    <h1>Mobile Map Section</h1>  
+  </div>
+
+
+  <!-- ============================================================
+       STEP 1 — DEFAULT MAP STATE (no spot selected)
+       ============================================================ -->
+
+  <div class="section">
+    <div class="step-title">
+      <span class="step-num">Default</span>
+    </div>
+    <div class="stage-tag-row">
+      <span class="stage-tag"><b>5 tabs at the bott</b></span>
+      <span class="stage-tag"><b>The map should have the ability to be enlarged or shrinked by two fingers</b></span>
+    </div>
+
+    <div class="phone-pair">
+
+      <!-- ── 預設狀態 ── -->
+      <div class="phone-cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"><i></i><i></i><i></i><i></i></span>
+              <span style="margin-left:4px;">5G</span>
+              <span class="battery"></span>
+            </span>
+          </div>
+          <div class="phone-screen">
+            <div class="top-search">
+              <span class="mark"><svg><use href="#aperture"/></svg></span>
+              <span class="input placeholder"><svg class="search-ic"><use href="#hi-search"/></svg>搜尋景點、城市、標籤…</span>
+              <span class="right-action"></span>
+            </div>
+            <div class="filter-row">
+              <span class="filter-chip active">全部</span>
+              <span class="filter-chip">雲海日出</span>
+              <span class="filter-chip">高山星空</span>
+              <span class="filter-chip">百萬夜景</span>
+              <span class="filter-chip">海岸線</span>
+            </div>
+            <div class="phone-pin cluster" style="top: 32%; left: 28%;">5</div>
+            <div class="phone-pin" style="top: 28%; left: 60%;"></div>
+            <div class="phone-pin" style="top: 44%; left: 42%;"></div>
+            <div class="phone-pin cluster" style="top: 52%; left: 70%;">12</div>
+            <div class="phone-pin" style="top: 60%; left: 32%;"></div>
+            <div class="phone-pin" style="top: 38%; left: 78%;"></div>
+            <div class="phone-pin" style="top: 70%; left: 50%;"></div>
+            <div class="map-ufo" style="top: 158px;">
+              <div class="fab-group">
+                <button class="fab" title="附近景點">
+                  <svg><use href="#hi-list"/></svg>
+                </button>
+                <span class="fab-label">景點</span>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <a class="tab active"><svg><use href="#hi-map-pin"/></svg>地圖</a>
+              <a class="tab"><svg><use href="#hi-photo"/></svg>動態</a>
+              <a class="tab"><svg><use href="#hi-upload"/></svg>上傳</a>
+              <a class="tab"><svg><use href="#hi-wrench"/></svg>器材</a>
+              <a class="tab"><svg><use href="#hi-user-circle"/></svg>我</a>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 景點清單展開 ── -->
+      <div class="phone-cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"><i></i><i></i><i></i><i></i></span>
+              <span style="margin-left:4px;">5G</span>
+              <span class="battery"></span>
+            </span>
+          </div>
+          <div class="phone-screen">
+            <div class="top-search">
+              <span class="mark"><svg><use href="#aperture"/></svg></span>
+              <span class="input placeholder"><svg class="search-ic"><use href="#hi-search"/></svg>搜尋景點、城市、標籤…</span>
+              <span class="right-action"></span>
+            </div>
+            <div class="filter-row">
+              <span class="filter-chip active">全部</span>
+              <span class="filter-chip">雲海日出</span>
+              <span class="filter-chip">高山星空</span>
+            </div>
+            <div class="phone-pin cluster" style="top: 32%; left: 28%;">5</div>
+            <div class="phone-pin" style="top: 28%; left: 60%;"></div>
+            <div class="phone-pin active" style="top: 44%; left: 42%;"></div>
+            <div class="phone-pin cluster" style="top: 52%; left: 70%;">12</div>
+            <div class="map-ufo" style="top: 158px;">
+              <div class="fab-group">
+                <button class="fab spots-active" title="關閉景點清單">
+                  <svg><use href="#hi-list"/></svg>
+                </button>
+                <span class="fab-label accent">景點</span>
+              </div>
+            </div>
+            <div class="spots-sheet open">
+              <div class="sh-drag"></div>
+              <div class="sh-head">
+                <div class="sh-title">
+                  附近景點
+                  <span class="sh-count">482 處</span>
+                </div>
+                <button class="sh-close"><svg><use href="#hi-xmark"/></svg></button>
+              </div>
+              <div class="sh-chips">
+                <span class="sh-chip active">全部</span>
+                <span class="sh-chip">日出</span>
+                <span class="sh-chip">夜景</span>
+                <span class="sh-chip">雲海</span>
+                <span class="sh-chip">星空</span>
+              </div>
+              <div class="sh-body">
+                <div class="spt-item active">
+                  <div class="spt-thumb"></div>
+                  <div class="spt-info">
+                    <div class="spt-name">象山六巨石</div>
+                    <div class="spt-meta">夜景 · ★ 4.8 · 簡易</div>
+                    <div class="spt-loc">台北信義 · 1.8 km</div>
+                  </div>
+                </div>
+                <div class="spt-item">
+                  <div class="spt-thumb t2"></div>
+                  <div class="spt-info">
+                    <div class="spt-name">阿里山祝山</div>
+                    <div class="spt-meta">雲海日出 · ★ 4.9 · 中等</div>
+                    <div class="spt-loc">嘉義 · 海拔 2,489 m</div>
+                  </div>
+                </div>
+                <div class="spt-item">
+                  <div class="spt-thumb t3"></div>
+                  <div class="spt-info">
+                    <div class="spt-name">太魯閣燕子口</div>
+                    <div class="spt-meta">峽谷 · ★ 4.7 · 簡易</div>
+                    <div class="spt-loc">花蓮 · 1.4 km</div>
+                  </div>
+                </div>
+                <div class="spt-item">
+                  <div class="spt-thumb t4"></div>
+                  <div class="spt-info">
+                    <div class="spt-name">九份老街</div>
+                    <div class="spt-meta">老街 · ★ 4.4</div>
+                    <div class="spt-loc">新北瑞芳 · 常霧</div>
+                  </div>
+                </div>
+                <div class="spt-item">
+                  <div class="spt-thumb t5"></div>
+                  <div class="spt-info">
+                    <div class="spt-name">清境農場</div>
+                    <div class="spt-meta">雲海 · ★ 4.6 · 中等</div>
+                    <div class="spt-loc">南投仁愛 · 1,748 m</div>
+                  </div>
+                </div>
+                <div class="spt-item">
+                  <div class="spt-thumb t2"></div>
+                  <div class="spt-info">
+                    <div class="spt-name">福隆海岸</div>
+                    <div class="spt-meta">海岸線 · ★ 4.3</div>
+                    <div class="spt-loc">新北貢寮 · 日出</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <a class="tab active"><svg><use href="#hi-map-pin"/></svg>地圖</a>
+              <a class="tab"><svg><use href="#hi-photo"/></svg>動態</a>
+              <a class="tab"><svg><use href="#hi-upload"/></svg>上傳</a>
+              <a class="tab"><svg><use href="#hi-wrench"/></svg>器材</a>
+              <a class="tab"><svg><use href="#hi-user-circle"/></svg>我</a>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+        </div> 
+      </div>
+
+    </div><!-- /phone-pair -->
+
+
+    
+  <!-- ============================================================
+       STEP 2 — INTERACTION FLOW
+       ============================================================ -->
+
+                    <br><br><br><br>
+  <div class="section">
+    <div class="step-title">
+      <span class="step-num">Interaction Flow</span>
+   </div>
+    <div class="flow">
+      <div class="flow-grid">
+        <div class="flow-step">
+          <div class="ph-mini"><div class="pin gold"></div></div>
+          <div class="label">點擊 Pin</div>
+          <div class="desc">tap → 觸發定位動畫</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="ph-mini">
+            <div class="pin gold" style="top:24%"></div>
+            <div class="sht" style="height:30%;"></div>
+          </div>
+          <div class="label">Peek</div>
+          <div class="desc">標題 + 3 個快速資訊</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="ph-mini">
+            <div class="pin gold" style="top:14%"></div>
+            <div class="sht" style="height:60%;"></div>
+          </div>
+          <div class="label">Half</div>
+          <div class="desc">完整資訊 + 主要動作</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="ph-mini">
+            <div class="sht" style="height:92%;"></div>
+          </div>
+          <div class="label">Full</div>
+          <div class="desc">時段預報 + 作品牆</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="annot-row">
+      <span class="annot"><b>This Design reffers to google map</b></span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       STEP 3 — THREE SHEET STATES
+       ============================================================ -->
+
+  <div class="section">
+    <div class="step-title">
+      <span class="step-num">Visualization of Interaction Flow </span>
+    </div>
+    <div class="phone-row">
+
+      <!-- ============= PEEK ============= -->
+      <div class="phone-cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"><i></i><i></i><i></i><i></i></span>
+              <span style="margin-left:4px;">5G</span>
+              <span class="battery"></span>
+            </span>
+          </div>
+
+          <div class="phone-screen">
+            <!-- Top search bar -->
+            <div class="top-search">
+              <span class="mark"><svg><use href="#aperture"/></svg></span>
+              <span class="input placeholder"><svg class="search-ic"><use href="#hi-search"/></svg>搜尋景點、城市、標籤…</span>
+              <span class="right-action"></span>
+            </div>
+
+            <!-- Filter chips -->
+            <div class="filter-row">
+              <span class="filter-chip active">全部</span>
+              <span class="filter-chip">雲海日出</span>
+              <span class="filter-chip">高山星空</span>
+            </div>
+
+            <!-- Pins (active one near top, sheet covers bottom) -->
+            <div class="phone-pin active" style="top: 32%; left: 38%;"></div>
+            <div class="phone-pin cluster" style="top: 22%; left: 65%;">5</div>
+            <div class="phone-pin" style="top: 42%; left: 70%;"></div>
+
+            <!-- Floating right FABs (above sheet) -->
+            <div class="map-ufo" style="bottom: 192px;">
+              <div class="fab-group">
+                <button class="fab" title="附近景點">
+                  <svg><use href="#hi-list"/></svg>
+                </button>
+                <span class="fab-label">景點</span>
+              </div>
+            </div>
+
+            <!-- Sheet — peek -->
+            <div class="sheet peek">
+              <div class="drag-handle"></div>
+              <div class="ic-hero">
+                <div class="ic-overlay"></div>
+                <div class="ic-actions">
+                  <button title="關閉"><svg><use href="#hi-xmark"/></svg></button>
+                </div>
+                <div class="ic-title-area">
+                  <h2>象山六巨石</h2>
+                  <div class="ic-subtitle">
+                    <span>夜景</span><span class="dot"></span>
+                    <span>★ 4.8</span><span class="dot"></span>
+                    <span>1.8 km</span>
+                  </div>
+                </div>
+              </div>
+              <div class="peek-strip">
+                <div class="peek-pill golden">
+                  <div class="pp-ico"><svg><use href="#hi-clock"/></svg></div>
+                  <div class="pp-text">
+                    <div class="pp-v">40<small style="font-size:10px;font-weight:500;">分</small></div>
+                    <div class="pp-k">黃金剩</div>
+                  </div>
+                </div>
+                <div class="peek-pill weather">
+                  <div class="pp-ico"><svg><use href="#hi-cloud"/></svg></div>
+                  <div class="pp-text">
+                    <div class="pp-v">22<small style="font-size:10px;font-weight:500;">°</small></div>
+                    <div class="pp-k">多雲</div>
+                  </div>
+                </div>
+                <div class="peek-pill rain">
+                  <div class="pp-ico"><svg><use href="#hi-drop"/></svg></div>
+                  <div class="pp-text">
+                    <div class="pp-v">15<small style="font-size:10px;font-weight:500;">%</small></div>
+                    <div class="pp-k">降雨</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="home-indicator"></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ============= HALF ============= -->
+      <div class="phone-cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"><i></i><i></i><i></i><i></i></span>
+              <span style="margin-left:4px;">5G</span>
+              <span class="battery"></span>
+            </span>
+          </div>
+
+          <div class="phone-screen">
+            <!-- Top search bar -->
+            <div class="top-search">
+              <span class="mark"><svg><use href="#aperture"/></svg></span>
+              <span class="input placeholder"><svg class="search-ic"><use href="#hi-search"/></svg>搜尋景點、城市、標籤…</span>
+              <span class="right-action"></span>
+            </div>
+
+            <!-- Filter chips -->
+            <div class="filter-row">
+              <span class="filter-chip active">全部</span>
+              <span class="filter-chip">雲海日出</span>
+              <span class="filter-chip">高山星空</span>
+            </div>
+
+            <!-- Active pin pushed near top -->
+            <div class="phone-pin active" style="top: 22%; left: 38%;"></div>
+
+            <!-- Sheet — half -->
+            <div class="sheet half">
+              <div class="drag-handle"></div>
+
+              <div class="ic-hero">
+                <div class="ic-overlay"></div>
+                <div class="ic-actions">
+                  <button title="收藏"><svg><use href="#hi-heart"/></svg></button>
+                  <button title="分享"><svg><use href="#hi-share"/></svg></button>
+                  <button title="關閉"><svg><use href="#hi-xmark"/></svg></button>
+                </div>
+                <div class="ic-title-area">
+                  <div class="ic-difficulty">難度 · 簡易</div>
+                  <h2>象山六巨石</h2>
+                  <div class="ic-subtitle">
+                    <span>夜景</span><span class="dot"></span>
+                    <span>★ 4.8</span><span class="dot"></span>
+                    <span>1.8 km 步道</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ic-body">
+                <!-- Sun timing -->
+                <div class="sun-timing">
+                  <div class="label"><span class="pulse"></span>黃金時刻 · 進行中</div>
+                  <div class="row">
+                    <div class="col">
+                      <div class="k"><svg><use href="#hi-sun"/></svg> 日出</div>
+                      <div class="v">05:32</div>
+                    </div>
+                    <div class="col golden">
+                      <div class="k"><svg><use href="#hi-clock"/></svg> 剩餘</div>
+                      <div class="v"><em>40</em><small>分</small></div>
+                    </div>
+                    <div class="col">
+                      <div class="k"><svg><use href="#hi-moon"/></svg> 日落</div>
+                      <div class="v">18:42</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Weather grid (4 cells) -->
+                <div class="weather-grid">
+                  <div class="wx-cell wx-weather">
+                    <div class="wx-icon"><svg><use href="#hi-cloud"/></svg></div>
+                    <div class="wx-text">
+                      <div class="wx-k">天氣</div>
+                      <div class="wx-v">22°<small>多雲時晴</small></div>
+                    </div>
+                  </div>
+                  <div class="wx-cell wx-rain">
+                    <div class="wx-icon"><svg><use href="#hi-drop"/></svg></div>
+                    <div class="wx-text">
+                      <div class="wx-k">降雨</div>
+                      <div class="wx-v">15<small>%</small></div>
+                    </div>
+                  </div>
+                  <div class="wx-cell wx-wind">
+                    <div class="wx-icon"><svg><use href="#hi-wind"/></svg></div>
+                    <div class="wx-text">
+                      <div class="wx-k">風速</div>
+                      <div class="wx-v">3 級<small>微風</small></div>
+                    </div>
+                  </div>
+                  <div class="wx-cell wx-vis">
+                    <div class="wx-icon"><svg><use href="#hi-eye"/></svg></div>
+                    <div class="wx-text">
+                      <div class="wx-k">能見度</div>
+                      <div class="wx-v">良好</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="ic-stats">
+                  <div class="stat"><div class="n">1,284</div><div class="l">作品</div></div>
+                  <div class="stat"><div class="n">428</div><div class="l">攝影師</div></div>
+                  <div class="stat"><div class="n">★ 4.8</div><div class="l">評分</div></div>
+                </div>
+              </div>
+
+              <div class="ic-foot">
+                <button class="btn primary flex">
+                  <svg><use href="#hi-map-pin"/></svg> 導航
+                </button>
+                <button class="btn icon" title="收藏">
+                  <svg><use href="#hi-bookmark"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="home-indicator"></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ============= FULL ============= -->
+      <div class="phone-cell">
+        <div class="phone">
+          <div class="island"></div>
+
+          <div class="phone-screen">
+            <!-- Sheet — full -->
+            <div class="sheet full">
+              <div class="drag-handle"></div>
+
+              <div class="ic-hero">
+                <div class="ic-overlay"></div>
+                <div class="ic-actions">
+                  <button title="收藏"><svg><use href="#hi-heart"/></svg></button>
+                  <button title="分享"><svg><use href="#hi-share"/></svg></button>
+                  <button title="關閉"><svg><use href="#hi-xmark"/></svg></button>
+                </div>
+                <div class="ic-title-area">
+                  <div class="ic-difficulty">難度 · 簡易</div>
+                  <h2>象山六巨石</h2>
+                  <div class="ic-subtitle">
+                    <span>夜景</span><span class="dot"></span>
+                    <span>★ 4.8</span><span class="dot"></span>
+                    <span>1.8 km 步道</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ic-body">
+                <div class="sun-timing">
+                  <div class="label"><span class="pulse"></span>黃金時刻 · 進行中</div>
+                  <div class="row">
+                    <div class="col">
+                      <div class="k"><svg><use href="#hi-sun"/></svg> 日出</div>
+                      <div class="v">05:32</div>
+                    </div>
+                    <div class="col golden">
+                      <div class="k"><svg><use href="#hi-clock"/></svg> 剩餘</div>
+                      <div class="v"><em>40</em><small>分</small></div>
+                    </div>
+                    <div class="col">
+                      <div class="k"><svg><use href="#hi-moon"/></svg> 日落</div>
+                      <div class="v">18:42</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="weather-grid">
+                  <div class="wx-cell wx-weather">
+                    <div class="wx-icon"><svg><use href="#hi-cloud"/></svg></div>
+                    <div class="wx-text">
+                      <div class="wx-k">天氣</div>
+                      <div class="wx-v">22°<small>多雲</small></div>
+                    </div>
+                  </div>
+                  <div class="wx-cell wx-rain">
+                    <div class="wx-icon"><svg><use href="#hi-drop"/></svg></div>
+                    <div class="wx-text">
+                      <div class="wx-k">降雨</div>
+                      <div class="wx-v">15<small>%</small></div>
+                    </div>
+                  </div>
+                  <div class="wx-cell wx-wind">
+                    <div class="wx-icon"><svg><use href="#hi-wind"/></svg></div>
+                    <div class="wx-text">
+                      <div class="wx-k">風速</div>
+                      <div class="wx-v">3 級</div>
+                    </div>
+                  </div>
+                  <div class="wx-cell wx-vis">
+                    <div class="wx-icon"><svg><use href="#hi-eye"/></svg></div>
+                    <div class="wx-text">
+                      <div class="wx-k">能見</div>
+                      <div class="wx-v">良好</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Hourly forecast -->
+                <div style="margin-bottom: 6px;">
+                  <h4 style="font-size: 11px; font-weight: 600; margin: 0 0 6px;">24 小時預報</h4>
+                  <div class="hourly-row">
+                    <div class="hourly-cell now">
+                      <div class="hour">現在</div>
+                      <div class="ico"><svg><use href="#hi-cloud"/></svg></div>
+                      <div class="t">22°</div>
+                    </div>
+                    <div class="hourly-cell">
+                      <div class="hour">17</div>
+                      <div class="ico"><svg><use href="#hi-cloud"/></svg></div>
+                      <div class="t">21°</div>
+                    </div>
+                    <div class="hourly-cell golden">
+                      <div class="hour">18</div>
+                      <div class="ico"><svg><use href="#hi-sun"/></svg></div>
+                      <div class="t">19°</div>
+                    </div>
+                    <div class="hourly-cell golden">
+                      <div class="hour">19</div>
+                      <div class="ico"><svg><use href="#hi-moon"/></svg></div>
+                      <div class="t">17°</div>
+                    </div>
+                    <div class="hourly-cell night">
+                      <div class="hour">20</div>
+                      <div class="ico"><svg><use href="#hi-moon"/></svg></div>
+                      <div class="t">16°</div>
+                    </div>
+                    <div class="hourly-cell night">
+                      <div class="hour">21</div>
+                      <div class="ico"><svg><use href="#hi-moon"/></svg></div>
+                      <div class="t">15°</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="ic-stats">
+                  <div class="stat"><div class="n">1,284</div><div class="l">作品</div></div>
+                  <div class="stat"><div class="n">428</div><div class="l">攝影師</div></div>
+                  <div class="stat"><div class="n">42</div><div class="l">本月</div></div>
+                </div>
+
+                <!-- Photo wall -->
+                <div class="photo-wall">
+                  <h4>
+                    社群作品
+                    <span class="more">查看全部 →</span>
+                  </h4>
+                  <div class="pw-grid">
+                    <div class="pw"></div>
+                    <div class="pw"></div>
+                    <div class="pw"></div>
+                    <div class="pw"></div>
+                    <div class="pw"></div>
+                    <div class="pw"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ic-foot">
+                <button class="btn primary flex">
+                  <svg><use href="#hi-map-pin"/></svg> 導航
+                </button>
+                <button class="btn icon" title="收藏">
+                  <svg><use href="#hi-bookmark"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="home-indicator"></div>
+          </div>
+        </div> 
+      </div>
+
+    </div>
+
+
+
+</div>
+</body>
+</html>
