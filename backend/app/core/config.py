@@ -40,6 +40,8 @@ class Settings(BaseSettings):
 
     # Upload limits (for presigned POST policies)
     PHOTO_UPLOAD_MAX_SIZE_MB: int = 20
+    # Presign expiration + server-side ownership check TTL (seconds)
+    PHOTO_PRESIGN_EXPIRE_SECONDS: int = 60 * 60
 
     # Email
     MAIL_USERNAME: str = ""
