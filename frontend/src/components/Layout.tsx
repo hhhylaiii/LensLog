@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import api from '../lib/api'
 import { clearTokens } from '../lib/auth'
-
+import T from '../styles/tokens'
 interface User {
   id: string
   username: string
@@ -20,27 +20,27 @@ const styles: Record<string, React.CSSProperties> = {
   sidebar: {
     width: '220px',
     flexShrink: 0,
-    background: '#13131a',
-    borderRight: '1px solid #2a2a38',
+    background: T.sideBgTwo,
+    borderRight: `1px solid ${T.sideLine}`,
     display: 'flex',
     flexDirection: 'column',
     padding: '0',
   },
   logoArea: {
     padding: '24px 20px 20px',
-    borderBottom: '1px solid #2a2a38',
+    borderBottom: `1px solid ${T.sideLine}`,
   },
   logoText: {
     fontSize: '22px',
     fontWeight: 700,
-    color: '#e8e8f0',
+    color: T.sideText,
     letterSpacing: '-0.5px',
   },
   logoAccent: {
-    color: '#6366f1',
+    color: T.accentNeon,
   },
   logoSub: {
-    color: '#555',
+    color: T.sideMute,
     fontSize: '11px',
     marginTop: '2px',
   },
@@ -54,7 +54,7 @@ const styles: Record<string, React.CSSProperties> = {
   navLabel: {
     fontSize: '10px',
     fontWeight: 600,
-    color: '#444',
+    color: T.sideMute,
     letterSpacing: '0.08em',
     textTransform: 'uppercase' as const,
     padding: '8px 8px 4px',
@@ -65,18 +65,18 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '10px',
     padding: '9px 12px',
     borderRadius: '8px',
-    color: '#888',
+    color: T.sideText,
     textDecoration: 'none',
     fontSize: '14px',
     fontWeight: 500,
     transition: 'background 0.15s, color 0.15s',
   },
   navLinkActive: {
-    background: '#1e1e2e',
+    background: T.sideBg,
     color: '#e8e8f0',
   },
   footer: {
-    borderTop: '1px solid #2a2a38',
+    borderTop: `1px solid ${T.sideLine}`,
     padding: '16px',
   },
   userInfo: {
@@ -85,20 +85,20 @@ const styles: Record<string, React.CSSProperties> = {
   userName: {
     fontSize: '13px',
     fontWeight: 600,
-    color: '#e8e8f0',
+    color: T.sideText,
   },
   userEmail: {
     fontSize: '11px',
-    color: '#555',
+    color: T.sideMute,
     marginTop: '2px',
   },
   logoutBtn: {
     width: '100%',
     background: 'transparent',
-    border: '1px solid #2a2a38',
+    border: `1px solid ${T.sideLine}`,
     borderRadius: '8px',
     padding: '8px 12px',
-    color: '#888',
+    color: T.sideMute,
     fontSize: '13px',
     cursor: 'pointer',
     textAlign: 'left' as const,
