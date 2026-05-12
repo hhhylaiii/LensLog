@@ -10,6 +10,7 @@ import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
 import markerIconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
 import api from '../lib/api'
+import T from '../styles/tokens'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -63,12 +64,41 @@ interface Location {
   tags: string[]
 }
 
-interface GlobalLocation {
-  id: string
-  name: string
-  description?: string
-  latitude: number
-  longitude: number
+const privacyStyles = {
+  shared: {
+    background: [
+      'linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.64))',
+      'radial-gradient(circle at 28% 16%, rgba(255,255,255,0.98), transparent 32%)',
+      'linear-gradient(180deg, rgba(219,255,235,0.52), rgba(255,255,255,0.08) 46%, rgba(33,200,117,0.08))',
+    ].join(', '),
+    border: '1px solid rgba(33,200,117,0.42)',
+    color: '#0f7a3f',
+    boxShadow: [
+      'inset 0 1px 0 rgba(255,255,255,0.98)',
+      'inset 0 -8px 16px rgba(33,200,117,0.08)',
+      '0 0 0 1px rgba(255,255,255,0.72)',
+      '0 10px 24px rgba(26,41,66,0.12)',
+      '0 0 18px rgba(33,200,117,0.14)',
+    ].join(', '),
+    textShadow: '0 1px 0 rgba(255,255,255,0.72)',
+  },
+  private: {
+    background: [
+      'linear-gradient(145deg, rgba(255,255,255,0.94), rgba(255,255,255,0.62))',
+      'radial-gradient(circle at 28% 16%, rgba(255,255,255,0.98), transparent 32%)',
+      'linear-gradient(180deg, rgba(255,224,235,0.6), rgba(255,255,255,0.08) 46%, rgba(240,111,157,0.1))',
+    ].join(', '),
+    border: '1px solid rgba(240,111,157,0.48)',
+    color: '#b83263',
+    boxShadow: [
+      'inset 0 1px 0 rgba(255,255,255,0.98)',
+      'inset 0 -8px 16px rgba(240,111,157,0.09)',
+      '0 0 0 1px rgba(255,255,255,0.74)',
+      '0 10px 24px rgba(26,41,66,0.12)',
+      '0 0 18px rgba(240,111,157,0.16)',
+    ].join(', '),
+    textShadow: '0 1px 0 rgba(255,255,255,0.72)',
+  },
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -76,16 +106,17 @@ interface GlobalLocation {
 const s: Record<string, React.CSSProperties> = {
   page: {
     padding: '32px 40px',
-    color: '#e8e8f0',
+    color: T.ink,
+    background: T.paper,
     fontFamily: "'Inter', system-ui, sans-serif",
-    maxWidth: '1100px',
-    margin: '0 auto',
+    minHeight: '100%',
+    boxSizing: 'border-box',
   },
   back: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
-    color: '#666',
+    color: T.inkSoft,
     fontSize: '13px',
     cursor: 'pointer',
     marginBottom: '24px',
@@ -99,11 +130,17 @@ const s: Record<string, React.CSSProperties> = {
     gridTemplateColumns: '1fr 380px',
     gap: '28px',
     alignItems: 'flex-start',
+    position: 'relative' as const,
+  },
+  imageColumn: {
+    position: 'relative' as const,
+    minHeight: 'calc(100vh - 140px)',
   },
 
   // Image
   imageWrap: {
-    background: '#0d0d18',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '14px',
     overflow: 'hidden',
     aspectRatio: '4/3',
@@ -116,7 +153,8 @@ const s: Record<string, React.CSSProperties> = {
   },
   image: { width: '100%', height: '100%', objectFit: 'contain' as const },
   imageWrapNatural: {
-    background: '#0d0d18',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '14px',
     overflow: 'hidden',
     maxHeight: 'calc(100vh - 160px)',
@@ -128,25 +166,25 @@ const s: Record<string, React.CSSProperties> = {
   },
   navZoneLeft: {
     position: 'absolute' as const,
-    left: 0, top: 0,
-    width: '25%', height: '100%',
+    left: '-40px', top: 0,
+    width: 'calc(50% + 40px)', height: '100%',
     cursor: 'w-resize',
-    zIndex: 2,
+    zIndex: 5,
   },
   navZoneRight: {
     position: 'absolute' as const,
-    right: 0, top: 0,
-    width: '25%', height: '100%',
+    right: '-28px', top: 0,
+    width: 'calc(50% + 28px)', height: '100%',
     cursor: 'e-resize',
-    zIndex: 2,
+    zIndex: 5,
   },
-  imagePlaceholder: { color: '#2a2a44', fontSize: '80px', userSelect: 'none' as const },
+  imagePlaceholder: { color: T.inkMute, fontSize: '80px', userSelect: 'none' as const },
   imageError: {
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
     gap: '12px',
-    color: '#555',
+    color: T.inkMute,
     fontSize: '14px',
   },
 
@@ -155,8 +193,8 @@ const s: Record<string, React.CSSProperties> = {
 
   // Caption card
   captionCard: {
-    background: '#13131a',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '12px',
     padding: '20px',
   },
@@ -167,14 +205,14 @@ const s: Record<string, React.CSSProperties> = {
     gap: '12px',
     marginBottom: '10px',
   },
-  captionText: { fontSize: '17px', fontWeight: 600, color: '#e8e8f0', lineHeight: 1.4, flex: 1 },
-  captionEmpty: { fontSize: '17px', fontWeight: 600, color: '#3a3a50', lineHeight: 1.4, flex: 1 },
+  captionText: { fontSize: '17px', fontWeight: 600, color: T.ink, lineHeight: 1.4, flex: 1, cursor: 'text' },
+  captionEmpty: { fontSize: '17px', fontWeight: 600, color: T.inkMute, lineHeight: 1.4, flex: 1, cursor: 'text' },
   captionInput: {
     flex: 1,
-    background: '#0d0d18',
-    border: '1px solid #3a3a50',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '8px',
-    color: '#e8e8f0',
+    color: T.ink,
     fontSize: '15px',
     fontWeight: 600,
     padding: '8px 12px',
@@ -190,33 +228,18 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '8px',
     fontSize: '12px',
-    color: '#666',
+    color: T.inkMute,
     flexWrap: 'wrap' as const,
     marginBottom: '14px',
   },
-  metaDot: { color: '#333' },
-  tagsRow: {
-    display: 'flex',
-    flexWrap: 'wrap' as const,
-    gap: '8px',
-    marginBottom: '14px',
-  },
-  tagChip: {
-    border: '1px solid #2a2a38',
-    background: '#0d0d18',
-    color: '#c9d2e3',
-    borderRadius: '999px',
-    padding: '4px 10px',
-    fontSize: '12px',
-    lineHeight: 1.2,
-  },
+  metaDot: { color: T.inkMute },
 
   // Edit / save buttons
   editBtn: {
-    background: 'transparent',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '8px',
-    color: '#666',
+    color: T.inkSoft,
     fontSize: '12px',
     padding: '5px 12px',
     cursor: 'pointer',
@@ -227,7 +250,7 @@ const s: Record<string, React.CSSProperties> = {
   actionRow: { display: 'flex', gap: '8px', marginTop: '12px' },
   saveBtn: {
     flex: 1,
-    background: '#6366f1',
+    background: T.accent,
     border: 'none',
     borderRadius: '8px',
     color: '#fff',
@@ -239,10 +262,10 @@ const s: Record<string, React.CSSProperties> = {
   },
   cancelBtn: {
     flex: 1,
-    background: 'transparent',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '8px',
-    color: '#888',
+    color: T.inkSoft,
     fontSize: '13px',
     padding: '9px',
     cursor: 'pointer',
@@ -251,17 +274,17 @@ const s: Record<string, React.CSSProperties> = {
   // Location select (edit mode)
   locationSelect: {
     width: '100%',
-    background: '#0d0d18',
-    border: '1px solid #3a3a50',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '8px',
-    color: '#e8e8f0',
+    color: T.ink,
     fontSize: '13px',
     padding: '8px 12px',
     outline: 'none',
     cursor: 'pointer',
     marginTop: '8px',
   },
-  locationLabel: { fontSize: '12px', color: '#555', marginTop: '12px', marginBottom: '4px' },
+  locationLabel: { fontSize: '12px', color: T.inkMute, marginTop: '12px', marginBottom: '4px' },
 
   // Toggle
   toggleRow: {
@@ -269,71 +292,75 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '10px',
     paddingTop: '14px',
-    borderTop: '1px solid #1e1e2e',
+    borderTop: `1px solid ${T.lineSoft}`,
   },
-  toggleLabel: { fontSize: '13px', color: '#888', flex: 1 },
+  toggleLabel: { fontSize: '13px', color: T.inkSoft, flex: 1 },
   toggleBtn: {
     padding: '7px 18px',
-    borderRadius: '20px',
-    border: 'none',
+    borderRadius: '999px',
     fontSize: '12px',
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: 'pointer',
-    transition: 'opacity 0.15s',
-    letterSpacing: '0.04em',
+    backdropFilter: 'blur(16px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+    transition: 'opacity 0.15s, box-shadow 0.15s',
+    letterSpacing: '0.02em',
   },
 
   // EXIF card
   exifCard: {
-    background: '#13131a',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '12px',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   exifHeader: {
     padding: '14px 18px',
-    borderBottom: '1px solid #1e1e2e',
+    borderBottom: `1px solid ${T.lineSoft}`,
     fontSize: '12px',
     fontWeight: 600,
-    color: '#555',
+    color: T.inkMute,
     letterSpacing: '0.07em',
     textTransform: 'uppercase' as const,
   },
   exifBody: { padding: '4px 0' },
   exifRow: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: '12px',
     padding: '10px 18px',
-    borderBottom: '1px solid #0d0d18',
+    borderBottom: `1px solid ${T.lineSoft}`,
+    minWidth: 0,
   },
   exifIcon: { fontSize: '16px', width: '22px', textAlign: 'center' as const, flexShrink: 0 },
   exifLabel: {
     fontSize: '11px',
-    color: '#555',
+    color: T.inkMute,
     width: '72px',
     flexShrink: 0,
     letterSpacing: '0.04em',
   },
   exifValue: {
     fontSize: '13px',
-    color: '#c0c0d0',
+    color: T.ink,
     flex: 1,
     minWidth: 0,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap' as const,
+    overflowWrap: 'anywhere' as const,
+    wordBreak: 'break-word' as const,
+    whiteSpace: 'normal' as const,
+    lineHeight: 1.45,
   },
   exifValueEmpty: {
     fontSize: '13px',
-    color: '#333',
+    color: T.inkMute,
     flex: 1,
+    lineHeight: 1.45,
   },
 
   // Location card (read-only)
   locationCard: {
-    background: '#13131a',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '12px',
     overflow: 'hidden',
     cursor: 'pointer',
@@ -349,31 +376,31 @@ const s: Record<string, React.CSSProperties> = {
     width: '36px',
     height: '36px',
     borderRadius: '8px',
-    background: '#1e1e2e',
+    background: T.paperTwo,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '16px',
     flexShrink: 0,
   },
-  locationName: { fontSize: '14px', fontWeight: 500, color: '#e8e8f0', marginBottom: '2px' },
-  locationMeta: { fontSize: '11px', color: '#666' },
-  locationArrow: { color: '#444', fontSize: '14px', marginLeft: 'auto' },
+  locationName: { fontSize: '14px', fontWeight: 500, color: T.ink, marginBottom: '2px' },
+  locationMeta: { fontSize: '11px', color: T.inkMute },
+  locationArrow: { color: T.inkMute, fontSize: '14px', marginLeft: 'auto' },
 
   // GPS mini-map
   mapWrap: {
     height: '180px',
     borderRadius: '12px',
     overflow: 'hidden',
-    border: '1px solid #2a2a38',
+    border: `1px solid ${T.line}`,
   },
 
   // Delete
   deleteBtn: {
-    background: 'transparent',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '8px',
-    color: '#555',
+    color: '#a51c30',
     fontSize: '12px',
     padding: '7px',
     cursor: 'pointer',
@@ -410,11 +437,11 @@ const s: Record<string, React.CSSProperties> = {
 
   // Retry button
   retryBtn: {
-    background: 'transparent',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '8px',
     padding: '7px 16px',
-    color: '#888',
+    color: T.inkSoft,
     fontSize: '13px',
     cursor: 'pointer',
   },
@@ -425,7 +452,7 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     height: '300px',
-    color: '#555',
+    color: T.inkMute,
     fontSize: '14px',
   },
   errorPage: {
@@ -435,7 +462,7 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     height: '300px',
     gap: '12px',
-    color: '#555',
+    color: T.inkMute,
     fontSize: '14px',
   },
 }
@@ -448,6 +475,21 @@ function fmt(iso?: string | null) {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
   })
+}
+
+function cleanLensModel(lens?: string | null) {
+  if (!lens) return null
+  const cleaned = lens
+    .replace(/\b\d+(?:\.\d+)?\s*-\s*\d+(?:\.\d+)?\s*mm\b/gi, '')
+    .replace(/\b\d+(?:\.\d+)?\s*mm\b/gi, '')
+    .replace(/\bf\s*\/\s*\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?\b/gi, '')
+    .replace(/\bF\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?\b/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,;/])/g, '$1')
+    .replace(/([,;/])\s*([,;/])/g, '$1')
+    .replace(/^[\s,;/|-]+|[\s,;/|-]+$/g, '')
+    .trim()
+  return cleaned || null
 }
 
 // ─── SafeImage ────────────────────────────────────────────────────────────────
@@ -603,16 +645,8 @@ const PhotoView: React.FC = () => {
   const exif = photo.exif
   const hasGps = exif?.gps_lat != null && exif?.gps_lng != null
   const cameraLabel = [exif?.make, exif?.model].filter(Boolean).join(' ') || null
-  const locationMap = Object.fromEntries(locations.map((item) => [item.id, item]))
-  const globalLocationMap = Object.fromEntries(globalLocations.map((item) => [item.id, item]))
-  const location = photo.location_id
-    ? (photo.location_source === 'global'
-      ? globalLocationMap[photo.location_id]
-      : locationMap[photo.location_id])
-    : undefined
-  const locationTags = Array.isArray((location as Location | undefined)?.tags)
-    ? (location as Location).tags
-    : undefined
+  const lensLabel = cleanLensModel(exif?.lens_model)
+  const location = photo.location_id ? locations.find((l) => l.id === photo.location_id) : undefined
 
   const currentIdx = photoList.findIndex(p => p.id === id)
   const prevId = currentIdx > 0 ? photoList[currentIdx - 1].id : null
@@ -626,7 +660,7 @@ const PhotoView: React.FC = () => {
       <div style={s.layout}>
 
         {/* ── Left: large image ── */}
-        <div>
+        <div style={s.imageColumn}>
           <div style={
             fitsFrame 
               ? s.imageWrap 
@@ -644,7 +678,7 @@ const PhotoView: React.FC = () => {
               />
             ) : imgFailed ? (
               <div style={s.imageError}>
-                <span style={{ fontSize: '40px', color: '#686868' }}>◈</span>
+                <span style={{ fontSize: '40px', color: T.inkMute }}>◈</span>
                 <span>圖片載入失敗</span>
                 <button
                   style={s.retryBtn}
@@ -656,21 +690,21 @@ const PhotoView: React.FC = () => {
             ) : (
               <div style={s.imagePlaceholder}>◈</div>
             )}
-            {photo.url && !imgFailed && prevId && (
-              <div
-                style={s.navZoneLeft}
-                onClick={(e) => { e.stopPropagation(); navigate(`/photos/${prevId}`) }}
-                title="上一張"
-              />
-            )}
-            {photo.url && !imgFailed && nextId && (
-              <div
-                style={s.navZoneRight}
-                onClick={(e) => { e.stopPropagation(); navigate(`/photos/${nextId}`) }}
-                title="下一張"
-              />
-            )}
           </div>
+          {photo.url && !imgFailed && prevId && (
+            <div
+              style={s.navZoneLeft}
+              onClick={(e) => { e.stopPropagation(); navigate(`/photos/${prevId}`) }}
+              title="上一張"
+            />
+          )}
+          {photo.url && !imgFailed && nextId && (
+            <div
+              style={s.navZoneRight}
+              onClick={(e) => { e.stopPropagation(); navigate(`/photos/${nextId}`) }}
+              title="下一張"
+            />
+          )}
         </div>
 
         {/* ── Right: info panel ── */}
@@ -690,12 +724,13 @@ const PhotoView: React.FC = () => {
                   onChange={(e) => setDraftCaption(e.target.value)}
                 />
               ) : (
-                <div style={photo.caption ? s.captionText : s.captionEmpty}>
+                <div
+                  style={photo.caption ? s.captionText : s.captionEmpty}
+                  onClick={handleEditOpen}
+                  title="點擊編輯標題"
+                >
                   {photo.caption || '未命名照片'}
                 </div>
-              )}
-              {!isEditing && (
-                <button style={s.editBtn} onClick={handleEditOpen}>編輯</button>
               )}
             </div>
 
@@ -782,14 +817,14 @@ const PhotoView: React.FC = () => {
                 type="button"
                 style={{
                   ...s.toggleBtn,
-                  background: photo.is_public ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)',
-                  color: photo.is_public ? '#10b981' : '#6366f1',
+                  ...(photo.is_public ? privacyStyles.shared : privacyStyles.private),
                   opacity: togglePublic.isPending ? 0.6 : 1,
                 }}
                 disabled={togglePublic.isPending}
                 onClick={() => togglePublic.mutate()}
+                title={photo.is_public ? '點擊設為私人' : '點擊設為公開'}
               >
-                {photo.is_public ? '切換為私人' : '切換為公開'}
+                {photo.is_public ? '🔓 Shared' : '🔒 Private'}
               </button>
             </div>
 
@@ -811,7 +846,7 @@ const PhotoView: React.FC = () => {
             <div style={s.exifHeader}>EXIF 資訊</div>
             <div style={s.exifBody}>
               <ExifRow icon={<Camera size={15} />}      label="相機"     value={cameraLabel} />
-              <ExifRow icon={<Wrench size={15} />}      label="鏡頭"     value={exif?.lens_model} />
+              <ExifRow icon={<Wrench size={15} />}      label="鏡頭"     value={lensLabel} />
               <ExifRow icon={<Maximize2 size={15} />}   label="焦段"     value={exif?.focal_length != null ? `${exif.focal_length} mm` : null} />
               <ExifRow icon={<Aperture size={15} />}    label="光圈"     value={exif?.aperture != null ? `f/${exif.aperture}` : null} />
               <ExifRow icon={<Timer size={15} />}       label="快門"     value={exif?.shutter_speed} />

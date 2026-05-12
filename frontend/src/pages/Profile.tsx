@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import T from '../styles/tokens'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,15 +64,53 @@ interface GearItem {
   model: string
 }
 
+const privacyStyles = {
+  shared: {
+    background: [
+      'linear-gradient(145deg, rgba(10,92,50,0.96), rgba(3,42,25,0.88))',
+      'radial-gradient(circle at 28% 18%, rgba(255,255,255,0.34), transparent 30%)',
+      'linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02) 42%, rgba(0,0,0,0.18))',
+    ].join(', '),
+    border: '1px solid rgba(90,255,168,0.58)',
+    color: '#c8ffdf',
+    boxShadow: [
+      'inset 0 1px 0 rgba(255,255,255,0.38)',
+      'inset 0 -10px 18px rgba(0,0,0,0.22)',
+      '0 0 0 1px rgba(33,200,117,0.18)',
+      '0 12px 30px rgba(6,63,36,0.32)',
+      '0 0 22px rgba(33,200,117,0.24)',
+    ].join(', '),
+    textShadow: '0 1px 1px rgba(0,0,0,0.35)',
+  },
+  private: {
+    background: [
+      'linear-gradient(145deg, rgba(111,20,58,0.96), rgba(50,12,32,0.88))',
+      'radial-gradient(circle at 28% 18%, rgba(255,255,255,0.36), transparent 30%)',
+      'linear-gradient(180deg, rgba(255,210,226,0.24), rgba(255,255,255,0.03) 44%, rgba(0,0,0,0.2))',
+    ].join(', '),
+    border: '1px solid rgba(255,145,184,0.66)',
+    color: '#ffe0eb',
+    boxShadow: [
+      'inset 0 1px 0 rgba(255,255,255,0.4)',
+      'inset 0 -10px 18px rgba(0,0,0,0.24)',
+      '0 0 0 1px rgba(255,145,184,0.18)',
+      '0 12px 30px rgba(76,31,50,0.34)',
+      '0 0 24px rgba(240,111,157,0.3)',
+    ].join(', '),
+    textShadow: '0 1px 1px rgba(0,0,0,0.38)',
+  },
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s: Record<string, React.CSSProperties> = {
   page: {
-    padding: '2px 0.25rem 16px',
-    color: '#e8e8f0',
+    padding: '24px',
+    color: T.ink,
+    background: T.paper,
     fontFamily: "'Inter', system-ui, sans-serif",
-    maxWidth: '1200px',
-    margin: '0 auto',
+    minHeight: '100%',
+    boxSizing: 'border-box',
   },
 
   // ── Banner ──
@@ -99,7 +138,7 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     gap: '8px',
     fontSize: '14px',
-    color: '#e8e8f0',
+    color: '#fff',
     transition: 'opacity 0.15s',
   },
   bannerFadeBottom: {
@@ -108,7 +147,7 @@ const s: Record<string, React.CSSProperties> = {
     left: 0,
     right: 0,
     height: '80px',
-    background: 'linear-gradient(to bottom, transparent, #0a0a0f)',
+    background: 'linear-gradient(to bottom, transparent, rgba(26,41,66,0.18))',
     pointerEvents: 'none' as const,
     zIndex: 3,
   },
@@ -118,28 +157,29 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '28px',
-    marginBottom: '32px',
+    marginBottom: '18px',
   },
   avatar: {
     width: '90px',
     height: '90px',
     borderRadius: '50%',
-    background: '#e8e8f0',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     flexShrink: 0,
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '30px',
-    color: '#939393',
+    color: T.inkMute,
   },
   avatarImg: { width: '100%', height: '100%', objectFit: 'cover' as const },
   profileInfo: { flex: 1 },
   nameRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' },
   displayName: { fontSize: '22px', fontWeight: 700, letterSpacing: '-0.3px' },
   proBadge: {
-    background: '#6366f1',
-    color: '#e8e8f0',
+    background: T.accent,
+    color: '#fff',
     fontSize: '10px',
     fontWeight: 700,
     padding: '2px 7px',
@@ -150,37 +190,46 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    color: '#888',
+    color: T.inkMute,
     fontSize: '13px',
     marginBottom: '12px',
     flexWrap: 'wrap' as const,
   },
-  metaDot: { color: '#444' },
-  bio: { color: '#aaa', fontSize: '14px', lineHeight: 1.65, maxWidth: '560px' },
+  metaDot: { color: T.inkMute },
+  bio: {
+    color: T.inkSoft,
+    fontSize: '14px',
+    lineHeight: 1.5,
+    margin: 0,
+    maxWidth: '720px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+  },
 
   // ── Stats bar (5 items) ──
   statsBar: {
     display: 'flex',
-    borderTop: '1px solid #2a2a38',
-    borderBottom: '1px solid #2a2a38',
+    borderTop: `1px solid ${T.line}`,
+    borderBottom: `1px solid ${T.line}`,
   },
-  statItem: { flex: 1, padding: '20px 24px', borderRight: '1px solid #2a2a38' },
+  statItem: { flex: 1, padding: '20px 24px', borderRight: `1px solid ${T.line}` },
   statItemLast: { flex: 1, padding: '20px 24px' },
   statNumber: { fontSize: '26px', fontWeight: 700, lineHeight: 1, marginBottom: '5px' },
-  statLabel: { fontSize: '12px', color: '#666' },
+  statLabel: { fontSize: '12px', color: T.inkMute },
 
   // ── Tabs ──
   tabBar: {
     display: 'flex',
     alignItems: 'center',
-    borderBottom: '1px solid #2a2a38',
+    borderBottom: `1px solid ${T.line}`,
     marginBottom: '20px',
   },
   tab: {
     padding: '14px 20px',
     fontSize: '14px',
     fontWeight: 500,
-    color: '#666',
+    color: T.inkMute,
     cursor: 'pointer',
     borderBottom: '2px solid transparent',
     marginBottom: '-1px',
@@ -190,9 +239,9 @@ const s: Record<string, React.CSSProperties> = {
     userSelect: 'none' as const,
     transition: 'color 0.15s',
   },
-  tabActive: { color: '#e8e8f0', borderBottomColor: '#6366f1' },
-  tabCount: { fontSize: '12px', color: '#555' },
-  tabCountActive: { fontSize: '12px', color: '#888' },
+  tabActive: { color: T.ink, borderBottomColor: T.accent },
+  tabCount: { fontSize: '12px', color: T.inkMute },
+  tabCountActive: { fontSize: '12px', color: T.accent },
 
   // ── Controls (filters + view toggle) ──
   controlsRow: {
@@ -205,16 +254,16 @@ const s: Record<string, React.CSSProperties> = {
   tagBtn: {
     padding: '5px 14px',
     borderRadius: '20px',
-    border: '1px solid #2a2a38',
-    background: 'transparent',
-    color: '#888',
+    border: `1px solid ${T.line}`,
+    background: T.card,
+    color: T.inkSoft,
     fontSize: '13px',
     cursor: 'pointer',
   },
   tagBtnActive: {
-    background: '#e8e8f0',
-    color: '#0a0a0f',
-    borderColor: '#e8e8f0',
+    background: T.sideBg,
+    color: '#fff',
+    borderColor: T.sideBg,
     fontWeight: 600,
   },
   viewToggle: { display: 'flex', gap: '4px', flexShrink: 0, alignItems: 'center' },
@@ -222,21 +271,21 @@ const s: Record<string, React.CSSProperties> = {
     width: '32px',
     height: '32px',
     borderRadius: '6px',
-    border: '1px solid #2a2a38',
-    background: 'transparent',
-    color: '#666',
+    border: `1px solid ${T.line}`,
+    background: T.card,
+    color: T.inkSoft,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '15px',
   },
-  viewBtnActive: { background: '#6366f1', color: '#fff', borderColor: '#6366f1' },
+  viewBtnActive: { background: T.accent, color: '#fff', borderColor: T.accent },
   sortSelect: {
-    background: '#0d0d18',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '6px',
-    color: '#888',
+    color: T.inkSoft,
     fontSize: '12px',
     padding: '0 8px',
     height: '32px',
@@ -257,7 +306,8 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '14px',
     padding: '10px 12px',
-    background: '#0d0d18',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '8px',
     cursor: 'pointer',
   },
@@ -267,12 +317,12 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     objectFit: 'cover' as const,
     flexShrink: 0,
-    background: '#1e1e2e',
+    background: T.paperTwo,
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#333',
+    color: T.inkMute,
     fontSize: '11px',
     fontFamily: 'monospace',
   },
@@ -280,13 +330,13 @@ const s: Record<string, React.CSSProperties> = {
   photoListTitle: {
     fontSize: '14px',
     fontWeight: 500,
-    color: '#e8e8f0',
+    color: T.ink,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap' as const,
     marginBottom: '3px',
   },
-  photoListMeta: { fontSize: '12px', color: '#555' },
+  photoListMeta: { fontSize: '12px', color: T.inkMute },
   lockBadgeInline: {
     display: 'flex',
     alignItems: 'center',
@@ -311,7 +361,7 @@ const s: Record<string, React.CSSProperties> = {
     marginBottom: '24px',
   },
   photoCell: {
-    background: '#13131a',
+    background: T.paperTwo,
     overflow: 'hidden',
     borderRadius: '3px',
     position: 'relative',
@@ -319,7 +369,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   photoCellFeatured: { gridColumn: 'span 2', gridRow: 'span 2' },
   photoCellFeaturedFull: {
-    background: '#13131a',
+    background: T.paperTwo,
     overflow: 'hidden',
     borderRadius: '3px',
     position: 'relative' as const,
@@ -333,17 +383,17 @@ const s: Record<string, React.CSSProperties> = {
     padding: '20px 8px 8px',
     background: 'linear-gradient(to top, rgba(0,0,0,0.72), transparent)',
     fontSize: '11px',
-    color: '#e8e8f0',
+    color: '#fff',
     lineHeight: 1.4,
   },
-  lockPublic: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 1 },
-  lockPrivate: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(165,28,48,0.85)', color: '#fff', opacity: 1 },
-  lockPublicPend: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 0.4 },
-  lockPrivatePend: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(6px)', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, background: 'rgba(165,28,48,0.85)', color: '#fff', opacity: 0.4 },
-  lockInlinePublic: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 1 },
-  lockInlinePrivate: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(165,28,48,0.85)', color: '#fff', opacity: 1 },
-  lockInlinePublicP: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(16,185,129,0.85)', color: '#fff', opacity: 0.4 },
-  lockInlinePrivateP: { display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', whiteSpace: 'nowrap' as const, flexShrink: 0, background: 'rgba(165,28,48,0.85)', color: '#fff', opacity: 0.4 },
+  lockPublic: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(14px) saturate(170%)', WebkitBackdropFilter: 'blur(14px) saturate(170%)', letterSpacing: '0.02em', whiteSpace: 'nowrap' as const, ...privacyStyles.shared, opacity: 1 },
+  lockPrivate: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(14px) saturate(170%)', WebkitBackdropFilter: 'blur(14px) saturate(170%)', letterSpacing: '0.02em', whiteSpace: 'nowrap' as const, ...privacyStyles.private, opacity: 1 },
+  lockPublicPend: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(14px) saturate(170%)', WebkitBackdropFilter: 'blur(14px) saturate(170%)', letterSpacing: '0.02em', whiteSpace: 'nowrap' as const, ...privacyStyles.shared, opacity: 0.48 },
+  lockPrivatePend: { position: 'absolute' as const, top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(14px) saturate(170%)', WebkitBackdropFilter: 'blur(14px) saturate(170%)', letterSpacing: '0.02em', whiteSpace: 'nowrap' as const, ...privacyStyles.private, opacity: 0.48 },
+  lockInlinePublic: { display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em', whiteSpace: 'nowrap' as const, flexShrink: 0, backdropFilter: 'blur(14px) saturate(170%)', WebkitBackdropFilter: 'blur(14px) saturate(170%)', ...privacyStyles.shared, opacity: 1 },
+  lockInlinePrivate: { display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em', whiteSpace: 'nowrap' as const, flexShrink: 0, backdropFilter: 'blur(14px) saturate(170%)', WebkitBackdropFilter: 'blur(14px) saturate(170%)', ...privacyStyles.private, opacity: 1 },
+  lockInlinePublicP: { display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em', whiteSpace: 'nowrap' as const, flexShrink: 0, backdropFilter: 'blur(14px) saturate(170%)', WebkitBackdropFilter: 'blur(14px) saturate(170%)', ...privacyStyles.shared, opacity: 0.48 },
+  lockInlinePrivateP: { display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em', whiteSpace: 'nowrap' as const, flexShrink: 0, backdropFilter: 'blur(14px) saturate(170%)', WebkitBackdropFilter: 'blur(14px) saturate(170%)', ...privacyStyles.private, opacity: 0.48 },
   photoImg: { width: '100%', height: '100%', objectFit: 'cover' as const },
   photoPlaceholder: {
     width: '100%',
@@ -351,8 +401,8 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#111122',
-    color: '#333',
+    background: T.paperTwo,
+    color: T.inkMute,
     fontSize: '12px',
     fontFamily: 'monospace',
   },
@@ -367,7 +417,7 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     padding: '4px 9px',
     fontSize: '12px',
-    color: '#e8e8f0',
+    color: '#fff',
     maxWidth: 'calc(100% - 20px)',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -390,14 +440,14 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     padding: '3px 8px',
     fontSize: '11px',
-    color: '#e8e8f0',
+    color: '#fff',
   },
   likeBadge: {
     background: 'rgba(0,0,0,0.4)',
     borderRadius: '6px',
     padding: '3px 8px',
     fontSize: '12px',
-    color: '#e8e8f0',
+    color: '#fff',
   },
 
   // Visibility pill (top-right of any photo)
@@ -430,7 +480,7 @@ const s: Record<string, React.CSSProperties> = {
     width: '293px',
     height: '293px',
     background: 'transparent',
-    border: '2px dashed #2a2a38',
+    border: `2px dashed ${T.line}`,
     borderRadius: '6px',
     display: 'flex',
     flexDirection: 'column' as const,
@@ -439,17 +489,17 @@ const s: Record<string, React.CSSProperties> = {
     gap: '10px',
     cursor: 'pointer',
   },
-  emptyCellIcon: { fontSize: '36px', color: '#2a2a4e' },
-  emptyCellLabel: { fontSize: '13px', color: '#555' },
+  emptyCellIcon: { fontSize: '36px', color: T.accent },
+  emptyCellLabel: { fontSize: '13px', color: T.inkSoft },
 
   // Load more
   loadMoreWrap: { display: 'flex', justifyContent: 'center', marginBottom: '48px' },
   loadMoreBtn: {
-    background: 'transparent',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '8px',
     padding: '10px 28px',
-    color: '#888',
+    color: T.inkSoft,
     fontSize: '13px',
     cursor: 'pointer',
   },
@@ -461,27 +511,27 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '14px',
     padding: '12px 0',
-    borderBottom: '1px solid #1e1e2e',
+    borderBottom: `1px solid ${T.lineSoft}`,
   },
   listIcon: {
     width: '38px',
     height: '38px',
     borderRadius: '9px',
-    background: '#1e1e2e',
+    background: T.paperTwo,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '15px',
     flexShrink: 0,
   },
-  listName: { fontSize: '14px', fontWeight: 500, color: '#e8e8f0', marginBottom: '2px' },
-  listMeta: { fontSize: '12px', color: '#666' },
+  listName: { fontSize: '14px', fontWeight: 500, color: T.ink, marginBottom: '2px' },
+  listMeta: { fontSize: '12px', color: T.inkMute },
 
   // Bottom stats cards
   bottomRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' },
   bottomCard: {
-    background: '#13131a',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '12px',
     padding: '20px 22px',
   },
@@ -491,14 +541,14 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     marginBottom: '18px',
   },
-  bottomCardTitle: { fontSize: '13px', fontWeight: 600, color: '#e8e8f0' },
-  topBadge: { fontSize: '11px', fontWeight: 600, color: '#555', letterSpacing: '0.04em' },
+  bottomCardTitle: { fontSize: '13px', fontWeight: 600, color: T.ink },
+  topBadge: { fontSize: '11px', fontWeight: 600, color: T.inkMute, letterSpacing: '0.04em' },
   rankRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' },
   rankIcon: {
     width: '36px',
     height: '36px',
     borderRadius: '8px',
-    background: '#1e1e2e',
+    background: T.paperTwo,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -509,18 +559,18 @@ const s: Record<string, React.CSSProperties> = {
   rankName: {
     fontSize: '13px',
     fontWeight: 500,
-    color: '#e8e8f0',
+    color: T.ink,
     marginBottom: '2px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap' as const,
   },
-  rankMeta: { fontSize: '11px', color: '#666' },
+  rankMeta: { fontSize: '11px', color: T.inkMute },
   rankBar: { width: '72px', flexShrink: 0 },
-  barTrack: { background: '#2a2a38', borderRadius: '4px', height: '4px', overflow: 'hidden' },
-  barFill: { height: '100%', background: '#6366f1', borderRadius: '4px' },
+  barTrack: { background: T.paperTwo, borderRadius: '4px', height: '4px', overflow: 'hidden' },
+  barFill: { height: '100%', background: T.accent, borderRadius: '4px' },
 
-  emptyNote: { color: '#555', fontSize: '13px', padding: '12px 0' },
+  emptyNote: { color: T.inkMute, fontSize: '13px', padding: '12px 0' },
 
   // ── Avatar editing ──
   avatarWrap: {
@@ -546,14 +596,14 @@ const s: Record<string, React.CSSProperties> = {
     width: '24px',
     height: '24px',
     borderRadius: '50%',
-    background: '#2a2a3e',
-    border: '2px solid #0a0a0f',
+    background: T.accent,
+    border: `2px solid ${T.paper}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '11px',
     cursor: 'pointer',
-    color: '#aaa',
+    color: '#fff',
     padding: 0,
     zIndex: 2,
   },
@@ -561,8 +611,8 @@ const s: Record<string, React.CSSProperties> = {
     position: 'absolute',
     top: '100px',
     left: 0,
-    background: '#1a1a28',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '10px',
     padding: '8px',
     display: 'flex',
@@ -570,7 +620,7 @@ const s: Record<string, React.CSSProperties> = {
     gap: '4px',
     width: '144px',
     zIndex: 10,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+    boxShadow: '0 8px 24px rgba(26,41,66,0.16)',
   },
   badgeOption: {
     width: '32px',
@@ -585,8 +635,8 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
   },
   badgeOptionActive: {
-    background: '#2a2a44',
-    borderColor: '#6366f1',
+    background: T.accentSoft,
+    borderColor: T.accent,
   },
   hiddenInput: { display: 'none' },
 
@@ -598,7 +648,7 @@ const s: Record<string, React.CSSProperties> = {
     width: '54px',
     height: '54px',
     borderRadius: '50%',
-    background: '#6366f1',
+    background: T.accent,
     border: 'none',
     color: '#fff',
     fontSize: '26px',
@@ -607,7 +657,7 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 24px rgba(99,102,241,0.45)',
+    boxShadow: '0 4px 24px rgba(30,95,179,0.28)',
     zIndex: 100,
   },
 }
@@ -797,7 +847,7 @@ const Profile: React.FC = () => {
   const topGear = gear.slice(0, 3)
   const maxLocCount = topLocations[0]?.photoCount || 1
 
-  const bannerBg = localBanner ? undefined : 'linear-gradient(135deg, #0f0f1a 0%, #1a1040 50%, #0d1a2e 100%)'
+  const bannerBg = localBanner ? undefined : `linear-gradient(135deg, ${T.accentSoft} 0%, ${T.paperTwo} 55%, ${T.card} 100%)`
 
   return (
     <>
@@ -852,7 +902,7 @@ const Profile: React.FC = () => {
               {localAvatar || user?.avatar_url
                 ? <SafeImage src={localAvatar ?? user!.avatar_url!} alt="avatar" style={s.avatarImg} />
                 : (
-                  <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#b0b0be" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke={T.inkMute} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
@@ -904,7 +954,9 @@ const Profile: React.FC = () => {
               <span style={s.metaDot}>·</span>
               <span>{user?.created_at ? formatJoinDate(user.created_at) : '—'}</span>
             </div>
-            {user?.bio && <div style={s.bio}>{user.bio}</div>}
+            <p style={s.bio}>
+              {user?.bio || '用影像記錄光線、地點與拍攝路線。'}
+            </p>
           </div>
         </div>
 
@@ -1017,7 +1069,7 @@ const Profile: React.FC = () => {
                         title={photo.is_public ? '點擊設為私人' : '點擊設為公開'}
                         onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(photo) }}
                       >
-                        {photo.is_public ? '🔓 公開' : '🔒 私人'}
+                        {photo.is_public ? '🔓 Shared' : '🔒 Private'}
                       </button>
                     </div>
                   )
@@ -1095,7 +1147,7 @@ const Profile: React.FC = () => {
                         title={p.is_public ? '點擊設為私人' : '點擊設為公開'}
                         onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(p) }}
                       >
-                        {p.is_public ? '🔓 公開' : '🔒 私人'}
+                        {p.is_public ? '🔓 Shared' : '🔒 Private'}
                       </button>
                     </div>
                   )
