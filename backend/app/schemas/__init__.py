@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, date
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 # ─── Auth Schemas ────────────────────────────────────────────────────────────
@@ -58,11 +58,67 @@ class ExifResponse(BaseModel):
 
 
 class PhotoCreate(BaseModel):
-    s3_key: str
-    thumb_key: Optional[str] = None
-    caption: Optional[str] = None
-    location_id: Optional[uuid.UUID] = None
-    is_public: bool = True
+    s3_key: str = Field(
+        ...,
+        description="Object key returned by POST /api/v1/photos/presign.",
+        examples=["photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg"],
+    )
+    thumb_key: Optional[str] = Field(
+        default=None,
+        description="Optional thumbnail object key. Usually omitted because thumbnails are generated asynchronously.",
+        examples=["thumbnails/800/8b1f2e70-50c9-4b8a-a7a0-7f8f5e0e1c21.jpg"],
+    )
+    caption: Optional[str] = Field(
+        default=None,
+        description="User-provided photo caption.",
+        examples=["Rainy night in Ximending"],
+    )
+    location_id: Optional[uuid.UUID] = Field(
+        default=None,
+        description="Optional linked location ID.",
+        examples=["90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73"],
+    )
+    tags: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="Per-photo tags. Empty strings are removed and duplicates are deduplicated in order.",
+        examples=[["street", "night", "city"]],
+    )
+    is_public: bool = Field(
+        default=True,
+        description="Whether the photo is visible publicly.",
+        examples=[True],
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "s3_key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg",
+                    "caption": "Rainy night in Ximending",
+                    "location_id": "90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73",
+                    "tags": ["street", "night", "city"],
+                    "is_public": True,
+                }
+            ]
+        }
+    )
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def normalize_tags(cls, value) -> list[str]:
+        if value is None:
+            return []
+        cleaned: list[str] = []
+        for item in value:
+            tag = str(item).strip()
+            if not tag:
+                continue
+            if len(tag) > 50:
+                raise ValueError("Each tag must be 50 characters or fewer")
+            if tag not in cleaned:
+                cleaned.append(tag)
+        return cleaned
 
 
 class PhotoResponse(BaseModel):
@@ -73,14 +129,46 @@ class PhotoResponse(BaseModel):
     thumb_key: Optional[str]
     url: Optional[str] = None
     thumb_url: Optional[str] = None
-    caption: Optional[str]
-    is_public: bool
-    taken_at: Optional[datetime]
-    created_at: datetime
+    caption: Optional[str] = Field(default=None, examples=["Rainy night in Ximending"])
+    tags: list[str] = Field(default_factory=list, examples=[["street", "night", "city"]])
+    is_public: bool = Field(..., examples=[True])
+    taken_at: Optional[datetime] = Field(default=None, examples=["2026-04-10T19:45:00Z"])
+    created_at: datetime = Field(..., examples=["2026-04-10T20:00:00Z"])
     exif: Optional[ExifResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": "8b1f2e70-50c9-4b8a-a7a0-7f8f5e0e1c21",
+                    "user_id": "3f4a8c2d-7d87-4b69-8cc8-e12d9b3a0f11",
+                    "location_id": "90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73",
+                    "s3_key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg",
+                    "thumb_key": "thumbnails/800/8b1f2e70-50c9-4b8a-a7a0-7f8f5e0e1c21.jpg",
+                    "url": "https://s3.amazonaws.com/lenslog/photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg",
+                    "thumb_url": "https://s3.amazonaws.com/lenslog/thumbnails/800/8b1f2e70-50c9-4b8a-a7a0-7f8f5e0e1c21.jpg",
+                    "caption": "Rainy night in Ximending",
+                    "tags": ["street", "night", "city"],
+                    "is_public": True,
+                    "taken_at": "2026-04-10T19:45:00Z",
+                    "created_at": "2026-04-10T20:00:00Z",
+                    "exif": {
+                        "make": "FUJIFILM",
+                        "model": "X100VI",
+                        "lens_model": "Fujinon 23mm",
+                        "focal_length": 23.0,
+                        "focal_length_35": 35.0,
+                        "aperture": 2.0,
+                        "shutter_speed": "1/125",
+                        "iso": 1600,
+                        "width": 6240,
+                        "height": 4160,
+                    },
+                }
+            ]
+        },
+    )
 
 
 class PresignResponse(BaseModel):
@@ -155,9 +243,48 @@ class GearResponse(BaseModel):
 # ─── Update Schemas ───────────────────────────────────────────────────────────
 
 class PhotoUpdate(BaseModel):
-    caption: Optional[str] = None
-    is_public: Optional[bool] = None
-    location_id: Optional[uuid.UUID] = None
+    caption: Optional[str] = Field(default=None, examples=["Rainy night walk in Ximending"])
+    is_public: Optional[bool] = Field(default=None, examples=[False])
+    location_id: Optional[uuid.UUID] = Field(
+        default=None,
+        description="Set to a location UUID to relink, or null to remove the location.",
+        examples=["90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73"],
+    )
+    tags: Optional[list[str]] = Field(
+        default=None,
+        max_length=10,
+        description="Replacement tag list. Omit the field to keep current tags; send [] to clear all tags.",
+        examples=[["street", "rain", "night"]],
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "caption": "Rainy night walk in Ximending",
+                    "is_public": False,
+                    "location_id": "90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73",
+                    "tags": ["street", "rain", "night"],
+                }
+            ]
+        }
+    )
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def normalize_update_tags(cls, value):
+        if value is None:
+            return None
+        cleaned: list[str] = []
+        for item in value:
+            tag = str(item).strip()
+            if not tag:
+                continue
+            if len(tag) > 50:
+                raise ValueError("Each tag must be 50 characters or fewer")
+            if tag not in cleaned:
+                cleaned.append(tag)
+        return cleaned
 
 
 class LocationUpdate(BaseModel):
