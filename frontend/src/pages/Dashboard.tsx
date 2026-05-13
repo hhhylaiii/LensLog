@@ -9,6 +9,7 @@ interface Photo {
   caption?: string
   s3_key: string
   url?: string
+  tags: string[]
   created_at: string
   is_public: boolean
 }

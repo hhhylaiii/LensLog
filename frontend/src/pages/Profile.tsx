@@ -29,6 +29,7 @@ interface Photo {
   thumb_url?: string
   url?: string
   caption?: string
+  tags: string[]
   is_public: boolean
   taken_at?: string
   created_at: string
