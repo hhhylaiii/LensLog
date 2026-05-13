@@ -248,10 +248,10 @@ const s: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     background: t.paper2,
   },
-  // Spot list toggle button (top-right of map)
+  // Spot list toggle button (right side of map, below zoom)
   spotListToggle: {
     position: 'absolute',
-    top: '16px',
+    top: '100px',
     right: '16px',
     zIndex: 500,
     width: '36px',
@@ -271,6 +271,48 @@ const s: Record<string, React.CSSProperties> = {
     background: t.accentSoft,
     borderColor: t.accent,
     color: t.accentInk,
+  },
+  // Custom zoom control (top-right of map, replaces Leaflet default)
+  zoomControl: {
+    position: 'absolute',
+    top: '16px',
+    right: '16px',
+    zIndex: 500,
+    background: t.card,
+    border: `1px solid ${t.line}`,
+    borderRadius: '8px',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 4px 12px rgba(15,30,56,0.10)',
+  },
+  zoomBtn: {
+    width: '36px',
+    height: '36px',
+    background: 'transparent',
+    border: 0,
+    borderBottom: `1px solid ${t.line}`,
+    cursor: 'pointer',
+    color: t.ink,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+  },
+  // Scale indicator (bottom-left of map)
+  // TODO(#54-followup): wire up to Leaflet zoom level for dynamic distance
+  mapScale: {
+    position: 'absolute',
+    bottom: '14px',
+    left: '16px',
+    zIndex: 500,
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: '10px',
+    color: t.inkMute,
+    background: 'rgba(255,255,255,0.82)',
+    padding: '3px 7px',
+    borderRadius: '4px',
+    border: `1px solid ${t.line}`,
   },
   // Floating spot card
   spotCard: {
@@ -567,6 +609,16 @@ const MapController: React.FC<{ target: [number, number] | null }> = ({ target }
   return null
 }
 
+// ─── MapRefSetter — expose Leaflet instance to outside controls ────────────────
+
+const MapRefSetter: React.FC<{ onReady: (map: L.Map) => void }> = ({ onReady }) => {
+  const map = useMap()
+  useEffect(() => {
+    onReady(map)
+  }, [map, onReady])
+  return null
+}
+
 // ─── AddLocationModal ─────────────────────────────────────────────────────────
 
 interface AddLocationModalProps {
@@ -730,6 +782,7 @@ const MapExplore: React.FC = () => {
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [selected, setSelected] = useState<Location | null>(null)
   const [spotListOpen, setSpotListOpen] = useState(true)
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
 
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
@@ -847,12 +900,14 @@ const MapExplore: React.FC = () => {
           <MapContainer
             center={[25.033, 121.5654]}
             zoom={11}
+            zoomControl={false}
             style={{ height: '100%', width: '100%' }}
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             />
+            <MapRefSetter onReady={setMapInstance} />
             <MapController target={target} />
             <ClusterMarkers
               locations={filtered}
@@ -860,6 +915,42 @@ const MapExplore: React.FC = () => {
               selectedId={selected?.id ?? null}
             />
           </MapContainer>
+
+          {/* Custom zoom control */}
+          <div style={s.zoomControl}>
+            <button
+              style={s.zoomBtn}
+              onClick={() => mapInstance?.zoomIn()}
+              aria-label="放大"
+              title="放大"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5V19.5M19.5 12L4.5 12"
+                />
+              </svg>
+            </button>
+            <button
+              style={{ ...s.zoomBtn, borderBottom: 0 }}
+              onClick={() => mapInstance?.zoomOut()}
+              aria-label="縮小"
+              title="縮小"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 12H19"
+                />
+              </svg>
+            </button>
+          </div>
 
           {/* Spot list toggle button */}
           <button
@@ -881,6 +972,9 @@ const MapExplore: React.FC = () => {
               />
             </svg>
           </button>
+
+          {/* Scale indicator (static for now) */}
+          <div style={s.mapScale}>1 km ├───────┤</div>
 
           {/* Floating spot card */}
           {selected && (
