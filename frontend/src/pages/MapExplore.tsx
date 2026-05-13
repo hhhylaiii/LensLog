@@ -84,63 +84,52 @@ const s: Record<string, React.CSSProperties> = {
     background: t.paper,
     color: t.ink,
     fontFamily: "'Inter', 'Noto Sans TC', system-ui, sans-serif",
-    padding: '24px 32px',
+    padding: 0,
     boxSizing: 'border-box',
-    overflow: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
     letterSpacing: '-0.005em',
   },
-  topbar: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' },
+  // Topbar (single 56px row: heading + search + chips + add + avatar)
+  topbar: {
+    height: '56px',
+    flexShrink: 0,
+    padding: '0 20px',
+    background: t.card,
+    borderBottom: `1px solid ${t.line}`,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  topbarHeading: {
+    fontSize: '16px',
+    fontWeight: 600,
+    letterSpacing: '-0.015em',
+    margin: 0,
+    color: t.ink,
+    whiteSpace: 'nowrap',
+  },
   search: {
-    flex: 1,
-    maxWidth: '360px',
+    width: '340px',
+    flexShrink: 0,
     height: '34px',
     border: `1px solid ${t.line}`,
-    borderRadius: '6px',
-    background: t.card,
+    borderRadius: '8px',
+    background: t.paper,
     padding: '0 12px',
     fontSize: '13px',
     color: t.ink,
     outline: 'none',
     boxSizing: 'border-box',
   },
-  btnPrimary: {
-    height: '34px',
-    padding: '0 14px',
-    border: `1px solid ${t.accent}`,
-    borderRadius: '6px',
-    background: t.accent,
-    color: '#fff',
-    fontSize: '13px',
-    fontWeight: 500,
-    cursor: 'pointer',
+  topbarChips: {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    gap: '5px',
+    overflow: 'hidden',
   },
-  avatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    background: t.paper2,
-    border: `1px solid ${t.line}`,
-    marginLeft: 'auto',
-  },
-  h1: {
-    fontSize: '24px',
-    fontWeight: 600,
-    letterSpacing: '-0.02em',
-    margin: '0 0 2px',
-    color: t.ink,
-  },
-  underline: { position: 'relative', display: 'inline-block', paddingBottom: '3px' },
-  underlineBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '2px',
-    background: t.accent,
-    borderRadius: '1px',
-  },
-  pageSub: { color: t.inkSoft, fontSize: '13px', margin: '0 0 20px' },
-  chipRow: { marginBottom: '12px', display: 'flex', flexWrap: 'wrap', gap: '4px' },
   chip: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -152,15 +141,41 @@ const s: Record<string, React.CSSProperties> = {
     color: t.inkSoft,
     cursor: 'pointer',
     fontWeight: 400,
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
   },
   chipOn: { background: t.ink, borderColor: t.ink, color: '#fff', fontWeight: 500 },
-  chipNeutral: { background: t.paper2, color: t.ink },
+  btnPrimary: {
+    height: '32px',
+    padding: '0 14px',
+    border: `1px solid ${t.accent}`,
+    borderRadius: '8px',
+    background: t.accent,
+    color: '#fff',
+    fontSize: '13px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    flexShrink: 0,
+  },
+  avatar: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    background: t.paper2,
+    border: `1px solid ${t.line}`,
+    flexShrink: 0,
+  },
+  // Body (fills remaining vertical space)
   body: {
+    flex: 1,
     display: 'grid',
     gridTemplateColumns: '300px 1fr',
     gap: '14px',
-    height: 'calc(100vh - 220px)',
-    minHeight: '460px',
+    padding: '14px',
+    minHeight: 0,
     position: 'relative',
   },
   // List card
@@ -711,52 +726,36 @@ const MapExplore: React.FC = () => {
     <div style={s.page}>
       <PulseStyle />
 
-      {/* Topbar: search + add + avatar */}
+      {/* Topbar: heading + search + chips + add + avatar (single row) */}
       <div style={s.topbar}>
+        <h2 style={s.topbarHeading}>探索攝影地圖</h2>
         <input
           style={s.search}
-          placeholder=" 搜尋景點、城市、標籤…"
+          placeholder="搜尋景點、城市、標籤…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <div style={s.topbarChips}>
+          <button
+            style={{ ...s.chip, ...(selectedTag === null ? s.chipOn : {}) }}
+            onClick={() => setSelectedTag(null)}
+          >
+            全部
+          </button>
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              style={{ ...s.chip, ...(selectedTag === tag ? s.chipOn : {}) }}
+              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
         <button style={s.btnPrimary} onClick={() => setShowModal(true)}>
           ＋ 新增景點
         </button>
         <div style={s.avatar} />
-      </div>
-
-      {/* Heading */}
-      <h1 style={s.h1}>
-        探索
-        <span style={s.underline}>
-          攝影路線
-          <span style={s.underlineBar} />
-        </span>
-      </h1>
-      <p style={s.pageSub}>
-        全台 {locations.length} 處攝影熱點 · {Math.floor(locations.length * 0.06)} 處收藏
-      </p>
-
-      {/* Tag chips */}
-      <div style={s.chipRow}>
-        <button
-          style={{ ...s.chip, ...(selectedTag === null ? s.chipOn : {}) }}
-          onClick={() => setSelectedTag(null)}
-        >
-          全部
-        </button>
-        {allTags.map((tag) => (
-          <button
-            key={tag}
-            style={{ ...s.chip, ...(selectedTag === tag ? s.chipOn : {}) }}
-            onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-          >
-            {tag}
-          </button>
-        ))}
-        <button style={{ ...s.chip, ...s.chipNeutral }} onClick={() => setShowModal(true)}>
-          ＋自訂
-        </button>
       </div>
 
       {/* Body: list + map */}
