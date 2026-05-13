@@ -78,6 +78,7 @@ export const photoMetadataSchema = z.object({
   s3_key: z.string().min(1),
   caption: z.string().max(2000).optional(),
   location_id: z.string().uuid().optional(),
+  tags: z.array(z.string().trim().min(1).max(50)).max(10, '最多 10 個標籤').default([]),
   is_public: z.boolean().default(true),
 })
 

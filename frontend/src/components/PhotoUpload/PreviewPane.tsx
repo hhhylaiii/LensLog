@@ -68,7 +68,7 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({ item, onChange }) => {
             </span>
           )}
         </div>
-        <div style={{ fontSize: 11, color: T.inkMute, marginTop: 8 }}>僅本機顯示，未來支援儲存</div>
+        <div style={{ fontSize: 11, color: T.inkMute, marginTop: 8 }}>上傳時會一併儲存到照片資料</div>
       </div>
     </div>
   )

@@ -178,6 +178,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onSuccess }) => {
       await api.post('/photos', {
         s3_key: data.s3_key,
         caption: item.caption || undefined,
+        tags: item.tags,
         is_public: true,
       })
       updateFile(index, { status: 'done', progress: 100 })
