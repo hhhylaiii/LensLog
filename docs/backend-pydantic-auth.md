@@ -79,12 +79,14 @@ class PhotoCreate(BaseModel):
     s3_key: str
     caption: str | None = None
     location_id: uuid.UUID | None = None
+    tags: list[str] = []
     is_public: bool = True
 
 # API 回應序列化
 class PhotoResponse(BaseModel):
     id: uuid.UUID
     s3_key: str
+    tags: list[str]
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)  # 允許從 ORM 物件直接建立
 ```
