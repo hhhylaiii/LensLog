@@ -168,26 +168,50 @@ const s: Record<string, React.CSSProperties> = {
     border: `1px solid ${t.line}`,
     flexShrink: 0,
   },
-  // Body (fills remaining vertical space)
+  // Body (fills remaining vertical space, flex row: spot list + map)
   body: {
     flex: 1,
-    display: 'grid',
-    gridTemplateColumns: '300px 1fr',
-    gap: '14px',
-    padding: '14px',
+    display: 'flex',
     minHeight: 0,
     position: 'relative',
+    overflow: 'hidden',
   },
-  // List card
-  listCard: {
+  // Spot list panel — collapsible 268px slide-in
+  spotList: {
+    width: '268px',
+    flexShrink: 0,
+    overflow: 'hidden',
     background: t.card,
-    border: `1px solid ${t.line}`,
-    borderRadius: '8px',
-    padding: '8px',
-    overflow: 'auto',
+    borderRight: `1px solid ${t.line}`,
+    transition: 'width 0.24s ease, border-color 0.24s ease',
+    display: 'flex',
+    flexDirection: 'column',
   },
-  listHeader: { padding: '4px 8px 8px', fontSize: '12px', color: t.inkSoft },
-  listItems: { display: 'grid', gap: '8px' },
+  spotListClosed: { width: 0, borderRightColor: 'transparent' },
+  spotListInner: {
+    width: '268px',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  listHeader: {
+    padding: '10px 14px 8px',
+    fontSize: '10.5px',
+    color: t.inkMute,
+    fontFamily: "'IBM Plex Mono', monospace",
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    borderBottom: `1px solid ${t.lineSoft}`,
+  },
+  listItems: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '6px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
   listItem: {
     display: 'flex',
     gap: '8px',
@@ -217,13 +241,36 @@ const s: Record<string, React.CSSProperties> = {
     color: t.inkMute,
     marginTop: '2px',
   },
-  // Map
+  // Map (full-bleed, fills remaining width)
   mapWrap: {
+    flex: 1,
     position: 'relative',
-    border: `1px solid ${t.line}`,
-    borderRadius: '8px',
     overflow: 'hidden',
     background: t.paper2,
+  },
+  // Spot list toggle button (top-right of map)
+  spotListToggle: {
+    position: 'absolute',
+    top: '16px',
+    right: '16px',
+    zIndex: 500,
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    background: t.card,
+    border: `1px solid ${t.line}`,
+    boxShadow: '0 4px 12px rgba(15,30,56,0.10)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: t.inkSoft,
+    padding: 0,
+  },
+  spotListToggleActive: {
+    background: t.accentSoft,
+    borderColor: t.accent,
+    color: t.accentInk,
   },
   // Floating spot card
   spotCard: {
@@ -682,6 +729,7 @@ const MapExplore: React.FC = () => {
   const [showModal, setShowModal] = useState(false)
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [selected, setSelected] = useState<Location | null>(null)
+  const [spotListOpen, setSpotListOpen] = useState(true)
 
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
@@ -760,35 +808,37 @@ const MapExplore: React.FC = () => {
 
       {/* Body: list + map */}
       <div style={s.body}>
-        {/* List card */}
-        <div style={s.listCard}>
-          <div style={s.listHeader}>排序: 距離 ↓</div>
-          <div style={s.listItems}>
-            {filtered.length === 0 ? (
-              <div style={s.emptyList}>{search ? '沒有符合的景點' : '還沒有景點'}</div>
-            ) : (
-              filtered.map((loc) => {
-                const active = selected?.id === loc.id
-                return (
-                  <div
-                    key={loc.id}
-                    style={{ ...s.listItem, ...(active ? s.listItemActive : {}) }}
-                    onClick={() => handleSelect(loc)}
-                  >
-                    <div style={s.thumb} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={s.itemName}>{loc.name}</div>
-                      <div style={s.itemMeta}>
-                        {loc.tags[0] || '景點'} · ★ 4.{(loc.id.charCodeAt(0) % 9) + 1}
-                      </div>
-                      <div style={s.itemMono}>
-                        {Number(loc.latitude).toFixed(3)}, {Number(loc.longitude).toFixed(3)}
+        {/* Slide-in spot list panel */}
+        <div style={{ ...s.spotList, ...(spotListOpen ? {} : s.spotListClosed) }}>
+          <div style={s.spotListInner}>
+            <div style={s.listHeader}>全台 {locations.length} 處 · 距離</div>
+            <div style={s.listItems}>
+              {filtered.length === 0 ? (
+                <div style={s.emptyList}>{search ? '沒有符合的景點' : '還沒有景點'}</div>
+              ) : (
+                filtered.map((loc) => {
+                  const active = selected?.id === loc.id
+                  return (
+                    <div
+                      key={loc.id}
+                      style={{ ...s.listItem, ...(active ? s.listItemActive : {}) }}
+                      onClick={() => handleSelect(loc)}
+                    >
+                      <div style={s.thumb} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={s.itemName}>{loc.name}</div>
+                        <div style={s.itemMeta}>
+                          {loc.tags[0] || '景點'} · ★ 4.{(loc.id.charCodeAt(0) % 9) + 1}
+                        </div>
+                        <div style={s.itemMono}>
+                          {Number(loc.latitude).toFixed(3)}, {Number(loc.longitude).toFixed(3)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })
-            )}
+                  )
+                })
+              )}
+            </div>
           </div>
         </div>
 
@@ -810,6 +860,27 @@ const MapExplore: React.FC = () => {
               selectedId={selected?.id ?? null}
             />
           </MapContainer>
+
+          {/* Spot list toggle button */}
+          <button
+            style={{
+              ...s.spotListToggle,
+              ...(spotListOpen ? s.spotListToggleActive : {}),
+            }}
+            onClick={() => setSpotListOpen((v) => !v)}
+            aria-label="切換景點清單"
+            title="景點清單"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                stroke="currentColor"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8.25 6.75H20.25M8.25 12H20.25M8.25 17.25H20.25"
+              />
+            </svg>
+          </button>
 
           {/* Floating spot card */}
           {selected && (
