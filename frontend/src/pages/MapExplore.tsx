@@ -84,63 +84,52 @@ const s: Record<string, React.CSSProperties> = {
     background: t.paper,
     color: t.ink,
     fontFamily: "'Inter', 'Noto Sans TC', system-ui, sans-serif",
-    padding: '24px 32px',
+    padding: 0,
     boxSizing: 'border-box',
-    overflow: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
     letterSpacing: '-0.005em',
   },
-  topbar: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' },
+  // Topbar (single 56px row: heading + search + chips + add + avatar)
+  topbar: {
+    height: '56px',
+    flexShrink: 0,
+    padding: '0 20px',
+    background: t.card,
+    borderBottom: `1px solid ${t.line}`,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  topbarHeading: {
+    fontSize: '16px',
+    fontWeight: 600,
+    letterSpacing: '-0.015em',
+    margin: 0,
+    color: t.ink,
+    whiteSpace: 'nowrap',
+  },
   search: {
-    flex: 1,
-    maxWidth: '360px',
+    width: '340px',
+    flexShrink: 0,
     height: '34px',
     border: `1px solid ${t.line}`,
-    borderRadius: '6px',
-    background: t.card,
+    borderRadius: '8px',
+    background: t.paper,
     padding: '0 12px',
     fontSize: '13px',
     color: t.ink,
     outline: 'none',
     boxSizing: 'border-box',
   },
-  btnPrimary: {
-    height: '34px',
-    padding: '0 14px',
-    border: `1px solid ${t.accent}`,
-    borderRadius: '6px',
-    background: t.accent,
-    color: '#fff',
-    fontSize: '13px',
-    fontWeight: 500,
-    cursor: 'pointer',
+  topbarChips: {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    gap: '5px',
+    overflow: 'hidden',
   },
-  avatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    background: t.paper2,
-    border: `1px solid ${t.line}`,
-    marginLeft: 'auto',
-  },
-  h1: {
-    fontSize: '24px',
-    fontWeight: 600,
-    letterSpacing: '-0.02em',
-    margin: '0 0 2px',
-    color: t.ink,
-  },
-  underline: { position: 'relative', display: 'inline-block', paddingBottom: '3px' },
-  underlineBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '2px',
-    background: t.accent,
-    borderRadius: '1px',
-  },
-  pageSub: { color: t.inkSoft, fontSize: '13px', margin: '0 0 20px' },
-  chipRow: { marginBottom: '12px', display: 'flex', flexWrap: 'wrap', gap: '4px' },
   chip: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -152,27 +141,77 @@ const s: Record<string, React.CSSProperties> = {
     color: t.inkSoft,
     cursor: 'pointer',
     fontWeight: 400,
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
   },
   chipOn: { background: t.ink, borderColor: t.ink, color: '#fff', fontWeight: 500 },
-  chipNeutral: { background: t.paper2, color: t.ink },
-  body: {
-    display: 'grid',
-    gridTemplateColumns: '300px 1fr',
-    gap: '14px',
-    height: 'calc(100vh - 220px)',
-    minHeight: '460px',
-    position: 'relative',
-  },
-  // List card
-  listCard: {
-    background: t.card,
-    border: `1px solid ${t.line}`,
+  btnPrimary: {
+    height: '32px',
+    padding: '0 14px',
+    border: `1px solid ${t.accent}`,
     borderRadius: '8px',
-    padding: '8px',
-    overflow: 'auto',
+    background: t.accent,
+    color: '#fff',
+    fontSize: '13px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    flexShrink: 0,
   },
-  listHeader: { padding: '4px 8px 8px', fontSize: '12px', color: t.inkSoft },
-  listItems: { display: 'grid', gap: '8px' },
+  avatar: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    background: t.paper2,
+    border: `1px solid ${t.line}`,
+    flexShrink: 0,
+  },
+  // Body (fills remaining vertical space, flex row: spot list + map)
+  body: {
+    flex: 1,
+    display: 'flex',
+    minHeight: 0,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  // Spot list panel — collapsible 268px slide-in
+  spotList: {
+    width: '268px',
+    flexShrink: 0,
+    overflow: 'hidden',
+    background: t.card,
+    borderRight: `1px solid ${t.line}`,
+    transition: 'width 0.24s ease, border-color 0.24s ease',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  spotListClosed: { width: 0, borderRightColor: 'transparent' },
+  spotListInner: {
+    width: '268px',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  listHeader: {
+    padding: '10px 14px 8px',
+    fontSize: '10.5px',
+    color: t.inkMute,
+    fontFamily: "'IBM Plex Mono', monospace",
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    borderBottom: `1px solid ${t.lineSoft}`,
+  },
+  listItems: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '6px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
   listItem: {
     display: 'flex',
     gap: '8px',
@@ -202,13 +241,78 @@ const s: Record<string, React.CSSProperties> = {
     color: t.inkMute,
     marginTop: '2px',
   },
-  // Map
+  // Map (full-bleed, fills remaining width)
   mapWrap: {
+    flex: 1,
     position: 'relative',
+    overflow: 'hidden',
+    background: t.paper2,
+  },
+  // Spot list toggle button (right side of map, below zoom)
+  spotListToggle: {
+    position: 'absolute',
+    top: '100px',
+    right: '16px',
+    zIndex: 500,
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    background: t.card,
+    border: `1px solid ${t.line}`,
+    boxShadow: '0 4px 12px rgba(15,30,56,0.10)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: t.inkSoft,
+    padding: 0,
+  },
+  spotListToggleActive: {
+    background: t.accentSoft,
+    borderColor: t.accent,
+    color: t.accentInk,
+  },
+  // Custom zoom control (top-right of map, replaces Leaflet default)
+  zoomControl: {
+    position: 'absolute',
+    top: '16px',
+    right: '16px',
+    zIndex: 500,
+    background: t.card,
     border: `1px solid ${t.line}`,
     borderRadius: '8px',
     overflow: 'hidden',
-    background: t.paper2,
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 4px 12px rgba(15,30,56,0.10)',
+  },
+  zoomBtn: {
+    width: '36px',
+    height: '36px',
+    background: 'transparent',
+    border: 0,
+    borderBottom: `1px solid ${t.line}`,
+    cursor: 'pointer',
+    color: t.ink,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+  },
+  // Scale indicator (bottom-left of map)
+  // TODO(#54-followup): wire up to Leaflet zoom level for dynamic distance
+  mapScale: {
+    position: 'absolute',
+    bottom: '14px',
+    left: '16px',
+    zIndex: 500,
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: '10px',
+    color: t.inkMute,
+    background: 'rgba(255,255,255,0.82)',
+    padding: '3px 7px',
+    borderRadius: '4px',
+    border: `1px solid ${t.line}`,
   },
   // Floating spot card
   spotCard: {
@@ -505,6 +609,16 @@ const MapController: React.FC<{ target: [number, number] | null }> = ({ target }
   return null
 }
 
+// ─── MapRefSetter — expose Leaflet instance to outside controls ────────────────
+
+const MapRefSetter: React.FC<{ onReady: (map: L.Map) => void }> = ({ onReady }) => {
+  const map = useMap()
+  useEffect(() => {
+    onReady(map)
+  }, [map, onReady])
+  return null
+}
+
 // ─── AddLocationModal ─────────────────────────────────────────────────────────
 
 interface AddLocationModalProps {
@@ -667,6 +781,8 @@ const MapExplore: React.FC = () => {
   const [showModal, setShowModal] = useState(false)
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [selected, setSelected] = useState<Location | null>(null)
+  const [spotListOpen, setSpotListOpen] = useState(true)
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
 
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
@@ -711,85 +827,71 @@ const MapExplore: React.FC = () => {
     <div style={s.page}>
       <PulseStyle />
 
-      {/* Topbar: search + add + avatar */}
+      {/* Topbar: heading + search + chips + add + avatar (single row) */}
       <div style={s.topbar}>
+        <h2 style={s.topbarHeading}>探索攝影地圖</h2>
         <input
           style={s.search}
-          placeholder=" 搜尋景點、城市、標籤…"
+          placeholder="搜尋景點、城市、標籤…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <div style={s.topbarChips}>
+          <button
+            style={{ ...s.chip, ...(selectedTag === null ? s.chipOn : {}) }}
+            onClick={() => setSelectedTag(null)}
+          >
+            全部
+          </button>
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              style={{ ...s.chip, ...(selectedTag === tag ? s.chipOn : {}) }}
+              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
         <button style={s.btnPrimary} onClick={() => setShowModal(true)}>
           ＋ 新增景點
         </button>
         <div style={s.avatar} />
       </div>
 
-      {/* Heading */}
-      <h1 style={s.h1}>
-        探索
-        <span style={s.underline}>
-          攝影路線
-          <span style={s.underlineBar} />
-        </span>
-      </h1>
-      <p style={s.pageSub}>
-        全台 {locations.length} 處攝影熱點 · {Math.floor(locations.length * 0.06)} 處收藏
-      </p>
-
-      {/* Tag chips */}
-      <div style={s.chipRow}>
-        <button
-          style={{ ...s.chip, ...(selectedTag === null ? s.chipOn : {}) }}
-          onClick={() => setSelectedTag(null)}
-        >
-          全部
-        </button>
-        {allTags.map((tag) => (
-          <button
-            key={tag}
-            style={{ ...s.chip, ...(selectedTag === tag ? s.chipOn : {}) }}
-            onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-          >
-            {tag}
-          </button>
-        ))}
-        <button style={{ ...s.chip, ...s.chipNeutral }} onClick={() => setShowModal(true)}>
-          ＋自訂
-        </button>
-      </div>
-
       {/* Body: list + map */}
       <div style={s.body}>
-        {/* List card */}
-        <div style={s.listCard}>
-          <div style={s.listHeader}>排序: 距離 ↓</div>
-          <div style={s.listItems}>
-            {filtered.length === 0 ? (
-              <div style={s.emptyList}>{search ? '沒有符合的景點' : '還沒有景點'}</div>
-            ) : (
-              filtered.map((loc) => {
-                const active = selected?.id === loc.id
-                return (
-                  <div
-                    key={loc.id}
-                    style={{ ...s.listItem, ...(active ? s.listItemActive : {}) }}
-                    onClick={() => handleSelect(loc)}
-                  >
-                    <div style={s.thumb} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={s.itemName}>{loc.name}</div>
-                      <div style={s.itemMeta}>
-                        {loc.tags[0] || '景點'} · ★ 4.{(loc.id.charCodeAt(0) % 9) + 1}
-                      </div>
-                      <div style={s.itemMono}>
-                        {Number(loc.latitude).toFixed(3)}, {Number(loc.longitude).toFixed(3)}
+        {/* Slide-in spot list panel */}
+        <div style={{ ...s.spotList, ...(spotListOpen ? {} : s.spotListClosed) }}>
+          <div style={s.spotListInner}>
+            <div style={s.listHeader}>全台 {locations.length} 處 · 距離</div>
+            <div style={s.listItems}>
+              {filtered.length === 0 ? (
+                <div style={s.emptyList}>{search ? '沒有符合的景點' : '還沒有景點'}</div>
+              ) : (
+                filtered.map((loc) => {
+                  const active = selected?.id === loc.id
+                  return (
+                    <div
+                      key={loc.id}
+                      style={{ ...s.listItem, ...(active ? s.listItemActive : {}) }}
+                      onClick={() => handleSelect(loc)}
+                    >
+                      <div style={s.thumb} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={s.itemName}>{loc.name}</div>
+                        <div style={s.itemMeta}>
+                          {loc.tags[0] || '景點'} · ★ 4.{(loc.id.charCodeAt(0) % 9) + 1}
+                        </div>
+                        <div style={s.itemMono}>
+                          {Number(loc.latitude).toFixed(3)}, {Number(loc.longitude).toFixed(3)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })
-            )}
+                  )
+                })
+              )}
+            </div>
           </div>
         </div>
 
@@ -798,12 +900,14 @@ const MapExplore: React.FC = () => {
           <MapContainer
             center={[25.033, 121.5654]}
             zoom={11}
+            zoomControl={false}
             style={{ height: '100%', width: '100%' }}
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             />
+            <MapRefSetter onReady={setMapInstance} />
             <MapController target={target} />
             <ClusterMarkers
               locations={filtered}
@@ -811,6 +915,66 @@ const MapExplore: React.FC = () => {
               selectedId={selected?.id ?? null}
             />
           </MapContainer>
+
+          {/* Custom zoom control */}
+          <div style={s.zoomControl}>
+            <button
+              style={s.zoomBtn}
+              onClick={() => mapInstance?.zoomIn()}
+              aria-label="放大"
+              title="放大"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5V19.5M19.5 12L4.5 12"
+                />
+              </svg>
+            </button>
+            <button
+              style={{ ...s.zoomBtn, borderBottom: 0 }}
+              onClick={() => mapInstance?.zoomOut()}
+              aria-label="縮小"
+              title="縮小"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 12H19"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Spot list toggle button */}
+          <button
+            style={{
+              ...s.spotListToggle,
+              ...(spotListOpen ? s.spotListToggleActive : {}),
+            }}
+            onClick={() => setSpotListOpen((v) => !v)}
+            aria-label="切換景點清單"
+            title="景點清單"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                stroke="currentColor"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8.25 6.75H20.25M8.25 12H20.25M8.25 17.25H20.25"
+              />
+            </svg>
+          </button>
+
+          {/* Scale indicator (static for now) */}
+          <div style={s.mapScale}>1 km ├───────┤</div>
 
           {/* Floating spot card */}
           {selected && (
