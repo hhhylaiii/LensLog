@@ -72,15 +72,17 @@ def upload_object(key: str, data: bytes, content_type: str = "image/jpeg"):
 
 def generate_presigned_url(
     key: str,
+    content_type: str,
     expiration: int = 3600,
-    content_type: str | None = None,
     tagging: str | None = None,
 ) -> str:
     """產生給前端直傳原始照片用的限時 URL"""
     s3 = get_storage_client()
-    params = {"Bucket": settings.STORAGE_BUCKET_NAME, "Key": key}
-    if content_type:
-        params["ContentType"] = content_type
+    params = {
+        "Bucket": settings.STORAGE_BUCKET_NAME,
+        "Key": key,
+        "ContentType": content_type,
+    }
     if tagging:
         params["Tagging"] = tagging
 
