@@ -2,10 +2,12 @@ export interface ExifData {
   make?: string; model?: string; lens?: string; aperture?: string
   shutter?: string; iso?: string; focalLength?: string; takenAt?: string
   width?: string; height?: string
+  gpsLat?: number; gpsLng?: number
 }
+export type LocationSource = 'user' | 'global'
 export interface LocationMatch {
   status: 'pending' | 'matched' | 'manual' | 'none'
-  loc?: { id: string; name: string; address: string; distance: number }
+  loc?: { id: string; name: string; source: LocationSource; distance?: number }
 }
 export type Visibility = 'public' | 'private'
 export interface FileItem {

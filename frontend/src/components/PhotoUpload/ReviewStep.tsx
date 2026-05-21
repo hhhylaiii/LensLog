@@ -37,7 +37,12 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ items, selectedIdx, onSelect, o
       {/* Right: metadata panels */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <ExifPanel exif={item.exif} />
-        <LocationPanel />
+        <LocationPanel
+          gpsLat={item.exif?.gpsLat}
+          gpsLng={item.exif?.gpsLng}
+          value={item.location}
+          onChange={(location) => onChangeItem(selectedIdx, { location })}
+        />
         <VisibilityPanel
           visibility={item.visibility}
           onChange={v => onChangeItem(selectedIdx, { visibility: v })}

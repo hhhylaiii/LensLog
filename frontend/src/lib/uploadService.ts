@@ -34,13 +34,21 @@ export async function uploadOne(
       },
     })
     const isPublic = item.visibility === 'public'
-    const locationId = item.location?.status === 'matched' ? item.location.loc?.id : undefined
+    const selectedLocation =
+      item.location?.status === 'matched' || item.location?.status === 'manual'
+        ? item.location.loc
+        : undefined
     await api.post('/photos', {
       s3_key: data.s3_key,
       caption: item.caption || undefined,
       tags: item.tags,
       is_public: isPublic,
-      ...(locationId ? { location_id: locationId } : {}),
+      ...(selectedLocation?.source === 'user'
+        ? { user_location_id: selectedLocation.id }
+        : {}),
+      ...(selectedLocation?.source === 'global'
+        ? { global_location_id: selectedLocation.id }
+        : {}),
     })
     updateItem(index, { status: 'done', progress: 100 })
   } catch (err: unknown) {
