@@ -149,7 +149,11 @@ backend/
 
 `app/api/v1/locations.py`
 - Location endpoints.
-- Location CRUD, nearby search with coordinates, and `GET /locations/{id}/weather` for 7-day forecast.
+- Current-user private location CRUD, nearby search with coordinates, and `GET /locations/{id}/weather` for 7-day forecast.
+
+`app/api/v1/location_directory.py`
+- Global location directory endpoints.
+- `GET /global-locations`, `GET /global-locations/{id}/weather`, and `GET /location-directory` for merged private/global matching results.
 
 `app/api/v1/gear.py`
 - Gear endpoints.
@@ -195,6 +199,7 @@ backend/
 
 `app/models/models.py`
 - Main model definitions such as `User`, `Photo`, `Location`, `Gear`, `Township`, and related records.
+- Includes both private `Location` and platform-maintained `GlobalLocation`, plus dual photo location linkage (`user_location_id` / `global_location_id`).
 
 `app/schemas/`
 - Pydantic schemas.
@@ -252,6 +257,7 @@ backend/
 - Versioned migration scripts.
 - Each file represents one database schema change.
 - `004_add_townships_table.py` — adds `townships` table with PostGIS `MULTIPOLYGON` geometry for reverse geocoding.
+- `005_add_global_locations_directory.py` — adds `global_locations`, splits photo location links into private/global FKs, and seeds initial global landmarks.
 
 ## Data Folder
 
@@ -294,6 +300,9 @@ backend/
 `tests/test_weather.py`
 - Integration tests for `GET /locations/{id}/weather` (success, 403, 404, 401, 422, 502, cache hit, field types).
 
+`tests/test_location_directory.py`
+- Integration tests for `GET /global-locations`, `GET /location-directory`, and `GET /global-locations/{id}/weather`.
+
 `tests/test_weather_service.py`
 - Unit tests for `weather_service.py` helpers (`_safe_int`, `_extract_element_times`, `_build_periods`, `get_weather_forecast`). All HTTP calls mocked.
 
@@ -301,7 +310,7 @@ backend/
 - Regression tests for `POST /api/v1/photos/presign` returning a presigned POST and enforcing a max upload size.
 
 `tests/test_photos.py`
-- Photo endpoint tests for presign headers and photo record creation behavior.
+- Photo endpoint tests for presign headers, private/global location validation, and photo record creation behavior.
 
 `tests/test_photos_s3_key_ownership.py`
 - Security tests for `POST /api/v1/photos` verifying `s3_key` ownership and one-time use (Redis-backed).

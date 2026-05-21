@@ -234,15 +234,31 @@ CREATE TABLE users (
 );
 
 -- 拍攝景點
+-- 使用者私人景點
 CREATE TABLE locations (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
     name        VARCHAR(200) NOT NULL,
     description TEXT,
-    geom        GEOGRAPHY(POINT, 4326) NOT NULL,  -- PostGIS 地理座標
+    latitude    NUMERIC(10,7) NOT NULL,
+    longitude   NUMERIC(10,7) NOT NULL,
+    geom        GEOMETRY(POINT, 4326),            -- PostGIS 點位
     created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX idx_locations_geom ON locations USING GIST(geom);
+
+-- 全站景點目錄
+CREATE TABLE global_locations (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name        VARCHAR(200) NOT NULL,
+    description TEXT,
+    latitude    NUMERIC(10,7) NOT NULL,
+    longitude   NUMERIC(10,7) NOT NULL,
+    geom        GEOMETRY(POINT, 4326),
+    is_active   BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX ix_global_locations_geom ON global_locations USING GIST(geom);
 
 -- 景點標籤
 CREATE TABLE location_tags (
@@ -255,7 +271,8 @@ CREATE TABLE location_tags (
 CREATE TABLE photos (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
-    location_id UUID REFERENCES locations(id) ON DELETE SET NULL,
+    user_location_id   UUID REFERENCES locations(id) ON DELETE SET NULL,
+    global_location_id UUID REFERENCES global_locations(id) ON DELETE SET NULL,
     s3_key      TEXT NOT NULL,           -- 原始圖 S3 路徑
     thumb_key   TEXT,                    -- 縮圖 S3 路徑
     caption     TEXT,
@@ -264,6 +281,7 @@ CREATE TABLE photos (
     taken_at    TIMESTAMPTZ,             -- 從 EXIF 讀取
     created_at  TIMESTAMPTZ DEFAULT NOW()
 );
+-- 規則：user_location_id / global_location_id 僅能擇一使用
 
 -- EXIF 資料
 CREATE TABLE exif_data (
@@ -319,21 +337,24 @@ CREATE TABLE gear (
 |--------|----------|------|
 | GET | `/photos` | 取得公開照片列表（分頁）|
 | POST | `/photos/presign` | 取得 S3 Presigned URL |
-| POST | `/photos` | 建立照片 metadata |
+| POST | `/photos` | 建立照片 metadata，可綁定私人景點或全站景點 |
 | GET | `/photos/{id}` | 取得單張照片詳情（含 EXIF）|
-| PATCH | `/photos/{id}` | 更新照片說明 / 地點 / 標籤 / 公開狀態 |
+| PATCH | `/photos/{id}` | 更新照片說明 / 地點來源 / 標籤 / 公開狀態 |
 | DELETE | `/photos/{id}` | 刪除照片 |
 
 ### 景點（Locations）
 
 | Method | Endpoint | 說明 |
 |--------|----------|------|
-| GET | `/locations` | 取得景點列表，支援 `?lat=&lng=&radius=` 地理篩選 |
-| POST | `/locations` | 新增景點 |
-| GET | `/locations/{id}` | 取得景點詳情（含照片、天氣）|
-| PATCH | `/locations/{id}` | 更新景點資訊 |
-| DELETE | `/locations/{id}` | 刪除景點 |
-| GET | `/locations/{id}/weather` | 取得景點 7 天天氣預報與日出日落時間 |
+| GET | `/locations` | 取得目前使用者的私人景點列表，支援 `?query=&lat=&lng=&radius=` |
+| POST | `/locations` | 新增私人景點 |
+| GET | `/locations/{id}` | 取得私人景點詳情 |
+| PATCH | `/locations/{id}` | 更新私人景點資訊 |
+| DELETE | `/locations/{id}` | 刪除私人景點 |
+| GET | `/locations/{id}/weather` | 取得私人景點 7 天天氣預報與日出日落時間 |
+| GET | `/global-locations` | 取得全站景點目錄，支援 `?query=&lat=&lng=&radius=` |
+| GET | `/global-locations/{id}/weather` | 取得全站景點 7 天天氣預報與日出日落時間 |
+| GET | `/location-directory` | 聚合搜尋私人景點 + 全站景點，供上傳配對使用 |
 
 ### 器材（Gear）
 
@@ -436,6 +457,7 @@ lenslog/
 │   │   │       ├── auth.py
 │   │   │       ├── photos.py
 │   │   │       ├── locations.py
+│   │   │       ├── location_directory.py
 │   │   │       ├── gear.py
 │   │   │       └── stats.py
 │   │   ├── core/
