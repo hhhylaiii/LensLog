@@ -10,7 +10,7 @@ Test scope:
 - 401: unauthenticated
 - 422: coordinates outside any known township
 - 502: CWA F-D0047-091 API failure
-- 502: Sunrise-Sunset API failure
+- Sunrise-Sunset API failure falls back to null sunrise/sunset
 - Field types: pop is int, wind_speed is str, start_time has timezone
 """
 
@@ -199,7 +199,7 @@ async def test_get_weather_cwa_api_failure(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_get_weather_sunrise_api_failure(client: AsyncClient):
-    """Sunrise-Sunset API failure returns 502."""
+    """Sunrise-Sunset API failure falls back to null sunrise/sunset."""
     token = await register_and_login(client, "user_w4", "w4@test.com", "password123")
     location_id = await create_location(client, token)
 
@@ -211,8 +211,11 @@ async def test_get_weather_sunrise_api_failure(client: AsyncClient):
             headers={"Authorization": f"Bearer {token}"},
         )
 
-    assert resp.status_code == 502
-    assert "Sunrise-sunset service unavailable" in resp.json()["detail"]
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["forecasts"]) == 2
+    assert data["sunrise"] is None
+    assert data["sunset"] is None
 
 
 @pytest.mark.asyncio
