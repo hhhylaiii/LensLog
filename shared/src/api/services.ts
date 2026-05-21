@@ -15,6 +15,8 @@ import type {
   Photo,
   PresignResponse,
   Location,
+  GlobalLocation,
+  DirectoryLocation,
   LocationWeather,
   Gear,
   FocalLengthStat,
@@ -61,15 +63,22 @@ export function createPhotosService(client: AxiosInstance) {
     create: (data: {
       s3_key: string
       caption?: string
-      location_id?: string
       tags?: string[]
+      user_location_id?: string
+      global_location_id?: string
       is_public?: boolean
     }) => client.post<Photo>('/photos', data),
 
     get: (id: string) =>
       client.get<Photo>(`/photos/${id}`),
 
-    update: (id: string, data: { caption?: string; location_id?: string; tags?: string[]; is_public?: boolean }) =>
+    update: (id: string, data: {
+      caption?: string
+      user_location_id?: string | null
+      global_location_id?: string | null
+      tags?: string[]
+      is_public?: boolean
+    }) =>
       client.patch<Photo>(`/photos/${id}`, data),
 
     delete: (id: string) =>
@@ -105,6 +114,12 @@ export function createLocationsService(client: AxiosInstance) {
 
     getWeather: (id: string) =>
       client.get<LocationWeather>(`/locations/${id}/weather`),
+
+    listGlobal: (params?: { query?: string; lat?: number; lng?: number; radius?: number }) =>
+      client.get<GlobalLocation[]>('/global-locations', { params }),
+
+    listDirectory: (params?: { query?: string; lat?: number; lng?: number; radius?: number }) =>
+      client.get<DirectoryLocation[]>('/location-directory', { params }),
   }
 }
 

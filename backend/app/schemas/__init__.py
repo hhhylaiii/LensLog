@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime, date
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
 # ─── Auth Schemas ────────────────────────────────────────────────────────────
@@ -73,10 +73,15 @@ class PhotoCreate(BaseModel):
         description="User-provided photo caption.",
         examples=["Rainy night in Ximending"],
     )
-    location_id: Optional[uuid.UUID] = Field(
+    user_location_id: Optional[uuid.UUID] = Field(
         default=None,
-        description="Optional linked location ID.",
+        description="Link photo to one of the current user's private locations.",
         examples=["90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73"],
+    )
+    global_location_id: Optional[uuid.UUID] = Field(
+        default=None,
+        description="Link photo to a platform-maintained global location.",
+        examples=["11111111-1111-1111-1111-111111111101"],
     )
     tags: list[str] = Field(
         default_factory=list,
@@ -96,7 +101,8 @@ class PhotoCreate(BaseModel):
                 {
                     "s3_key": "photos/c2fd4c7a-3ef1-47b8-a402-b6565516d1da/taipei-street.jpg",
                     "caption": "Rainy night in Ximending",
-                    "location_id": "90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73",
+                    "user_location_id": "90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73",
+                    "global_location_id": None,
                     "tags": ["street", "night", "city"],
                     "is_public": True,
                 }
@@ -120,11 +126,20 @@ class PhotoCreate(BaseModel):
                 cleaned.append(tag)
         return cleaned
 
+    @model_validator(mode="after")
+    def validate_location_choice(self):
+        if self.user_location_id and self.global_location_id:
+            raise ValueError("Only one location source may be selected")
+        return self
+
 
 class PhotoResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
-    location_id: Optional[uuid.UUID]
+    user_location_id: Optional[uuid.UUID] = Field(None, description="Private location ID when bound to a user-owned location")
+    global_location_id: Optional[uuid.UUID] = Field(None, description="Global location ID when bound to a platform-maintained location")
+    location_id: Optional[uuid.UUID] = Field(None, description="Convenience field exposing either user_location_id or global_location_id")
+    location_source: Optional[Literal["user", "global"]] = Field(None, description="Which location table the effective location_id belongs to")
     s3_key: str
     thumb_key: Optional[str]
     url: Optional[str] = None
@@ -211,6 +226,29 @@ class LocationResponse(BaseModel):
         from_attributes = True
 
 
+class GlobalLocationResponse(BaseModel):
+    id: uuid.UUID
+    name: str = Field(..., description="Global landmark name")
+    description: Optional[str] = Field(None, description="Optional global landmark description")
+    latitude: float = Field(..., description="Latitude in decimal degrees")
+    longitude: float = Field(..., description="Longitude in decimal degrees")
+    is_active: bool = Field(..., description="Whether the global location is visible in the public directory")
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class DirectoryLocationResponse(BaseModel):
+    id: uuid.UUID
+    source: Literal["user", "global"] = Field(..., description="Whether the match came from the user's private locations or the global directory")
+    name: str = Field(..., description="Location name")
+    description: Optional[str] = Field(None, description="Optional description")
+    latitude: float = Field(..., description="Latitude in decimal degrees")
+    longitude: float = Field(..., description="Longitude in decimal degrees")
+    distance_m: Optional[float] = Field(None, description="Distance from the query point in meters when lat/lng filtering is used")
+
+
 # ─── Gear Schemas ─────────────────────────────────────────────────────────────
 
 class GearCreate(BaseModel):
@@ -245,10 +283,15 @@ class GearResponse(BaseModel):
 class PhotoUpdate(BaseModel):
     caption: Optional[str] = Field(default=None, examples=["Rainy night walk in Ximending"])
     is_public: Optional[bool] = Field(default=None, examples=[False])
-    location_id: Optional[uuid.UUID] = Field(
+    user_location_id: Optional[uuid.UUID] = Field(
         default=None,
-        description="Set to a location UUID to relink, or null to remove the location.",
+        description="Replace the bound private location; mutually exclusive with global_location_id.",
         examples=["90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73"],
+    )
+    global_location_id: Optional[uuid.UUID] = Field(
+        default=None,
+        description="Replace the bound global location; mutually exclusive with user_location_id.",
+        examples=["11111111-1111-1111-1111-111111111101"],
     )
     tags: Optional[list[str]] = Field(
         default=None,
@@ -263,7 +306,8 @@ class PhotoUpdate(BaseModel):
                 {
                     "caption": "Rainy night walk in Ximending",
                     "is_public": False,
-                    "location_id": "90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73",
+                    "user_location_id": "90fa7cc1-9bd3-4215-bfa2-ecf2f576ee73",
+                    "global_location_id": None,
                     "tags": ["street", "rain", "night"],
                 }
             ]
@@ -285,6 +329,12 @@ class PhotoUpdate(BaseModel):
             if tag not in cleaned:
                 cleaned.append(tag)
         return cleaned
+
+    @model_validator(mode="after")
+    def validate_location_choice(self):
+        if self.user_location_id and self.global_location_id:
+            raise ValueError("Only one location source may be selected")
+        return self
 
 
 class LocationUpdate(BaseModel):

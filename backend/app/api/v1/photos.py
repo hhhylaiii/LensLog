@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.core.filenames import sanitize_filename
 from app.core.redis import get_redis
-from app.models.models import Photo, User
+from app.models.models import GlobalLocation, Location, Photo, User
 from app.schemas import PhotoCreate, PhotoUpdate, PhotoResponse, PresignResponse
 from app.services.storage_service import (
     generate_presigned_post,
@@ -36,6 +36,39 @@ def _with_url(photo: Photo) -> PhotoResponse:
 
 def _exif_opts():
     return selectinload(Photo.exif)
+
+
+async def _validate_photo_location(
+    db: AsyncSession,
+    current_user: User,
+    user_location_id: uuid.UUID | None,
+    global_location_id: uuid.UUID | None,
+) -> tuple[uuid.UUID | None, uuid.UUID | None]:
+    if user_location_id and global_location_id:
+        raise HTTPException(status_code=422, detail="Only one location source may be selected")
+
+    if user_location_id:
+        result = await db.execute(
+            select(Location).where(Location.id == user_location_id)
+        )
+        location = result.scalar_one_or_none()
+        if not location:
+            raise HTTPException(status_code=404, detail="User location not found")
+        if location.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to use this location")
+
+    if global_location_id:
+        result = await db.execute(
+            select(GlobalLocation).where(
+                GlobalLocation.id == global_location_id,
+                GlobalLocation.is_active.is_(True),
+            )
+        )
+        global_location = result.scalar_one_or_none()
+        if not global_location:
+            raise HTTPException(status_code=404, detail="Global location not found")
+
+    return user_location_id, global_location_id
 
 @router.get("", response_model=list[PhotoResponse])
 async def list_photos(
@@ -120,12 +153,25 @@ async def create_photo(
     1. 使用 await db.commit() 確保 ID 已產生。
     2. 呼叫 process_exif_task.delay 處理元數據。
     3. 呼叫 generate_thumbnail_task.delay 處理縮圖。
+    4. 照片可綁定擇一景點來源：`user_location_id` 或 `global_location_id`。
     """
     ok = await consume_presign(redis, data.s3_key, current_user.id)
     if not ok:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid s3_key")
 
-    photo = Photo(**data.model_dump(), user_id=current_user.id)
+    user_location_id, global_location_id = await _validate_photo_location(
+        db,
+        current_user,
+        data.user_location_id,
+        data.global_location_id,
+    )
+
+    photo = Photo(
+        **data.model_dump(exclude={"user_location_id", "global_location_id"}),
+        user_id=current_user.id,
+        user_location_id=user_location_id,
+        global_location_id=global_location_id,
+    )
     db.add(photo)
 
     # 【修改】必須先 Commit，否則後台 Worker 會因為 Transaction 未完成而找不到這筆 ID
@@ -168,7 +214,7 @@ async def update_photo(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """更新照片資訊 (如標題、描述)"""
+    """更新照片資訊，可切換照片綁定的私人景點或全站景點。"""
     result = await db.execute(
         select(Photo).where(Photo.id == photo_id).options(_exif_opts())
     )
@@ -178,7 +224,23 @@ async def update_photo(
     if photo.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    for field, value in data.model_dump(exclude_unset=True).items():
+    updated_user_location_id = photo.user_location_id
+    updated_global_location_id = photo.global_location_id
+    if "user_location_id" in data.model_fields_set:
+        updated_user_location_id = data.user_location_id
+    if "global_location_id" in data.model_fields_set:
+        updated_global_location_id = data.global_location_id
+
+    updated_user_location_id, updated_global_location_id = await _validate_photo_location(
+        db,
+        current_user,
+        updated_user_location_id,
+        updated_global_location_id,
+    )
+    photo.user_location_id = updated_user_location_id
+    photo.global_location_id = updated_global_location_id
+
+    for field, value in data.model_dump(exclude_unset=True, exclude={"user_location_id", "global_location_id"}).items():
         setattr(photo, field, value)
 
     await db.commit() # 【修改】更新也需要 commit

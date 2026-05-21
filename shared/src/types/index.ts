@@ -16,7 +16,10 @@ export interface User {
 export interface Photo {
   id: string
   user_id: string
+  user_location_id?: string
+  global_location_id?: string
   location_id?: string
+  location_source?: 'user' | 'global'
   s3_key: string
   thumb_key?: string
   url?: string
@@ -53,6 +56,26 @@ export interface Location {
   longitude: number
   tags: string[]
   created_at: string
+}
+
+export interface GlobalLocation {
+  id: string
+  name: string
+  description?: string
+  latitude: number
+  longitude: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface DirectoryLocation {
+  id: string
+  source: 'user' | 'global'
+  name: string
+  description?: string
+  latitude: number
+  longitude: number
+  distance_m?: number
 }
 
 export interface LocationWeather {

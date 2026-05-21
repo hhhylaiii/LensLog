@@ -51,8 +51,23 @@ class Location(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     user: Mapped["User"] = relationship("User", back_populates="locations")
-    photos: Mapped[list["Photo"]] = relationship("Photo", back_populates="location")
+    photos: Mapped[list["Photo"]] = relationship("Photo", back_populates="user_location")
     tags: Mapped[list["LocationTag"]] = relationship("LocationTag", back_populates="location", cascade="all, delete-orphan")
+
+
+class GlobalLocation(Base):
+    __tablename__ = "global_locations"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    latitude: Mapped[float] = mapped_column(Numeric(10, 7), nullable=False)
+    longitude: Mapped[float] = mapped_column(Numeric(10, 7), nullable=False)
+    geom: Mapped[Any | None] = mapped_column(Geometry("POINT", srid=4326), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    photos: Mapped[list["Photo"]] = relationship("Photo", back_populates="global_location")
 
 
 class LocationTag(Base):
@@ -69,7 +84,8 @@ class Photo(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
-    location_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("locations.id", ondelete="SET NULL"))
+    user_location_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("locations.id", ondelete="SET NULL"))
+    global_location_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("global_locations.id", ondelete="SET NULL"))
     s3_key: Mapped[str] = mapped_column(Text, nullable=False)
     thumb_key: Mapped[str | None] = mapped_column(Text)
     caption: Mapped[str | None] = mapped_column(Text)
@@ -79,8 +95,21 @@ class Photo(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     user: Mapped["User"] = relationship("User", back_populates="photos")
-    location: Mapped["Location"] = relationship("Location", back_populates="photos")
+    user_location: Mapped["Location | None"] = relationship("Location", back_populates="photos")
+    global_location: Mapped["GlobalLocation | None"] = relationship("GlobalLocation", back_populates="photos")
     exif: Mapped["ExifData"] = relationship("ExifData", back_populates="photo", uselist=False, cascade="all, delete-orphan")
+
+    @property
+    def location_id(self) -> uuid.UUID | None:
+        return self.user_location_id or self.global_location_id
+
+    @property
+    def location_source(self) -> str | None:
+        if self.user_location_id:
+            return "user"
+        if self.global_location_id:
+            return "global"
+        return None
 
 
 class ExifData(Base):
