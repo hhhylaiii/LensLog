@@ -139,9 +139,16 @@ async def get_location_weather(
     )
 
     if isinstance(forecast_data, Exception):
+        logger.exception("Weather forecast fetch failed for county=%s", township.county, exc_info=forecast_data)
         raise HTTPException(status_code=502, detail="Weather service unavailable")
     if isinstance(sun_data, Exception):
-        raise HTTPException(status_code=502, detail="Sunrise-sunset service unavailable")
+        logger.warning(
+            "Sunrise-sunset fetch failed for lat=%s lng=%s: %r",
+            lat,
+            lng,
+            sun_data,
+        )
+        sun_data = {}
 
     def to_local_hhmm(utc_iso: str) -> str | None:
         try:
