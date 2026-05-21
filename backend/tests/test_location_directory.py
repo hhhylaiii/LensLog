@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 from geoalchemy2.elements import WKTElement
 from unittest.mock import AsyncMock, patch
