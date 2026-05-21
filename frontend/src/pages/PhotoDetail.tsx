@@ -38,7 +38,10 @@ interface ExifData {
 interface PhotoFull {
   id: string
   user_id: string
+  user_location_id?: string
+  global_location_id?: string
   location_id?: string
+  location_source?: 'user' | 'global'
   s3_key: string
   thumb_key?: string
   url?: string
@@ -58,6 +61,14 @@ interface Location {
   latitude: number
   longitude: number
   tags: string[]
+}
+
+interface GlobalLocation {
+  id: string
+  name: string
+  description?: string
+  latitude: number
+  longitude: number
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -503,7 +514,7 @@ const PhotoView: React.FC = () => {
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false)
   const [draftCaption, setDraftCaption] = useState('')
-  const [draftLocationId, setDraftLocationId] = useState('')
+  const [draftLocationValue, setDraftLocationValue] = useState('')
 
   const { data: photo, isLoading, isError } = useQuery<PhotoFull>({
     queryKey: ['photo', id],
@@ -514,6 +525,10 @@ const PhotoView: React.FC = () => {
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
     queryFn: () => api.get('/locations').then((r) => r.data),
+  })
+  const { data: globalLocations = [] } = useQuery<GlobalLocation[]>({
+    queryKey: ['global-locations'],
+    queryFn: () => api.get('/global-locations').then((r) => r.data),
   })
 
   const { data: photoList = [] } = useQuery<PhotoFull[]>({
@@ -529,7 +544,7 @@ const PhotoView: React.FC = () => {
   useEffect(() => {
     if (photo && isEditing) {
       setDraftCaption(photo.caption ?? '')
-      setDraftLocationId(photo.location_id ?? '')
+      setDraftLocationValue(photo.location_id && photo.location_source ? `${photo.location_source}:${photo.location_id}` : '')
     }
   }, [photo, isEditing])
 
@@ -557,7 +572,8 @@ const PhotoView: React.FC = () => {
     mutationFn: () =>
       api.patch(`/photos/${id}`, {
         caption: draftCaption.trim() || null,
-        location_id: draftLocationId || null,
+        user_location_id: draftLocationValue.startsWith('user:') ? draftLocationValue.slice(5) : null,
+        global_location_id: draftLocationValue.startsWith('global:') ? draftLocationValue.slice(7) : null,
       }).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['photo', id] })
@@ -568,7 +584,7 @@ const PhotoView: React.FC = () => {
 
   const handleEditOpen = () => {
     setDraftCaption(photo?.caption ?? '')
-    setDraftLocationId(photo?.location_id ?? '')
+    setDraftLocationValue(photo?.location_id && photo.location_source ? `${photo.location_source}:${photo.location_id}` : '')
     setIsEditing(true)
   }
 
@@ -587,7 +603,16 @@ const PhotoView: React.FC = () => {
   const exif = photo.exif
   const hasGps = exif?.gps_lat != null && exif?.gps_lng != null
   const cameraLabel = [exif?.make, exif?.model].filter(Boolean).join(' ') || null
-  const location = photo.location_id ? locations.find((l) => l.id === photo.location_id) : undefined
+  const locationMap = Object.fromEntries(locations.map((item) => [item.id, item]))
+  const globalLocationMap = Object.fromEntries(globalLocations.map((item) => [item.id, item]))
+  const location = photo.location_id
+    ? (photo.location_source === 'global'
+      ? globalLocationMap[photo.location_id]
+      : locationMap[photo.location_id])
+    : undefined
+  const locationTags = Array.isArray((location as Location | undefined)?.tags)
+    ? (location as Location).tags
+    : undefined
 
   const currentIdx = photoList.findIndex(p => p.id === id)
   const prevId = currentIdx > 0 ? photoList[currentIdx - 1].id : null
@@ -700,12 +725,15 @@ const PhotoView: React.FC = () => {
                 <select
                   style={s.locationSelect}
                   aria-label="所屬景點"
-                  value={draftLocationId}
-                  onChange={(e) => setDraftLocationId(e.target.value)}
+                  value={draftLocationValue}
+                  onChange={(e) => setDraftLocationValue(e.target.value)}
                 >
                   <option value="">— 無景點 —</option>
                   {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    <option key={`user:${loc.id}`} value={`user:${loc.id}`}>我的景點 · {loc.name}</option>
+                  ))}
+                  {globalLocations.map((loc) => (
+                    <option key={`global:${loc.id}`} value={`global:${loc.id}`}>全站景點 · {loc.name}</option>
                   ))}
                 </select>
               </>
@@ -720,8 +748,8 @@ const PhotoView: React.FC = () => {
                   <div>
                     <div style={s.locationName}>{location.name}</div>
                     <div style={s.locationMeta}>
-                      {location.tags?.length
-                        ? location.tags.join(' · ')
+                      {locationTags?.length
+                        ? locationTags.join(' · ')
                         : `${Number(location.latitude).toFixed(4)}, ${Number(location.longitude).toFixed(4)}`}
                     </div>
                   </div>
