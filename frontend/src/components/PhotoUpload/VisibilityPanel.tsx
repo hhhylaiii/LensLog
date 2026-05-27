@@ -1,11 +1,11 @@
 import React from 'react'
 import T from '../../styles/tokens'
+import { useBreakpoint } from '../../hooks/useBreakpoint'
 import type { Visibility } from '../../lib/uploadTypes'
 
-const VISIBILITY_OPTIONS: { value: Visibility; label: string; desc: string }[] = [
-  { value: 'public',  label: '公開',  desc: '所有人可見' },
-  { value: 'private', label: '私人',  desc: '僅自己可見' },
-  // { value: 'followers', label: '僅追蹤者', desc: '追蹤者可見' },
+const VISIBILITY_OPTIONS: { value: Visibility; label: string; desc: string; icon: string }[] = [
+  { value: 'public',  label: '公開', desc: '所有人可見', icon: '🌐' },
+  { value: 'private', label: '私人', desc: '僅自己可見', icon: '🔒' },
 ]
 
 interface VisibilityPanelProps {
@@ -16,6 +16,22 @@ interface VisibilityPanelProps {
 }
 
 const VisibilityPanel: React.FC<VisibilityPanelProps> = ({ visibility, onChange, hidePreciseGps, onToggleGps }) => {
+  const { isMobile } = useBreakpoint()
+  const current = VISIBILITY_OPTIONS.find(o => o.value === visibility) ?? VISIBILITY_OPTIONS[0]
+  const next = VISIBILITY_OPTIONS.find(o => o.value !== visibility) ?? VISIBILITY_OPTIONS[1]
+
+  if (isMobile) {
+    return (
+      <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 11, fontWeight: 500 }}>{current.icon} {current.label}</span>
+        <span style={{ fontSize: 10, color: T.inkMute }}>{current.desc}</span>
+        <span onClick={() => onChange(next.value)} style={{ fontSize: 10, color: T.accent, fontWeight: 500, cursor: 'pointer' }}>
+          變更
+        </span>
+      </div>
+    )
+  }
+
   return (
     <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, padding: 14 }}>
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 10.5, color: T.inkMute, marginBottom: 10 }}>
@@ -26,11 +42,7 @@ const VisibilityPanel: React.FC<VisibilityPanelProps> = ({ visibility, onChange,
           const sel = visibility === opt.value
           return (
             <label key={opt.value} onClick={() => onChange(opt.value)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: sel ? T.ink : T.inkSoft }}>
-              <span style={{
-                width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-                border: `1.5px solid ${sel ? T.accent : T.line}`,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              }}>
+              <span style={{ width: 14, height: 14, borderRadius: '50%', flexShrink: 0, border: `1.5px solid ${sel ? T.accent : T.line}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                 {sel && <span style={{ width: 7, height: 7, borderRadius: '50%', background: T.accent }} />}
               </span>
               <span>{opt.label}</span>
@@ -48,4 +60,5 @@ const VisibilityPanel: React.FC<VisibilityPanelProps> = ({ visibility, onChange,
     </div>
   )
 }
+
 export default VisibilityPanel

@@ -31,31 +31,26 @@ const FileList: React.FC<FileListProps> = ({ items, selectedIdx, onSelect, onAdd
 
   if (isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {header}
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+      <div style={{ background: T.card, borderBottom: `1px solid ${T.lineSoft}` }}>
+        <div style={{ display: 'flex', gap: 5, padding: '8px 10px', overflowX: 'auto' }}>
           {items.map((item, i) => {
             const sel = i === selectedIdx
-            const st = statusLabel(item.status)
             return (
               <div key={i} onClick={() => onSelect(i)} style={{
                 flexShrink: 0,
-                border: sel ? `2px solid ${T.accent}` : `1px solid ${T.line}`,
-                borderRadius: 8, overflow: 'hidden', cursor: 'pointer',
+                border: sel ? `1.5px solid ${T.accent}` : `1px solid ${T.line}`,
+                borderRadius: 5, overflow: 'hidden', cursor: 'pointer',
                 background: sel ? T.accentSoft : T.card,
               }}>
-                <img src={item.preview} alt="" style={{ width: 72, height: 72, objectFit: 'cover', display: 'block' }} />
-                <div style={{ padding: '3px 4px', fontSize: 9, color: st.color, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", whiteSpace: 'nowrap' }}>
-                  {st.text}
-                </div>
+                <img src={item.preview} alt="" style={{ width: 40, height: 40, objectFit: 'cover', display: 'block' }} />
               </div>
             )
           })}
           <div {...getRootProps({ style: {
-            flexShrink: 0, width: 72, height: 94,
-            border: `1px dashed ${T.line}`, borderRadius: 8,
+            flexShrink: 0, width: 40, height: 40,
+            border: `1px dashed ${T.line}`, borderRadius: 5,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: T.inkMute, fontSize: 20, background: T.card,
+            cursor: 'pointer', color: T.inkMute, fontSize: 16, background: T.card,
           }})}>
             <input {...getInputProps()} />
             ＋
