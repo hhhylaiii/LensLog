@@ -41,8 +41,8 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ items, selectedIdx, onSelect, o
       <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 8 }}>
 
         {/* 預覽圖 */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <img src={item.preview} alt="" style={{ width: '100%', height: 168, objectFit: 'cover', display: 'block' }} />
+        <div style={{ position: 'relative', flexShrink: 0, background: T.paperTwo }}>
+          <img src={item.preview} alt="" style={{ width: '100%', height: 'auto', maxHeight: 280, objectFit: 'contain', display: 'block' }} />
           <span style={{ position: 'absolute', bottom: 8, left: 8, fontFamily: mono, fontSize: 9, background: 'rgba(255,255,255,0.9)', color: T.inkMute, padding: '2px 6px', borderRadius: 3 }}>
             {item.file.name}
           </span>
