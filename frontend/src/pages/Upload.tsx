@@ -71,26 +71,90 @@ const Upload: React.FC = () => {
   const pendingCount = items.filter(f => f.status === 'pending').length
   const allDone = items.length > 0 && items.every(f => f.status === 'done' || f.status === 'error')
 
-  if (success || allDone) {
+  const successBanner = (
+    <div style={{ background: T.okSoft, border: `1px solid ${T.ok}`, borderRadius: 10, padding: '16px 20px', color: T.ok, fontSize: 14, display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+      <span>✓</span>
+      <span>
+        照片上傳成功！{' '}
+        <button onClick={() => navigate('/')} style={{ color: T.accent, cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 14, padding: 0 }}>
+          前往 Dashboard →
+        </button>
+      </span>
+    </div>
+  )
+
+  // ── Mobile layout ──────────────────────────────────────────────
+  if (isMobile) {
+    if (success || allDone) {
+      return <div style={{ padding: 16, fontFamily: "'Inter', 'Noto Sans TC', sans-serif", color: T.ink }}>{successBanner}</div>
+    }
     return (
-      <div style={{ padding: 32, fontFamily: "'Inter', 'Noto Sans TC', sans-serif", color: T.ink }}>
-        <div style={{ background: T.okSoft, border: `1px solid ${T.ok}`, borderRadius: 10, padding: '16px 20px', color: T.ok, fontSize: 14, display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-          <span>✓</span>
-          <span>
-            照片上傳成功！{' '}
-            <button onClick={() => navigate('/')} style={{ color: T.accent, cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 14, padding: 0 }}>
-              前往 Dashboard →
-            </button>
-          </span>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', fontFamily: "'Inter', 'Noto Sans TC', sans-serif", color: T.ink, background: T.paper }}>
+        {/* Header */}
+        <div style={{ padding: '14px 16px 8px', background: T.paper, flexShrink: 0 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.025em', margin: 0, color: T.ink }}>
+            上傳<span style={{ color: T.accent }}>照片</span>
+          </h1>
+          {step === 2 && (
+            <p style={{ margin: '2px 0 0', fontSize: 11, color: T.inkMute }}>
+              {items.length} 張已選 · 步驟 2/3
+            </p>
+          )}
         </div>
+
+        {/* Stepper */}
+        <div style={{ padding: '4px 16px 10px', flexShrink: 0 }}>
+          <Stepper step={step} />
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1 }}>
+          {step === 1 ? (
+            <div style={{ padding: '0 16px 16px' }}>
+              <DropStep files={items} onAddFiles={addFiles} onNext={() => { setSelectedIdx(0); setStep(2) }} />
+            </div>
+          ) : (
+            <ReviewStep items={items} selectedIdx={selectedIdx} onSelect={setSelectedIdx} onAddMore={addMore} onChangeItem={updateItem} />
+          )}
+        </div>
+
+        {/* Footer buttons (step 2 only) */}
+        {step === 2 && (
+          <div style={{ padding: '8px 12px', background: T.card, borderTop: `1px solid ${T.lineSoft}`, display: 'flex', gap: 6, flexShrink: 0 }}>
+            <button
+              onClick={() => { setStep(1); setSuccess(false) }}
+              style={{ flex: 1, height: 40, border: `1px solid ${T.line}`, borderRadius: 8, background: T.card, color: T.inkSoft, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+            >
+              取消
+            </button>
+            <button
+              onClick={handlePublish}
+              disabled={publishing || pendingCount === 0}
+              style={{
+                flex: 2, height: 40, border: 'none', borderRadius: 8,
+                background: publishing || pendingCount === 0 ? T.paperTwo : T.accent,
+                color: publishing || pendingCount === 0 ? T.inkMute : '#fff',
+                fontSize: 13, fontWeight: 600,
+                cursor: publishing || pendingCount === 0 ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {publishing ? '發布中…' : `發布 ${pendingCount} 張`}
+            </button>
+          </div>
+        )}
       </div>
     )
+  }
+
+  // ── Desktop layout ─────────────────────────────────────────────
+  if (success || allDone) {
+    return <div style={{ padding: 32, fontFamily: "'Inter', 'Noto Sans TC', sans-serif", color: T.ink }}>{successBanner}</div>
   }
 
   return (
     <div style={{ padding: 24, fontFamily: "'Inter', 'Noto Sans TC', sans-serif", color: T.ink, background: T.paper, minHeight: '100%', boxSizing: 'border-box' }}>
       {/* Topbar */}
-      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.025em', margin: 0, color: T.ink }}>
             上傳<span style={{ color: T.accent }}>照片</span>
@@ -103,26 +167,23 @@ const Upload: React.FC = () => {
           )}
         </div>
         {step === 2 && (
-          <div style={{ display: 'flex', gap: 8, alignSelf: isMobile ? 'stretch' : 'auto' }}>
+          <>
             <button
               onClick={() => { setStep(1); setSuccess(false) }}
-              style={{ flex: isMobile ? 1 : undefined, background: 'none', border: `1px solid ${T.line}`, borderRadius: 6, padding: '6px 14px', fontSize: 13, color: T.inkSoft, cursor: 'pointer' }}
+              style={{ background: 'none', border: `1px solid ${T.line}`, borderRadius: 6, padding: '6px 14px', fontSize: 13, color: T.inkSoft, cursor: 'pointer' }}
             >
               取消
             </button>
-            {!isMobile && (
-              <button
-                disabled
-                style={{ background: 'none', border: `1px solid ${T.line}`, borderRadius: 6, padding: '6px 14px', fontSize: 13, color: T.inkMute, cursor: 'not-allowed', opacity: 0.5 }}
-              >
-                存為草稿
-              </button>
-            )}
+            <button
+              disabled
+              style={{ background: 'none', border: `1px solid ${T.line}`, borderRadius: 6, padding: '6px 14px', fontSize: 13, color: T.inkMute, cursor: 'not-allowed', opacity: 0.5 }}
+            >
+              存為草稿
+            </button>
             <button
               onClick={handlePublish}
               disabled={publishing || pendingCount === 0}
               style={{
-                flex: isMobile ? 1 : undefined,
                 background: publishing || pendingCount === 0 ? T.paperTwo : T.accent,
                 color: publishing || pendingCount === 0 ? T.inkMute : '#fff',
                 border: 'none', borderRadius: 6, padding: '6px 16px',
@@ -132,7 +193,7 @@ const Upload: React.FC = () => {
             >
               {publishing ? '發布中…' : `發布 ${pendingCount} 張`}
             </button>
-          </div>
+          </>
         )}
       </div>
 
@@ -143,19 +204,9 @@ const Upload: React.FC = () => {
 
       {/* Step content */}
       {step === 1 ? (
-        <DropStep
-          files={items}
-          onAddFiles={addFiles}
-          onNext={() => { setSelectedIdx(0); setStep(2) }}
-        />
+        <DropStep files={items} onAddFiles={addFiles} onNext={() => { setSelectedIdx(0); setStep(2) }} />
       ) : (
-        <ReviewStep
-          items={items}
-          selectedIdx={selectedIdx}
-          onSelect={setSelectedIdx}
-          onAddMore={addMore}
-          onChangeItem={updateItem}
-        />
+        <ReviewStep items={items} selectedIdx={selectedIdx} onSelect={setSelectedIdx} onAddMore={addMore} onChangeItem={updateItem} />
       )}
     </div>
   )
