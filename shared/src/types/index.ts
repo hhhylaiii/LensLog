@@ -19,7 +19,10 @@ export interface Photo {
   location_id?: string
   s3_key: string
   thumb_key?: string
+  url?: string
+  thumb_url?: string
   caption?: string
+  tags: string[]
   is_public: boolean
   taken_at?: string
   created_at: string

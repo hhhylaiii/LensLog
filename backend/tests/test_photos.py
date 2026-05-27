@@ -103,6 +103,7 @@ async def test_create_photo_marks_object_confirmed(client, db_session, active_us
         json={
             "s3_key": s3_key,
             "caption": "Sunset",
+            "tags": ["night", "street", "night", " city "],
             "is_public": True,
         },
     )
@@ -110,6 +111,7 @@ async def test_create_photo_marks_object_confirmed(client, db_session, active_us
     assert response.status_code == 201, response.text
     body = response.json()
     assert body["s3_key"] == s3_key
+    assert body["tags"] == ["night", "street", "city"]
     put_object_tags.assert_called_once_with(
         s3_key,
         {"upload_state": "confirmed"},
@@ -118,7 +120,9 @@ async def test_create_photo_marks_object_confirmed(client, db_session, active_us
     result = await db_session.execute(
         select(Photo).where(Photo.s3_key == s3_key)
     )
-    assert result.scalar_one_or_none() is not None
+    photo = result.scalar_one_or_none()
+    assert photo is not None
+    assert photo.tags == ["night", "street", "city"]
 
 
 @pytest.mark.asyncio
@@ -162,3 +166,65 @@ async def test_create_photo_removes_db_record_when_confirm_tagging_fails(
         select(Photo).where(Photo.s3_key == s3_key)
     )
     assert result.scalar_one_or_none() is None
+
+
+@pytest.mark.asyncio
+async def test_update_photo_tags(client, active_user, monkeypatch):
+    generate_presigned_url = Mock(return_value="http://storage.local/upload")
+    monkeypatch.setattr(photos_api, "generate_presigned_url", generate_presigned_url)
+    monkeypatch.setattr(photos_api, "put_object_tags", Mock())
+    monkeypatch.setattr(photos_api.process_exif_task, "delay", Mock())
+    monkeypatch.setattr(photos_api.generate_thumbnail_task, "delay", Mock())
+    app.dependency_overrides[get_current_active_user] = lambda: active_user
+
+    presign_resp = await client.post(
+        "/api/v1/photos/presign",
+        params={"filename": "retag.jpg", "content_type": "image/jpeg"},
+    )
+    assert presign_resp.status_code == 200, presign_resp.text
+    s3_key = presign_resp.json()["s3_key"]
+
+    create_resp = await client.post(
+        "/api/v1/photos",
+        json={
+            "s3_key": s3_key,
+            "caption": "Initial",
+            "tags": ["before"],
+            "is_public": True,
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    photo_id = create_resp.json()["id"]
+
+    update_resp = await client.patch(
+        f"/api/v1/photos/{photo_id}",
+        json={"tags": ["after", " after ", "", "travel"]},
+    )
+
+    assert update_resp.status_code == 200, update_resp.text
+    assert update_resp.json()["tags"] == ["after", "travel"]
+
+
+@pytest.mark.asyncio
+async def test_openapi_photo_schemas_include_tags_examples(client):
+    response = await client.get("/openapi.json")
+
+    assert response.status_code == 200, response.text
+    components = response.json()["components"]["schemas"]
+
+    create_schema = components["PhotoCreate"]
+    update_schema = components["PhotoUpdate"]
+    response_schema = components["PhotoResponse"]
+
+    assert "tags" in create_schema["properties"]
+    assert create_schema["properties"]["tags"]["type"] == "array"
+    assert create_schema["properties"]["tags"]["items"]["type"] == "string"
+    assert create_schema["examples"][0]["tags"] == ["street", "night", "city"]
+
+    assert "tags" in update_schema["properties"]
+    assert update_schema["examples"][0]["tags"] == ["street", "rain", "night"]
+
+    assert "tags" in response_schema["properties"]
+    assert response_schema["examples"][0]["tags"] == ["street", "night", "city"]
+    assert "thumb_url" in response_schema["properties"]
+    assert "exif" in response_schema["properties"]

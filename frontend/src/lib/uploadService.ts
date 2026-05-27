@@ -38,6 +38,7 @@ export async function uploadOne(
     await api.post('/photos', {
       s3_key: data.s3_key,
       caption: item.caption || undefined,
+      tags: item.tags,
       is_public: isPublic,
       ...(locationId ? { location_id: locationId } : {}),
     })

@@ -62,13 +62,14 @@ export function createPhotosService(client: AxiosInstance) {
       s3_key: string
       caption?: string
       location_id?: string
+      tags?: string[]
       is_public?: boolean
     }) => client.post<Photo>('/photos', data),
 
     get: (id: string) =>
       client.get<Photo>(`/photos/${id}`),
 
-    update: (id: string, data: { caption?: string; location_id?: string }) =>
+    update: (id: string, data: { caption?: string; location_id?: string; tags?: string[]; is_public?: boolean }) =>
       client.patch<Photo>(`/photos/${id}`, data),
 
     delete: (id: string) =>

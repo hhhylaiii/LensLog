@@ -9,6 +9,7 @@ interface Photo {
   caption?: string
   s3_key: string
   url?: string
+  tags: string[]
   created_at: string
   is_public: boolean
 }
@@ -301,6 +302,24 @@ const Dashboard: React.FC = () => {
                   : '◈'}
               </div>
               <div style={s.photoCaption}>{p.caption || 'Untitled'}</div>
+              {p.tags?.length ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                  {p.tags.slice(0, 3).map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        border: '1px solid #2a2a38',
+                        borderRadius: 999,
+                        padding: '2px 8px',
+                        fontSize: 11,
+                        color: '#888',
+                      }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

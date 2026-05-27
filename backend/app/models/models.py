@@ -4,7 +4,7 @@ from typing import Any
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
-    UUID, Boolean, Date, DateTime, ForeignKey,
+    ARRAY, UUID, Boolean, Date, DateTime, ForeignKey,
     Integer, Numeric, String, Text, func, text,
 )
 from sqlalchemy import event
@@ -73,6 +73,7 @@ class Photo(Base):
     s3_key: Mapped[str] = mapped_column(Text, nullable=False)
     thumb_key: Mapped[str | None] = mapped_column(Text)
     caption: Mapped[str | None] = mapped_column(Text)
+    tags: Mapped[list[str]] = mapped_column(ARRAY(String(50)), nullable=False, default=list, server_default="{}")
     is_public: Mapped[bool] = mapped_column(Boolean, default=True)
     taken_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -9,6 +9,7 @@ interface FileItem {
   file: File
   preview: string
   caption: string
+  tags: string[]
   status: 'pending' | 'uploading' | 'done' | 'error'
   progress: number
   error?: string
@@ -115,6 +116,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onSuccess }) => {
       file,
       preview: URL.createObjectURL(file),
       caption: '',
+      tags: [],
       status: 'pending',
       progress: 0,
     }))
@@ -178,6 +180,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onSuccess }) => {
       await api.post('/photos', {
         s3_key: data.s3_key,
         caption: item.caption || undefined,
+        tags: item.tags,
         is_public: true,
       })
       updateFile(index, { status: 'done', progress: 100 })

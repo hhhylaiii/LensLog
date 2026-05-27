@@ -259,6 +259,7 @@ CREATE TABLE photos (
     s3_key      TEXT NOT NULL,           -- 原始圖 S3 路徑
     thumb_key   TEXT,                    -- 縮圖 S3 路徑
     caption     TEXT,
+    tags        VARCHAR(50)[] NOT NULL DEFAULT '{}',
     is_public   BOOLEAN DEFAULT TRUE,
     taken_at    TIMESTAMPTZ,             -- 從 EXIF 讀取
     created_at  TIMESTAMPTZ DEFAULT NOW()
@@ -320,7 +321,7 @@ CREATE TABLE gear (
 | POST | `/photos/presign` | 取得 S3 Presigned URL |
 | POST | `/photos` | 建立照片 metadata |
 | GET | `/photos/{id}` | 取得單張照片詳情（含 EXIF）|
-| PATCH | `/photos/{id}` | 更新照片說明 / 地點 |
+| PATCH | `/photos/{id}` | 更新照片說明 / 地點 / 標籤 / 公開狀態 |
 | DELETE | `/photos/{id}` | 刪除照片 |
 
 ### 景點（Locations）

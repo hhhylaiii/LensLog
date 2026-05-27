@@ -29,6 +29,7 @@ interface Photo {
   thumb_url?: string
   url?: string
   caption?: string
+  tags: string[]
   is_public: boolean
   taken_at?: string
   created_at: string
@@ -978,7 +979,9 @@ const Profile: React.FC = () => {
                       <div style={s.photoListInfo}>
                         <div style={s.photoListTitle}>{photo.caption || '未命名照片'}</div>
                         <div style={s.photoListMeta}>
-                          {relativeTime(photo.created_at)}{loc ? ` · ${loc.name}` : ''}
+                          {relativeTime(photo.created_at)}
+                          {loc ? ` · ${loc.name}` : ''}
+                          {photo.tags?.length ? ` · ${photo.tags.slice(0, 3).map((tag) => `#${tag}`).join(' ')}` : ''}
                         </div>
                       </div>
                       <button

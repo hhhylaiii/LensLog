@@ -42,7 +42,9 @@ interface PhotoFull {
   s3_key: string
   thumb_key?: string
   url?: string
+  thumb_url?: string
   caption?: string
+  tags: string[]
   is_public: boolean
   taken_at?: string
   created_at: string
@@ -182,6 +184,21 @@ const s: Record<string, React.CSSProperties> = {
     marginBottom: '14px',
   },
   metaDot: { color: '#333' },
+  tagsRow: {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '8px',
+    marginBottom: '14px',
+  },
+  tagChip: {
+    border: '1px solid #2a2a38',
+    background: '#0d0d18',
+    color: '#c9d2e3',
+    borderRadius: '999px',
+    padding: '4px 10px',
+    fontSize: '12px',
+    lineHeight: 1.2,
+  },
 
   // Edit / save buttons
   editBtn: {
@@ -667,6 +684,14 @@ const PhotoView: React.FC = () => {
                 </>
               )}
             </div>
+
+            {photo.tags?.length > 0 && (
+              <div style={s.tagsRow}>
+                {photo.tags.map((tag) => (
+                  <span key={tag} style={s.tagChip}>#{tag}</span>
+                ))}
+              </div>
+            )}
 
             {/* Location selector (edit) or link (read) */}
             {isEditing ? (
