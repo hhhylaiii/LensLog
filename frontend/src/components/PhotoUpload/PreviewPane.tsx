@@ -30,8 +30,10 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({ item, onChange }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {item.preview
-        ? <img src={item.preview} alt="" style={{ flex: 1, minHeight: 360, borderRadius: 8, objectFit: 'cover', width: '100%', display: 'block' }} />
-        : <div style={{ flex: 1, minHeight: 360, borderRadius: 8, background: T.paperTwo, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.inkMute }} />
+        ? <div style={{ borderRadius: 8, overflow: 'hidden', background: T.paperTwo, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+            <img src={item.preview} alt="" style={{ width: '100%', height: 'auto', maxHeight: 560, objectFit: 'contain', display: 'block' }} />
+          </div>
+        : <div style={{ minHeight: 360, borderRadius: 8, background: T.paperTwo, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.inkMute }} />
       }
 
       <div style={cardStyle}>
