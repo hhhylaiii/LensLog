@@ -1,4 +1,5 @@
 import React from 'react'
+import { useBreakpoint } from '../../hooks/useBreakpoint'
 import type { FileItem } from '../../lib/uploadTypes'
 import FileList from './FileList'
 import PreviewPane from './PreviewPane'
@@ -15,11 +16,17 @@ interface ReviewStepProps {
 }
 
 const ReviewStep: React.FC<ReviewStepProps> = ({ items, selectedIdx, onSelect, onAddMore, onChangeItem }) => {
+  const { isMobile } = useBreakpoint()
   const item = items[selectedIdx]
   if (!item) return null
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr 320px', gap: 20, minHeight: 540 }}>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: isMobile ? '1fr' : '240px 1fr 320px',
+      gap: isMobile ? 16 : 20,
+      minHeight: isMobile ? undefined : 540,
+    }}>
       {/* Left: file list */}
       <FileList
         items={items}

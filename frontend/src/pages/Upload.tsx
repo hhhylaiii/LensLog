@@ -5,6 +5,7 @@ import T from '../styles/tokens'
 import type { FileItem } from '../lib/uploadTypes'
 import { uploadOne } from '../lib/uploadService'
 import { parseExifData } from '../lib/exif'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import Stepper from '../components/PhotoUpload/Stepper'
 import DropStep from '../components/PhotoUpload/DropStep'
 import ReviewStep from '../components/PhotoUpload/ReviewStep'
@@ -66,6 +67,7 @@ const Upload: React.FC = () => {
     setSuccess(true)
   }
 
+  const { isMobile } = useBreakpoint()
   const pendingCount = items.filter(f => f.status === 'pending').length
   const allDone = items.length > 0 && items.every(f => f.status === 'done' || f.status === 'error')
 
@@ -88,7 +90,7 @@ const Upload: React.FC = () => {
   return (
     <div style={{ padding: 24, fontFamily: "'Inter', 'Noto Sans TC', sans-serif", color: T.ink, background: T.paper, minHeight: '100%', boxSizing: 'border-box' }}>
       {/* Topbar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 20 }}>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.025em', margin: 0, color: T.ink }}>
             上傳<span style={{ color: T.accent }}>照片</span>
@@ -101,23 +103,26 @@ const Upload: React.FC = () => {
           )}
         </div>
         {step === 2 && (
-          <>
+          <div style={{ display: 'flex', gap: 8, alignSelf: isMobile ? 'stretch' : 'auto' }}>
             <button
               onClick={() => { setStep(1); setSuccess(false) }}
-              style={{ background: 'none', border: `1px solid ${T.line}`, borderRadius: 6, padding: '6px 14px', fontSize: 13, color: T.inkSoft, cursor: 'pointer' }}
+              style={{ flex: isMobile ? 1 : undefined, background: 'none', border: `1px solid ${T.line}`, borderRadius: 6, padding: '6px 14px', fontSize: 13, color: T.inkSoft, cursor: 'pointer' }}
             >
               取消
             </button>
-            <button
-              disabled
-              style={{ background: 'none', border: `1px solid ${T.line}`, borderRadius: 6, padding: '6px 14px', fontSize: 13, color: T.inkMute, cursor: 'not-allowed', opacity: 0.5 }}
-            >
-              存為草稿
-            </button>
+            {!isMobile && (
+              <button
+                disabled
+                style={{ background: 'none', border: `1px solid ${T.line}`, borderRadius: 6, padding: '6px 14px', fontSize: 13, color: T.inkMute, cursor: 'not-allowed', opacity: 0.5 }}
+              >
+                存為草稿
+              </button>
+            )}
             <button
               onClick={handlePublish}
               disabled={publishing || pendingCount === 0}
               style={{
+                flex: isMobile ? 1 : undefined,
                 background: publishing || pendingCount === 0 ? T.paperTwo : T.accent,
                 color: publishing || pendingCount === 0 ? T.inkMute : '#fff',
                 border: 'none', borderRadius: 6, padding: '6px 16px',
@@ -127,7 +132,7 @@ const Upload: React.FC = () => {
             >
               {publishing ? '發布中…' : `發布 ${pendingCount} 張`}
             </button>
-          </>
+          </div>
         )}
       </div>
 
