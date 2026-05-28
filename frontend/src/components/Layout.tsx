@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import api from '../lib/api'
 import { clearTokens } from '../lib/auth'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import T from '../styles/tokens'
+
 interface User {
   id: string
   username: string
@@ -120,8 +122,54 @@ const NAV_ITEMS = [
 
 const ADMIN_NAV_ITEM = { to: '/admin', label: 'Admin', icon: '⚙', end: false }
 
+// Bottom tab bar items (mobile)
+const TAB_ITEMS = [
+  {
+    to: '/map', label: '地圖', end: false,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width={22} height={22}>
+        <path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
+        <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/>
+      </svg>
+    ),
+  },
+  {
+    to: '/', label: '動態', end: true,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width={22} height={22}>
+        <path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+      </svg>
+    ),
+  },
+  {
+    to: '/upload', label: '上傳', end: false,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width={22} height={22}>
+        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+      </svg>
+    ),
+  },
+  {
+    to: '/gear', label: '器材', end: false,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width={22} height={22}>
+        <path d="M21.75 6.75a4.5 4.5 0 01-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 11-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 016.336-4.486l-3.276 3.276a3.004 3.004 0 002.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852z"/>
+      </svg>
+    ),
+  },
+  {
+    to: '/profile', label: '我', end: false,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width={22} height={22}>
+        <path d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    ),
+  },
+]
+
 const Layout: React.FC = () => {
   const navigate = useNavigate()
+  const { isMobile } = useBreakpoint()
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
@@ -138,6 +186,51 @@ const Layout: React.FC = () => {
     navigate('/login')
   }
 
+  // ── Mobile layout ──────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: T.paper, fontFamily: "'Inter', system-ui, sans-serif" }}>
+        {/* Content */}
+        <main style={{ flex: 1, paddingBottom: 62, overflow: 'auto' }}>
+          <Outlet />
+        </main>
+
+        {/* Bottom tab bar */}
+        <nav style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          height: 62, background: T.card,
+          borderTop: `1px solid ${T.line}`,
+          display: 'flex', alignItems: 'flex-start',
+          padding: '8px 0 0',
+          zIndex: 100,
+        }}>
+          {TAB_ITEMS.map(({ to, label, end, icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              style={({ isActive }) => ({
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column' as const,
+                alignItems: 'center',
+                gap: 2,
+                color: isActive ? T.accent : T.inkMute,
+                textDecoration: 'none',
+                fontSize: 10,
+                fontWeight: isActive ? 600 : 400,
+              })}
+            >
+              {icon}
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+    )
+  }
+
+  // ── Desktop layout ─────────────────────────────────────────────
   return (
     <div style={styles.shell}>
       <aside style={styles.sidebar}>
