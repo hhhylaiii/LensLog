@@ -53,6 +53,29 @@ interface Location {
   tags: string[]
 }
 
+interface GlobalLocation {
+  id: string
+  name: string
+  description?: string
+  latitude: number
+  longitude: number
+  is_active: boolean
+  created_at: string
+}
+
+type MapSource = 'user' | 'global'
+
+interface ExploreLocation {
+  id: string
+  name: string
+  description?: string
+  latitude: number
+  longitude: number
+  created_at: string
+  source: MapSource
+  tags: string[]
+}
+
 interface LocationForm {
   name: string
   description: string
@@ -131,6 +154,32 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex',
     gap: '5px',
     overflow: 'hidden',
+  },
+  sourceTabs: {
+    display: 'flex',
+    gap: '6px',
+    flexShrink: 0,
+    marginRight: '4px',
+  },
+  sourceTab: {
+    height: '34px',
+    padding: '0 12px',
+    border: `1px solid ${t.line}`,
+    borderRadius: '9px',
+    background: t.paper,
+    color: t.inkSoft,
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    whiteSpace: 'nowrap',
+  },
+  sourceTabOn: {
+    background: t.accentSoft,
+    borderColor: t.accent,
+    color: t.accentInk,
   },
   chip: {
     display: 'inline-flex',
@@ -686,8 +735,8 @@ const ICON = {
 // ─── ClusterMarkers — renders all locations as a clustered layer ──────────────
 
 interface ClusterMarkersProps {
-  locations: Location[]
-  onSelect: (loc: Location) => void
+  locations: ExploreLocation[]
+  onSelect: (loc: ExploreLocation) => void
   selectedId: string | null
 }
 
@@ -908,21 +957,28 @@ const MapExplore: React.FC = () => {
   const [search, setSearch] = useState('')
   const [target, setTarget] = useState<[number, number] | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [source, setSource] = useState<MapSource>('user')
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
-  const [selected, setSelected] = useState<Location | null>(null)
+  const [selected, setSelected] = useState<ExploreLocation | null>(null)
   const [spotListOpen, setSpotListOpen] = useState(true)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
 
-  const { data: locations = [] } = useQuery<Location[]>({
+  const { data: userLocations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
     queryFn: () => api.get('/locations').then((r) => r.data),
+  })
+  const { data: globalLocations = [] } = useQuery<GlobalLocation[]>({
+    queryKey: ['global-locations'],
+    queryFn: () => api.get('/global-locations').then((r) => r.data),
   })
 
   const { data: weather, isLoading: weatherLoading, isError: weatherError } =
     useQuery<WeatherForecast>({
-      queryKey: ['weather', selected?.id],
+      queryKey: ['weather', selected?.source, selected?.id],
       queryFn: () =>
-        api.get(`/locations/${selected!.id}/weather`).then((r) => r.data),
+        selected!.source === 'global'
+          ? api.get(`/global-locations/${selected!.id}/weather`).then((r) => r.data)
+          : api.get(`/locations/${selected!.id}/weather`).then((r) => r.data),
       enabled: !!selected,
       staleTime: 1000 * 60 * 30,
       retry: false,
@@ -930,22 +986,54 @@ const MapExplore: React.FC = () => {
 
   const currentForecast = weather?.forecasts?.[0]
 
+  const mappedUserLocations = useMemo<ExploreLocation[]>(
+    () =>
+      userLocations.map((loc) => ({
+        ...loc,
+        source: 'user',
+      })),
+    [userLocations]
+  )
+
+  const mappedGlobalLocations = useMemo<ExploreLocation[]>(
+    () =>
+      globalLocations.map((loc) => ({
+        id: loc.id,
+        name: loc.name,
+        description: loc.description,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        created_at: loc.created_at,
+        source: 'global',
+        tags: ['全站景點'],
+      })),
+    [globalLocations]
+  )
+
+  const activeLocations = source === 'user' ? mappedUserLocations : mappedGlobalLocations
+
   const allTags = useMemo(
-    () => Array.from(new Set(locations.flatMap((l) => l.tags))),
-    [locations]
+    () => Array.from(new Set(activeLocations.flatMap((l) => l.tags))).filter(Boolean),
+    [activeLocations]
   )
 
   const filtered = useMemo(
     () =>
-      locations.filter((l) => {
+      activeLocations.filter((l) => {
         const matchesSearch = l.name.toLowerCase().includes(search.toLowerCase())
         const matchesTag = selectedTag ? l.tags.includes(selectedTag) : true
         return matchesSearch && matchesTag
       }),
-    [locations, search, selectedTag]
+    [activeLocations, search, selectedTag]
   )
 
-  const handleSelect = (loc: Location) => {
+  useEffect(() => {
+    setSelected(null)
+    setSelectedTag(null)
+    setTarget(null)
+  }, [source])
+
+  const handleSelect = (loc: ExploreLocation) => {
     setSelected(loc)
     setTarget([loc.latitude, loc.longitude])
   }
@@ -959,6 +1047,20 @@ const MapExplore: React.FC = () => {
       {/* Topbar: heading + search + chips + add + avatar (single row) */}
       <div style={s.topbar}>
         <h2 style={s.topbarHeading}>探索攝影地圖</h2>
+        <div style={s.sourceTabs}>
+          <button
+            style={{ ...s.sourceTab, ...(source === 'user' ? s.sourceTabOn : {}) }}
+            onClick={() => setSource('user')}
+          >
+            我的景點
+          </button>
+          <button
+            style={{ ...s.sourceTab, ...(source === 'global' ? s.sourceTabOn : {}) }}
+            onClick={() => setSource('global')}
+          >
+            大家景點
+          </button>
+        </div>
         <input
           style={s.search}
           placeholder="搜尋景點、城市、標籤…"
@@ -982,9 +1084,11 @@ const MapExplore: React.FC = () => {
             </button>
           ))}
         </div>
-        <button style={s.btnPrimary} onClick={() => setShowModal(true)}>
-          ＋ 新增景點
-        </button>
+        {source === 'user' && (
+          <button style={s.btnPrimary} onClick={() => setShowModal(true)}>
+            ＋ 新增景點
+          </button>
+        )}
         <div style={s.avatar} />
       </div>
 
@@ -993,7 +1097,9 @@ const MapExplore: React.FC = () => {
         {/* Slide-in spot list panel */}
         <div style={{ ...s.spotList, ...(spotListOpen ? {} : s.spotListClosed) }}>
           <div style={s.spotListInner}>
-            <div style={s.listHeader}>全台 {locations.length} 處 · 距離</div>
+            <div style={s.listHeader}>
+              {source === 'user' ? '我的景點' : '大家景點'} · {activeLocations.length} 處
+            </div>
             <div style={s.listItems}>
               {filtered.length === 0 ? (
                 <div style={s.emptyList}>{search ? '沒有符合的景點' : '還沒有景點'}</div>
@@ -1010,7 +1116,7 @@ const MapExplore: React.FC = () => {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={s.itemName}>{loc.name}</div>
                         <div style={s.itemMeta}>
-                          {loc.tags[0] || '景點'} · ★ 4.{(loc.id.charCodeAt(0) % 9) + 1}
+                          {loc.tags[0] || (loc.source === 'global' ? '全站景點' : '景點')} · ★ 4.{(loc.id.charCodeAt(0) % 9) + 1}
                         </div>
                         <div style={s.itemMono}>
                           {Number(loc.latitude).toFixed(3)}, {Number(loc.longitude).toFixed(3)}
@@ -1133,6 +1239,7 @@ const MapExplore: React.FC = () => {
                       {Number(selected.latitude).toFixed(3)}°N ·{' '}
                       {Number(selected.longitude).toFixed(3)}°E
                     </span>
+                    <span>{selected.source === 'global' ? '平台標注景點' : '你的私人景點'}</span>
                   </div>
                 </div>
               </div>
@@ -1240,6 +1347,12 @@ const MapExplore: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {selected.source === 'global' && selected.description && (
+                  <div style={{ fontSize: '13px', color: t.inkSoft, lineHeight: 1.6, marginBottom: '14px' }}>
+                    {selected.description}
+                  </div>
+                )}
               </div>
 
               {/* Actions */}

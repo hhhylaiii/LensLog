@@ -11,7 +11,7 @@ from geoalchemy2.elements import WKTElement
 from geoalchemy2.functions import ST_DWithin, ST_Distance, ST_Intersects, ST_MakePoint, ST_SetSRID
 from geoalchemy2.types import Geography
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import cast, select
+from sqlalchemy import cast, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
@@ -41,22 +41,37 @@ async def _get_township(lat: float, lng: float, db: AsyncSession) -> Township | 
 
 @router.get("", response_model=list[LocationResponse])
 async def list_locations(
+    query: str | None = Query(None, min_length=1, max_length=200),
     lat: float | None = Query(None),
     lng: float | None = Query(None),
     radius: float = Query(10000, ge=1, le=100000, description="Radius in meters (1–100,000)"),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
 ):
+    """List the current user's private locations, with optional keyword and nearby filtering."""
+    stmt = (
+        select(Location)
+        .options(selectinload(Location.tags))
+        .where(Location.user_id == current_user.id)
+    )
+    if query:
+        pattern = f"%{query.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Location.name.ilike(pattern),
+                Location.description.ilike(pattern),
+            )
+        )
     if lat is not None and lng is not None:
         point = cast(ST_MakePoint(lng, lat), Geography(srid=4326))
         geom_geo = cast(Location.geom, Geography(srid=4326))
         stmt = (
-            select(Location)
-            .options(selectinload(Location.tags))
+            stmt
             .where(ST_DWithin(geom_geo, point, radius))
             .order_by(ST_Distance(geom_geo, point))
         )
     else:
-        stmt = select(Location).options(selectinload(Location.tags)).limit(50)
+        stmt = stmt.order_by(Location.created_at.desc()).limit(50)
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -89,9 +104,16 @@ async def create_location(
 
 
 @router.get("/{location_id}", response_model=LocationResponse)
-async def get_location(location_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_location(
+    location_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get one private location owned by the current user."""
     result = await db.execute(
-        select(Location).options(selectinload(Location.tags)).where(Location.id == location_id)
+        select(Location)
+        .options(selectinload(Location.tags))
+        .where(Location.id == location_id, Location.user_id == current_user.id)
     )
     location = result.scalar_one_or_none()
     if not location:

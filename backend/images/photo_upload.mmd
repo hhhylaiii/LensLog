@@ -8,6 +8,8 @@ sequenceDiagram
     API-->>C: { presigned_url, s3_key }
     C->>S3: 2. PUT 圖片內容 (直傳 S3)
     S3-->>C: 200 OK
-    C->>API: 3. POST /photos { s3_key, caption }
+    C->>API: 3. GET /location-directory?lat=...&lng=... (選配)
+    API-->>C: 私人景點 + 全站景點候選
+    C->>API: 4. POST /photos { s3_key, caption, user_location_id | global_location_id }
     API->>DB: 寫入 photos Table
     API-->>C: Photo Created

@@ -1,20 +1,23 @@
-import React, { useCallback, useState } from 'react'
+import React, { startTransition, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import T from '../styles/tokens'
 import type { FileItem } from '../lib/uploadTypes'
 import { uploadOne } from '../lib/uploadService'
+import { parseExifData } from '../lib/exif'
 import Stepper from '../components/PhotoUpload/Stepper'
 import DropStep from '../components/PhotoUpload/DropStep'
 import ReviewStep from '../components/PhotoUpload/ReviewStep'
 
-const makeItem = (file: File): FileItem => ({
+const makeItem = async (file: File): Promise<FileItem> => ({
   file,
   preview: URL.createObjectURL(file),
   caption: '',
   tags: [],
   visibility: 'public',
   hidePreciseGps: false,
+  exif: await parseExifData(file),
+  location: { status: 'pending' },
   status: 'pending',
   progress: 0,
 })
@@ -33,15 +36,21 @@ const Upload: React.FC = () => {
     setItems(prev => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)))
   }, [])
 
-  const addFiles = useCallback((files: File[]) => {
-    setItems(prev => [...prev, ...files.map(makeItem)])
+  const addFiles = useCallback(async (files: File[]) => {
+    const nextItems = await Promise.all(files.map(makeItem))
+    startTransition(() => {
+      setItems(prev => [...prev, ...nextItems])
+    })
   }, [])
 
-  const addMore = useCallback((files: File[]) => {
-    setItems(prev => {
-      const next = [...prev, ...files.map(makeItem)]
-      setSelectedIdx(prev.length)
-      return next
+  const addMore = useCallback(async (files: File[]) => {
+    const nextItems = await Promise.all(files.map(makeItem))
+    startTransition(() => {
+      setItems(prev => {
+        const next = [...prev, ...nextItems]
+        setSelectedIdx(prev.length)
+        return next
+      })
     })
   }, [])
 

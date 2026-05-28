@@ -12,6 +12,13 @@ erDiagram
         float latitude
         float longitude
     }
+    GlobalLocation {
+        UUID id PK
+        string name
+        float latitude
+        float longitude
+        bool is_active
+    }
     LocationTag {
         UUID location_id FK
         string tag
@@ -19,7 +26,8 @@ erDiagram
     Photo {
         UUID id PK
         UUID user_id FK
-        UUID location_id FK
+        UUID user_location_id FK
+        UUID global_location_id FK
         string s3_key
         bool is_public
     }
@@ -39,5 +47,6 @@ erDiagram
     User ||--o{ Location : "建立"
     User ||--o{ Gear : "擁有"
     Location ||--o{ LocationTag : "附帶"
-    Location ||--o{ Photo : "被標記於"
+    Location ||--o{ Photo : "私人景點綁定"
+    GlobalLocation ||--o{ Photo : "全站景點綁定"
     Photo ||--o| ExifData : "附帶"

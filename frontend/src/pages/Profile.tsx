@@ -23,7 +23,10 @@ interface ExifData {
 
 interface Photo {
   id: string
+  user_location_id?: string
+  global_location_id?: string
   location_id?: string
+  location_source?: 'user' | 'global'
   s3_key: string
   thumb_key?: string
   thumb_url?: string
@@ -43,6 +46,14 @@ interface Location {
   latitude: number
   longitude: number
   tags: string[]
+}
+
+interface GlobalLocation {
+  id: string
+  name: string
+  description?: string
+  latitude: number
+  longitude: number
 }
 
 interface GearItem {
@@ -717,6 +728,10 @@ const Profile: React.FC = () => {
     queryKey: ['locations'],
     queryFn: () => api.get('/locations').then((r) => r.data),
   })
+  const { data: globalLocations = [] } = useQuery<GlobalLocation[]>({
+    queryKey: ['global-locations'],
+    queryFn: () => api.get('/global-locations').then((r) => r.data),
+  })
 
   const { data: gear = [] } = useQuery<GearItem[]>({
     queryKey: ['gear'],
@@ -740,6 +755,12 @@ const Profile: React.FC = () => {
     locations.forEach((l) => { m[l.id] = l })
     return m
   }, [locations])
+
+  const globalLocationMap = useMemo(() => {
+    const m: Record<string, GlobalLocation> = {}
+    globalLocations.forEach((l) => { m[l.id] = l })
+    return m
+  }, [globalLocations])
 
   const allTags = useMemo(() => {
     const set = new Set<string>()
@@ -967,7 +988,11 @@ const Profile: React.FC = () => {
               /* ── List view ── */
               <div style={s.photoList}>
                 {visiblePhotos.map((photo) => {
-                  const loc = photo.location_id ? locationMap[photo.location_id] : null
+                  const loc = photo.location_id
+                    ? (photo.location_source === 'global'
+                      ? globalLocationMap[photo.location_id]
+                      : locationMap[photo.location_id])
+                    : null
                   const thumbSrc = photo.thumb_url || photo.url
                   const isPending = pendingPhoto?.id === photo.id
                   return (
@@ -1005,7 +1030,11 @@ const Profile: React.FC = () => {
                 {allPhotos.length > 0 && (
                   (() => {
                     const fp = allPhotos[featuredIdx] || allPhotos[0]
-                    const loc = fp.location_id ? locationMap[fp.location_id] : null
+                    const loc = fp.location_id
+                      ? (fp.location_source === 'global'
+                        ? globalLocationMap[fp.location_id]
+                        : locationMap[fp.location_id])
+                      : null
                     const thumbSrc = fp.thumb_url || fp.url
                     const exifLabel = fp.exif
                       ? [
