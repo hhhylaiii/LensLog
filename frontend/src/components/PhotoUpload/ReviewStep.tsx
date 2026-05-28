@@ -28,7 +28,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ items, selectedIdx, onSelect, o
         <PhotoPreview item={item} />
         <FileList items={items} selectedIdx={selectedIdx} onSelect={onSelect} onAddMore={onAddMore} />
         <div style={{ margin: '8px 10px 0' }}><ExifPanel exif={item.exif} /></div>
-        <div style={{ margin: '8px 10px 0' }}><LocationPanel /></div>
+        <div style={{ margin: '8px 10px 0' }}><LocationPanel gpsLat={item.exif?.gpsLat} gpsLng={item.exif?.gpsLng} value={item.location} onChange={(location) => onChangeItem(selectedIdx, { location })} /></div>
         <PreviewPane item={item} onChange={patch => onChangeItem(selectedIdx, patch)} />
         <div style={{ margin: '8px 10px' }}>
           <VisibilityPanel

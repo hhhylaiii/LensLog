@@ -110,25 +110,7 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({ item, onChange }) => {
 
       <div style={cardStyle}>
         <div style={labelStyle}>標籤</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-          {item.tags.map(tag => (
-            <span key={tag} style={{ border: `1px solid ${T.line}`, borderRadius: 20, padding: '3px 10px', fontSize: 12, color: T.ink, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              #{tag}
-              <button onClick={() => removeTag(tag)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.inkMute, padding: 0, fontSize: 12, lineHeight: 1 }}>✕</button>
-            </span>
-          ))}
-          {addingTag ? (
-            <input autoFocus value={tagInput} onChange={e => setTagInput(e.target.value)}
-              onBlur={commitTag}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitTag() } if (e.key === 'Escape') { setTagInput(''); setAddingTag(false) } }}
-              style={{ border: `1px solid ${T.accent}`, borderRadius: 20, padding: '3px 10px', fontSize: 12, outline: 'none', color: T.ink, width: 80 }}
-            />
-          ) : (
-            <span onClick={() => setAddingTag(true)} style={{ border: `1px dashed ${T.line}`, borderRadius: 20, padding: '3px 10px', fontSize: 12, color: T.inkMute, cursor: 'pointer' }}>
-              ＋ 新增
-            </span>
-          )}
-        </div>
+        {tagRow}
         <div style={{ fontSize: 11, color: T.inkMute, marginTop: 8 }}>上傳時會一併儲存到照片資料</div>
       </div>
     </div>
