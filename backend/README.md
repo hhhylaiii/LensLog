@@ -257,7 +257,8 @@ backend/
 - Versioned migration scripts.
 - Each file represents one database schema change.
 - `004_add_townships_table.py` — adds `townships` table with PostGIS `MULTIPOLYGON` geometry for reverse geocoding.
-- `005_add_global_locations_directory.py` — adds `global_locations`, splits photo location links into private/global FKs, and seeds initial global landmarks.
+- `005_add_photo_tags_array.py` — adds the `tags` array column to `photos`.
+- `006_add_global_locations_directory.py` — adds `global_locations`, splits photo location links into private/global FKs, and seeds initial global landmarks.
 
 ## Data Folder
 

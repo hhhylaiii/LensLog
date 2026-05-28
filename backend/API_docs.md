@@ -383,6 +383,17 @@ Notes:
 - Send `"tags": []` to clear all tags.
 - Send `"user_location_id": null` and/or `"global_location_id": null` to clear an existing location binding.
 - `user_location_id` and `global_location_id` remain mutually exclusive during updates.
+- The API preserves any existing location binding unless you explicitly replace or clear it.
+- To switch a photo from a private location to a global location, send both fields:
+
+```json
+{
+  "user_location_id": null,
+  "global_location_id": "11111111-1111-1111-1111-111111111101"
+}
+```
+
+- If the photo already has `user_location_id` and you send only `global_location_id`, the backend keeps the old `user_location_id`, sees both fields as set, and returns `422`.
 
 Success response `200 OK`:
 

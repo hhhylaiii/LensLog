@@ -1,7 +1,7 @@
 """Add global locations and split photo location links
 
-Revision ID: 005
-Revises: 004
+Revision ID: 006
+Revises: 005
 Create Date: 2026-05-21
 
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 import geoalchemy2
 
 
-revision = "005"
-down_revision = "004"
+revision = "006"
+down_revision = "005"
 branch_labels = None
 depends_on = None
 

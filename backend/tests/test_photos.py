@@ -329,6 +329,63 @@ async def test_create_photo_rejects_other_users_location(client, db_session, act
     assert response.status_code == 403, response.text
 
 
+async def test_update_photo_requires_clearing_user_location_before_switching_to_global(
+    client,
+    db_session,
+    active_user,
+    monkeypatch,
+):
+    generate_presigned_url = Mock(return_value="http://storage.local/upload")
+    monkeypatch.setattr(photos_api, "generate_presigned_url", generate_presigned_url)
+    monkeypatch.setattr(photos_api, "put_object_tags", Mock())
+    monkeypatch.setattr(photos_api.process_exif_task, "delay", Mock())
+    monkeypatch.setattr(photos_api.generate_thumbnail_task, "delay", Mock())
+    app.dependency_overrides[get_current_active_user] = lambda: active_user
+
+    location = Location(
+        user_id=active_user.id,
+        name="我的景點",
+        latitude=25.0,
+        longitude=121.5,
+        geom=WKTElement("POINT(121.5 25.0)", srid=4326),
+    )
+    global_location = GlobalLocation(
+        name="台北101",
+        description="公共地標",
+        latitude=25.033968,
+        longitude=121.564468,
+        is_active=True,
+        geom=WKTElement("POINT(121.564468 25.033968)", srid=4326),
+    )
+    db_session.add_all([location, global_location])
+    await db_session.commit()
+
+    presign_resp = await client.post(
+        "/api/v1/photos/presign",
+        params={"filename": "switch.jpg", "content_type": "image/jpeg"},
+    )
+    s3_key = presign_resp.json()["s3_key"]
+
+    create_response = await client.post(
+        "/api/v1/photos",
+        json={
+            "s3_key": s3_key,
+            "caption": "Needs switching",
+            "user_location_id": str(location.id),
+            "is_public": True,
+        },
+    )
+    assert create_response.status_code == 201, create_response.text
+    photo_id = create_response.json()["id"]
+
+    response = await client.patch(
+        f"/api/v1/photos/{photo_id}",
+        json={"global_location_id": str(global_location.id)},
+    )
+
+    assert response.status_code == 422, response.text
+
+
 @pytest.mark.asyncio
 async def test_update_photo_tags(client, active_user, monkeypatch):
     generate_presigned_url = Mock(return_value="http://storage.local/upload")
