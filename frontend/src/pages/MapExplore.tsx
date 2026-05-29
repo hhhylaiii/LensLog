@@ -8,6 +8,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import 'leaflet.markercluster'
 import api from '../lib/api'
+import { useBreakpoint } from '../hooks/useBreakpoint'
+import MobileMapView from '../components/Map/MobileMapView'
 
 // Fix Leaflet default marker icons in bundled apps
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
@@ -64,6 +66,7 @@ interface GlobalLocation {
 }
 
 type MapSource = 'user' | 'global'
+type SheetState = 'peek' | 'half' | 'full' | null
 
 interface ExploreLocation {
   id: string
@@ -962,6 +965,9 @@ const MapExplore: React.FC = () => {
   const [selected, setSelected] = useState<ExploreLocation | null>(null)
   const [spotListOpen, setSpotListOpen] = useState(true)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
+  const { isMobile } = useBreakpoint()
+  const [sheetState, setSheetState] = useState<SheetState>(null)
+  const [spotsSheetOpen, setSpotsSheetOpen] = useState(false)
 
   const { data: userLocations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
@@ -1036,9 +1042,49 @@ const MapExplore: React.FC = () => {
   const handleSelect = (loc: ExploreLocation) => {
     setSelected(loc)
     setTarget([loc.latitude, loc.longitude])
+    if (isMobile) {
+      setSheetState('peek')
+      setSpotsSheetOpen(false)
+    }
+  }
+
+  const handleAdvanceSheet = () =>
+    setSheetState((s) => (s === 'peek' ? 'half' : s === 'half' ? 'full' : 'full'))
+
+  const handleCloseDetail = () => {
+    setSelected(null)
+    setSheetState(null)
   }
 
   const goldenMin = goldenMinutesLeft(weather?.sunset ?? null)
+
+  if (isMobile) {
+    return (
+      <MobileMapView
+        filtered={filtered}
+        allTags={allTags}
+        search={search}
+        onSearch={setSearch}
+        selectedTag={selectedTag}
+        onTagSelect={setSelectedTag}
+        source={source}
+        onSourceChange={setSource}
+        target={target}
+        onMapReady={setMapInstance}
+        selected={selected}
+        onSelect={handleSelect}
+        onCloseDetail={handleCloseDetail}
+        sheetState={sheetState}
+        onAdvanceSheet={handleAdvanceSheet}
+        spotsSheetOpen={spotsSheetOpen}
+        onToggleSpotsSheet={() => setSpotsSheetOpen((v) => !v)}
+        weather={weather}
+        weatherLoading={weatherLoading}
+        weatherError={weatherError}
+        goldenMin={goldenMin}
+      />
+    )
+  }
 
   return (
     <div style={s.page}>
