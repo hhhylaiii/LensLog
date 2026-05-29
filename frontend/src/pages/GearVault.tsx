@@ -11,6 +11,8 @@ import EditGearModal from '../components/gear/EditGearModal'
 import { filterGear, computePillCounts } from '../utils/gearUtils'
 import { useGear } from '@shared/hooks/useGear'
 import { api } from '../api'
+import { useBreakpoint } from '../hooks/useBreakpoint'
+import GearList from '../components/gear/GearList'
 
 // ─── Mapping ─────────────────────────────────────────────────────────────────
 
@@ -141,6 +143,63 @@ const GearVault: React.FC = () => {
   )
 
   const maintenanceCount = pillCounts.maintenance_due
+
+  const { isMobile } = useBreakpoint()
+
+  if (isMobile) {
+    return (
+      <div style={{
+        padding: '14px 16px 62px',
+        fontFamily: "'Inter', 'Noto Sans TC', sans-serif",
+        background: T.paper,
+        color: T.ink,
+        minHeight: '100%',
+        boxSizing: 'border-box' as const,
+      }}>
+        {/* Mobile header: title + add button */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0, letterSpacing: '-0.025em', color: T.ink }}>
+            器材<span style={{ color: T.accent }}>庫</span>
+          </h1>
+          <button
+            onClick={() => setShowAddModal(true)}
+            style={{ height: 34, padding: '0 14px', background: T.accent, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          >
+            ＋ 新增
+          </button>
+        </div>
+
+        {/* Filter bar — same props as desktop */}
+        <GearFilterBar
+          pills={pills}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+        />
+
+        {/* Mobile list */}
+        <GearList
+          items={filteredGear}
+          onAddGear={() => setShowAddModal(true)}
+          onDeleteClick={setDeletingGearItem}
+          onCardClick={setViewingGearId}
+        />
+
+        {showAddModal && <AddGearModal onClose={() => setShowAddModal(false)} />}
+        {deletingGearItem && (
+          <DeleteGearModal
+            item={deletingGearItem}
+            onClose={() => setDeletingGearItem(null)}
+          />
+        )}
+        {viewingGearId && (
+          <EditGearModal
+            gearId={viewingGearId}
+            onClose={() => setViewingGearId(null)}
+          />
+        )}
+      </div>
+    )
+  }
 
   return (
     <div style={styles.page}>
