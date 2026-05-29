@@ -59,7 +59,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   cardHovered: {
-    borderColor: T.accent,
+    border: `1px solid ${T.accent}`,
     boxShadow: `0 0 0 1px ${T.accent}, 0 6px 16px rgba(0,0,0,0.06)`,
     background: T.paper,
   },
