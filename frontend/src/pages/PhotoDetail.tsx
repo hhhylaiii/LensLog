@@ -11,6 +11,7 @@ import markerIconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
 import api from '../lib/api'
 import T from '../styles/tokens'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -62,6 +63,14 @@ interface Location {
   latitude: number
   longitude: number
   tags: string[]
+}
+
+interface GlobalLocation {
+  id: string
+  name: string
+  description?: string
+  latitude: number
+  longitude: number
 }
 
 const privacyStyles = {
@@ -446,6 +455,22 @@ const s: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
 
+  // Tags
+  tagsRow: {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '6px',
+    marginBottom: '12px',
+  },
+  tagChip: {
+    background: T.paperTwo,
+    border: `1px solid ${T.line}`,
+    borderRadius: '20px',
+    padding: '3px 10px',
+    fontSize: '12px',
+    color: T.inkSoft,
+  },
+
   // States
   spinner: {
     display: 'flex',
@@ -548,6 +573,7 @@ const PhotoView: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { isMobile } = useBreakpoint()
 
   const [imgFailed, setImgFailed] = useState(false)
   const [imgRetry, setImgRetry] = useState(0)
@@ -654,17 +680,17 @@ const PhotoView: React.FC = () => {
   const fitsFrame = imgNaturalRatio === null || Math.abs(imgNaturalRatio - 4 / 3) < 0.1
 
   return (
-    <div style={s.page}>
+    <div style={{ ...s.page, padding: isMobile ? '12px 16px' : '32px 40px', paddingBottom: isMobile ? '74px' : undefined }}>
       <button style={s.back} onClick={() => navigate('/profile')}>← 返回</button>
 
-      <div style={s.layout}>
+      <div style={{ ...s.layout, gridTemplateColumns: isMobile ? '1fr' : '1fr 380px' }}>
 
         {/* ── Left: large image ── */}
-        <div style={s.imageColumn}>
+        <div style={{ ...s.imageColumn, minHeight: isMobile ? 'auto' : 'calc(100vh - 140px)' }}>
           <div style={
-            fitsFrame 
-              ? s.imageWrap 
-              : { ...s.imageWrapNatural, aspectRatio: imgNaturalRatio ? String(imgNaturalRatio) : 'auto' }
+            fitsFrame
+              ? { ...s.imageWrap, maxHeight: isMobile ? 'none' : 'calc(100vh - 160px)' }
+              : { ...s.imageWrapNatural, maxHeight: isMobile ? 'none' : 'calc(100vh - 160px)', aspectRatio: imgNaturalRatio ? String(imgNaturalRatio) : 'auto' }
           }>
             {photo.url && !imgFailed ? (
               <SafeImage
@@ -691,14 +717,14 @@ const PhotoView: React.FC = () => {
               <div style={s.imagePlaceholder}>◈</div>
             )}
           </div>
-          {photo.url && !imgFailed && prevId && (
+          {!isMobile && photo.url && !imgFailed && prevId && (
             <div
               style={s.navZoneLeft}
               onClick={(e) => { e.stopPropagation(); navigate(`/photos/${prevId}`) }}
               title="上一張"
             />
           )}
-          {photo.url && !imgFailed && nextId && (
+          {!isMobile && photo.url && !imgFailed && nextId && (
             <div
               style={s.navZoneRight}
               onClick={(e) => { e.stopPropagation(); navigate(`/photos/${nextId}`) }}
@@ -783,8 +809,8 @@ const PhotoView: React.FC = () => {
                   <div>
                     <div style={s.locationName}>{location.name}</div>
                     <div style={s.locationMeta}>
-                      {locationTags?.length
-                        ? locationTags.join(' · ')
+                      {location.tags?.length
+                        ? location.tags.join(' · ')
                         : `${Number(location.latitude).toFixed(4)}, ${Number(location.longitude).toFixed(4)}`}
                     </div>
                   </div>
