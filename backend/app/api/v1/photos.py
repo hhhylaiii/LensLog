@@ -1,6 +1,6 @@
 import uuid
 import redis.asyncio as aioredis
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -74,14 +74,35 @@ async def _validate_photo_location(
 async def list_photos(
     skip: int = 0,
     limit: int = 20,
+    user_location_id: uuid.UUID | None = Query(default=None),
+    global_location_id: uuid.UUID | None = Query(default=None),
+    public_only: bool = Query(default=False),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """獲取當前使用者的照片列表"""
+    """獲取照片列表，支援依綁定景點來源過濾。"""
+    if user_location_id and global_location_id:
+        raise HTTPException(status_code=422, detail="Only one location filter may be selected")
+
+    stmt = select(Photo).options(_exif_opts())
+
+    if user_location_id:
+        stmt = stmt.where(
+            Photo.user_id == current_user.id,
+            Photo.user_location_id == user_location_id,
+        )
+    elif global_location_id:
+        stmt = stmt.where(Photo.global_location_id == global_location_id)
+        if public_only:
+            stmt = stmt.where(Photo.is_public.is_(True))
+        else:
+            stmt = stmt.where(Photo.user_id == current_user.id)
+    else:
+        stmt = stmt.where(Photo.user_id == current_user.id)
+
     result = await db.execute(
-        select(Photo)
-        .where(Photo.user_id == current_user.id)
-        .options(_exif_opts())
+        stmt
+        .order_by(Photo.created_at.desc())
         .offset(skip)
         .limit(limit)
     )

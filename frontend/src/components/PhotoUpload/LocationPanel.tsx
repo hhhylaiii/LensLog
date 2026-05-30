@@ -1,25 +1,33 @@
 import React, { useDeferredValue, useEffect, useState } from 'react'
 import api from '../../lib/api'
-import type { LocationMatch } from '../../lib/uploadTypes'
-import type { DirectoryLocation } from '@shared/types'
+import type { LocationMatch, Visibility } from '../../lib/uploadTypes'
+import type { DirectoryLocation, GlobalLocation, Location } from '@shared/types'
 import T from '../../styles/tokens'
 
 interface LocationPanelProps {
   gpsLat?: number
   gpsLng?: number
+  visibility: Visibility
   value?: LocationMatch
   onChange: (value: LocationMatch) => void
 }
 
 const mono = "'IBM Plex Mono', monospace"
 
-const LocationPanel: React.FC<LocationPanelProps> = ({ gpsLat, gpsLng, value, onChange }) => {
+const LocationPanel: React.FC<LocationPanelProps> = ({ gpsLat, gpsLng, visibility, value, onChange }) => {
   const [search, setSearch] = useState('')
   const [results, setResults] = useState<DirectoryLocation[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const deferredSearch = useDeferredValue(search.trim())
   const hasGps = gpsLat != null && gpsLng != null
+  const targetSource = visibility === 'public' ? 'global' : 'user'
+
+  useEffect(() => {
+    if (value?.loc?.source && value.loc.source !== targetSource) {
+      onChange({ status: 'none' })
+    }
+  }, [onChange, targetSource, value?.loc?.source])
 
   useEffect(() => {
     let alive = true
@@ -35,7 +43,8 @@ const LocationPanel: React.FC<LocationPanelProps> = ({ gpsLat, gpsLng, value, on
       setLoading(true)
       setError(null)
       try {
-        const { data } = await api.get<DirectoryLocation[]>('/location-directory', {
+        const endpoint = targetSource === 'global' ? '/global-locations' : '/locations'
+        const { data } = await api.get<(GlobalLocation[] | Location[])>(endpoint, {
           params: {
             ...(hasGps ? { lat: gpsLat, lng: gpsLng, radius: 1500 } : {}),
             ...(deferredSearch ? { query: deferredSearch } : {}),
@@ -43,9 +52,25 @@ const LocationPanel: React.FC<LocationPanelProps> = ({ gpsLat, gpsLng, value, on
           signal: controller.signal,
         })
         if (!alive) return
-        setResults(data)
-        if (value?.status === 'pending' && data.length > 0) {
-          const top = data[0]
+
+        const normalized: DirectoryLocation[] = data.map((item) => ({
+          id: item.id,
+          source: targetSource,
+          name: item.name,
+          description: item.description,
+          latitude: item.latitude,
+          longitude: item.longitude,
+          distance_m: undefined,
+        }))
+
+        setResults(normalized)
+
+        if (value?.loc?.source && value.loc.source !== targetSource) {
+          onChange({ status: 'none' })
+        }
+
+        if ((value?.status === 'pending' || value?.status === 'none' || value?.loc?.source !== targetSource) && normalized.length > 0) {
+          const top = normalized[0]
           onChange({
             status: 'matched',
             loc: {
@@ -69,7 +94,7 @@ const LocationPanel: React.FC<LocationPanelProps> = ({ gpsLat, gpsLng, value, on
       alive = false
       controller.abort()
     }
-  }, [deferredSearch, gpsLat, gpsLng, hasGps, onChange, value?.status])
+  }, [deferredSearch, gpsLat, gpsLng, hasGps, onChange, targetSource, value?.loc?.source, value?.status])
 
   const chooseLocation = (item: DirectoryLocation) => {
     onChange({
@@ -91,17 +116,23 @@ const LocationPanel: React.FC<LocationPanelProps> = ({ gpsLat, gpsLng, value, on
     <div style={{ background: T.paperTwo, border: `1px solid ${T.line}`, borderRadius: 10, padding: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div style={{ fontFamily: mono, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 10.5, color: T.inkMute }}>
-          景點配對
+          {visibility === 'public' ? '大家景點配對' : '我的景點配對'}
         </div>
         <span style={{ fontFamily: mono, fontSize: 10.5, color: hasGps ? T.ok : T.inkMute }}>
           {hasGps ? 'GPS 已讀取' : '無 GPS'}
         </span>
       </div>
 
+      <div style={{ fontSize: 12, color: T.inkMute, lineHeight: 1.5, marginBottom: 10 }}>
+        {visibility === 'public'
+          ? '公開照片會綁定到大家景點，並顯示在公開地圖位置。'
+          : '私人照片會綁定到我的景點，並顯示在你的個人地圖位置。'}
+      </div>
+
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="搜尋全站或你的景點"
+        placeholder={visibility === 'public' ? '搜尋大家景點' : '搜尋我的景點'}
         style={{
           width: '100%',
           background: T.paper,
