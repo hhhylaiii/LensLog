@@ -9,6 +9,7 @@ export interface User {
   username: string
   email: string
   avatar_url?: string
+  banner_url?: string
   bio?: string
   created_at: string
 }

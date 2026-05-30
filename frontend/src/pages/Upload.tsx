@@ -1,4 +1,4 @@
-import React, { startTransition, useCallback, useMemo, useState } from 'react'
+import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import T from '../styles/tokens'
@@ -9,6 +9,35 @@ import { useBreakpoint } from '../hooks/useBreakpoint'
 import Stepper from '../components/PhotoUpload/Stepper'
 import DropStep from '../components/PhotoUpload/DropStep'
 import ReviewStep from '../components/PhotoUpload/ReviewStep'
+import PreviewPane from '../components/PhotoUpload/PreviewPane'
+import VisibilityPanel from '../components/PhotoUpload/VisibilityPanel'
+import LocationPanel from '../components/PhotoUpload/LocationPanel'
+import api from '../lib/api'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ApiPhoto {
+  id: string
+  s3_key: string
+  thumb_key?: string
+  url?: string
+  thumb_url?: string
+  caption?: string
+  tags: string[]
+  is_public: boolean
+  taken_at?: string
+  user_location_id?: string
+  global_location_id?: string
+  location_id?: string
+  location_source?: 'user' | 'global'
+  exif?: {
+    make?: string; model?: string; lens_model?: string
+    focal_length?: number; aperture?: number; shutter_speed?: string; iso?: number
+    gps_lat?: number; gps_lng?: number; width?: number; height?: number
+  }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 interface UploadPreset {
   visibility: Visibility
@@ -28,16 +57,187 @@ const makeItem = async (file: File, preset?: UploadPreset): Promise<FileItem> =>
   progress: 0,
 })
 
+function photoToFileItem(photo: ApiPhoto): FileItem {
+  const location: LocationMatch = photo.location_id
+    ? { status: 'manual', loc: { id: photo.location_id, name: '已選擇位置', source: photo.location_source ?? 'user' } }
+    : { status: 'none' }
+  return {
+    file: null as unknown as File,
+    preview: photo.thumb_url || photo.url || '',
+    caption: photo.caption ?? '',
+    tags: photo.tags ?? [],
+    visibility: photo.is_public ? 'public' : 'private',
+    hidePreciseGps: false,
+    exif: photo.exif ? {
+      make: photo.exif.make,
+      model: photo.exif.model,
+      aperture: photo.exif.aperture != null ? String(photo.exif.aperture) : undefined,
+      shutter: photo.exif.shutter_speed,
+      iso: photo.exif.iso != null ? String(photo.exif.iso) : undefined,
+      focalLength: photo.exif.focal_length != null ? String(photo.exif.focal_length) : undefined,
+      takenAt: photo.taken_at,
+      gpsLat: photo.exif.gps_lat,
+      gpsLng: photo.exif.gps_lng,
+    } : undefined,
+    location,
+    status: 'done',
+    progress: 100,
+  }
+}
+
+// ─── Edit mode component ───────────────────────────────────────────────────────
+
+interface EditModeProps {
+  photoId: string
+}
+
+const EditMode: React.FC<EditModeProps> = ({ photoId }) => {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [item, setItem] = useState<FileItem | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api.get<ApiPhoto>(`/photos/${photoId}`)
+      .then(r => setItem(photoToFileItem(r.data)))
+      .catch(() => setError('找不到該照片'))
+      .finally(() => setLoading(false))
+  }, [photoId])
+
+  const updateItem = (patch: Partial<FileItem>) => {
+    setItem(prev => prev ? { ...prev, ...patch } : prev)
+  }
+
+  const handleSave = async () => {
+    if (!item || saving) return
+    setSaving(true)
+    setError(null)
+    try {
+      const loc = item.location?.status === 'matched' || item.location?.status === 'manual'
+        ? item.location.loc : undefined
+      await api.patch(`/photos/${photoId}`, {
+        caption: item.caption || undefined,
+        tags: item.tags,
+        is_public: item.visibility === 'public',
+        ...(loc?.source === 'user' ? { user_location_id: loc.id } : {}),
+        ...(loc?.source === 'global' ? { global_location_id: loc.id } : {}),
+      })
+      queryClient.invalidateQueries({ queryKey: ['photos'] })
+      setSaved(true)
+    } catch {
+      setError('儲存失敗，請稍後再試')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const containerStyle: React.CSSProperties = {
+    padding: 24,
+    fontFamily: "'Inter', 'Noto Sans TC', sans-serif",
+    color: T.ink,
+    background: T.paper,
+    minHeight: '100%',
+    boxSizing: 'border-box',
+  }
+
+  if (saved) {
+    return (
+      <div style={containerStyle}>
+        <div style={{ background: T.okSoft, border: `1px solid ${T.ok}`, borderRadius: 10, padding: '16px 20px', color: T.ok, fontSize: 14, display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+          <span>✓</span>
+          <span>
+            修改已儲存！{' '}
+            <button onClick={() => navigate(-1)} style={{ color: T.accent, cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 14, padding: 0 }}>
+              返回 →
+            </button>
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={containerStyle}>
+      {/* Topbar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <div style={{ flex: 1 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.025em', margin: 0, color: T.ink }}>
+            編輯<span style={{ color: T.accent }}>照片</span>
+          </h1>
+          <p style={{ margin: '2px 0 0', fontSize: 13, color: T.inkMute }}>修改說明、標籤、位置與可見度</p>
+        </div>
+        <button
+          onClick={() => navigate(-1)}
+          style={{ background: 'none', border: `1px solid ${T.line}`, borderRadius: 6, padding: '6px 14px', fontSize: 13, color: T.inkSoft, cursor: 'pointer' }}
+        >
+          取消
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving || loading}
+          style={{
+            background: saving || loading ? T.paperTwo : T.accent,
+            color: saving || loading ? T.inkMute : '#fff',
+            border: 'none', borderRadius: 6, padding: '6px 20px',
+            fontSize: 13, fontWeight: 600,
+            cursor: saving || loading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {saving ? '儲存中…' : '儲存修改'}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ background: '#fff0f0', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', color: '#dc2626', fontSize: 13, marginBottom: 16 }}>
+          {error}
+        </div>
+      )}
+
+      {loading || !item ? (
+        <div style={{ color: T.inkMute, fontSize: 14, padding: '40px 0', textAlign: 'center' }}>載入中…</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, minHeight: 540 }}>
+          <PreviewPane item={item} onChange={updateItem} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <LocationPanel
+              gpsLat={item.exif?.gpsLat}
+              gpsLng={item.exif?.gpsLng}
+              value={item.location}
+              onChange={(location: LocationMatch) => updateItem({ location })}
+            />
+            <VisibilityPanel
+              visibility={item.visibility as Visibility}
+              onChange={(v: Visibility) => updateItem({ visibility: v })}
+              hidePreciseGps={item.hidePreciseGps}
+              onToggleGps={() => updateItem({ hidePreciseGps: !item.hidePreciseGps })}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Upload component ─────────────────────────────────────────────────────────
+
 const Upload: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
+  const editPhotoId = searchParams.get('edit')
 
   const [step, setStep] = useState<1 | 2>(1)
   const [items, setItems] = useState<FileItem[]>([])
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [publishing, setPublishing] = useState(false)
   const [success, setSuccess] = useState(false)
+
+  if (editPhotoId) {
+    return <EditMode photoId={editPhotoId} />
+  }
 
   const preset = useMemo<UploadPreset | null>(() => {
     const source = searchParams.get('source')

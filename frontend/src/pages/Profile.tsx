@@ -12,6 +12,9 @@ interface User {
   username: string
   email: string
   avatar_url?: string
+  banner_url?: string
+  banner_pos_x?: number
+  banner_pos_y?: number
   bio?: string
   created_at: string
 }
@@ -63,6 +66,22 @@ interface GearItem {
   type: string
   brand?: string
   model: string
+}
+
+interface StoryItem {
+  id: string
+  type: 'photo' | 'text'
+  photoId?: string
+  content?: string
+  caption?: string
+}
+
+interface Story {
+  id: string
+  name: string
+  photoIds: string[]
+  notes: Record<string, string>
+  items: StoryItem[]
 }
 
 const privacyStyles = {
@@ -147,8 +166,8 @@ const s: Record<string, React.CSSProperties> = {
     bottom: 0,
     left: 0,
     right: 0,
-    height: '80px',
-    background: 'linear-gradient(to bottom, transparent, rgba(26,41,66,0.18))',
+    height: '100px',
+    background: `linear-gradient(to bottom, transparent 0%, ${T.paper} 100%)`,
     pointerEvents: 'none' as const,
     zIndex: 3,
   },
@@ -862,6 +881,34 @@ const m: Record<string, React.CSSProperties> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function migrateStory(raw: Partial<Story> & { id: string; name: string }): Story {
+  if (Array.isArray((raw as Story).items)) return raw as Story
+  const photoIds = raw.photoIds ?? []
+  const notes = raw.notes ?? {}
+  const items: StoryItem[] = []
+  for (const pid of photoIds) {
+    items.push({ id: `photo-${pid}`, type: 'photo', photoId: pid, caption: notes[pid] || undefined })
+  }
+  return { id: raw.id, name: raw.name, photoIds, notes, items }
+}
+
+function groupPhotosByDay(photos: Photo[]) {
+  const map: Record<string, Photo[]> = {}
+  for (const p of photos) {
+    const d = new Date(p.taken_at ?? p.created_at)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    if (!map[key]) map[key] = []
+    map[key].push(p)
+  }
+  return Object.entries(map)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([key, ps]) => ({
+      key,
+      label: new Date(key + 'T12:00:00').toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }),
+      photos: [...ps].sort((a, b) => new Date(b.taken_at ?? b.created_at).getTime() - new Date(a.taken_at ?? a.created_at).getTime()),
+    }))
+}
+
 function formatJoinDate(iso: string) {
   const d = new Date(iso)
   return `加入於 ${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -882,29 +929,39 @@ function relativeTime(iso: string) {
 function SafeImage({ src, alt, style }: { src: string; alt?: string; style?: React.CSSProperties }) {
   const [err, setErr] = useState(false)
   if (err) return null
-  return <img src={src} alt={alt ?? ''} style={style} loading="lazy" onError={() => setErr(true)} />
+  return <img src={src} alt={alt ?? ''} style={{ imageOrientation: 'from-image', ...style }} loading="lazy" onError={() => setErr(true)} />
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
-type TabKey = 'photos' | 'locations' | 'gear'
+type TabKey = 'photos' | 'albums' | 'locations' | 'gear'
 const PAGE_SIZE = 8
 
 const Profile: React.FC = () => {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { isMobile } = useBreakpoint()
 
   const [activeTab, setActiveTab] = useState<TabKey>('photos')
   const [activeTag, setActiveTag] = useState('全部')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [sortBy, setSortBy] = useState<'time-desc' | 'time-asc' | 'name-asc' | 'name-desc'>('time-desc')
+  const [sortBy, setSortBy] = useState<'time-desc' | 'time-asc' | 'taken-desc' | 'taken-asc' | 'name-asc' | 'name-desc'>('time-desc')
   const [photoLimit, setPhotoLimit] = useState(PAGE_SIZE)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [stories, setStories] = useState<Story[]>([])
+  const [storiesInitialized, setStoriesInitialized] = useState(false)
+  const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null)
+  const [storyEditing, setStoryEditing] = useState(false)
+  const [editingStoryName, setEditingStoryName] = useState(false)
+  const [storyNameDraft, setStoryNameDraft] = useState('')
+  const [storySortOrder, setStorySortOrder] = useState<'custom' | 'taken-asc' | 'taken-desc'>('taken-asc')
+
   const [localAvatar, setLocalAvatar] = useState<string | null>(null)
   const [avatarHovered, setAvatarHovered] = useState(false)
   const [badgeEmoji, setBadgeEmoji] = useState('◈')
   const [showBadgePicker, setShowBadgePicker] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
+
   const [localBanner, setLocalBanner] = useState<string | null>(null)
   const [bannerHovered, setBannerHovered] = useState(false)
   const bannerInputRef = useRef<HTMLInputElement>(null)
@@ -912,11 +969,26 @@ const Profile: React.FC = () => {
   const bannerDragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null)
   const [bannerPosX, setBannerPosX] = useState(50)
   const [bannerPosY, setBannerPosY] = useState(50)
-
+  const bannerPosRef = useRef({ x: 50, y: 50 })
   const [featuredIdx, setFeaturedIdx] = useState(0)
 
   const { isMobile } = useBreakpoint()
   const BADGE_OPTIONS = ['◈', '◉', '◎', '⊕', '⬡', '★', '✦', '⬤', '🌙', '🔭', '📷', '🎞']
+
+
+  const uploadProfileImage = async (file: File, type: 'avatar' | 'banner') => {
+    const presignRes = await api.post(`/users/me/${type}/presign`, null, {
+      params: { filename: file.name, content_type: file.type || 'image/jpeg' },
+    })
+    const { presigned_url, s3_key } = presignRes.data
+    await fetch(presigned_url, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'image/jpeg' },
+      body: file,
+    })
+    const confirmRes = await api.post(`/users/me/${type}/confirm`, { s3_key })
+    return confirmRes.data
+  }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -925,6 +997,9 @@ const Profile: React.FC = () => {
     reader.onload = (ev) => setLocalAvatar(ev.target?.result as string)
     reader.readAsDataURL(file)
     e.target.value = ''
+    uploadProfileImage(file, 'avatar')
+      .then(() => qc.invalidateQueries({ queryKey: ['me'] }))
+      .catch(() => {})
   }
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -939,28 +1014,38 @@ const Profile: React.FC = () => {
     }
     reader.readAsDataURL(file)
     e.target.value = ''
+    uploadProfileImage(file, 'banner')
+      .then(() => qc.invalidateQueries({ queryKey: ['me'] }))
+      .catch(() => {})
   }
 
   const handleBannerPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId)
     bannerDragRef.current = { x: e.clientX, y: e.clientY, px: bannerPosX, py: bannerPosY }
   }
-
   const handleBannerPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!bannerDragRef.current || !localBanner || !bannerWrapRef.current) return
+    if (!bannerDragRef.current || !activeBanner || !bannerWrapRef.current) return
     const rect = bannerWrapRef.current.getBoundingClientRect()
     const dx = ((e.clientX - bannerDragRef.current.x) / rect.width) * 100
     const dy = ((e.clientY - bannerDragRef.current.y) / rect.height) * 100
-    setBannerPosX(Math.max(0, Math.min(100, bannerDragRef.current.px - dx)))
-    setBannerPosY(Math.max(0, Math.min(100, bannerDragRef.current.py - dy)))
+    const nx = Math.max(0, Math.min(100, bannerDragRef.current.px - dx))
+    const ny = Math.max(0, Math.min(100, bannerDragRef.current.py - dy))
+    bannerPosRef.current = { x: nx, y: ny }
+    setBannerPosX(nx)
+    setBannerPosY(ny)
   }
-
   const handleBannerPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!bannerDragRef.current) return
-    const moved =
-      Math.abs(e.clientX - bannerDragRef.current.x) > 3 ||
+    const moved = Math.abs(e.clientX - bannerDragRef.current.x) > 3 ||
       Math.abs(e.clientY - bannerDragRef.current.y) > 3
-    if (!moved) bannerInputRef.current?.click()
+    if (!moved) {
+      bannerInputRef.current?.click()
+    } else if (activeBanner) {
+      api.patch('/users/me/banner/position', {
+        pos_x: bannerPosRef.current.x,
+        pos_y: bannerPosRef.current.y,
+      }).catch(() => {})
+    }
     bannerDragRef.current = null
   }
 
@@ -968,6 +1053,72 @@ const Profile: React.FC = () => {
     queryKey: ['me'],
     queryFn: () => api.get('/auth/me').then((r) => r.data),
   })
+
+  useEffect(() => {
+    if (!user) return
+    const raw = localStorage.getItem(`lenslog_stories_${user.id}`)
+    try {
+      const parsed: Story[] = raw ? JSON.parse(raw) : []
+      setStories(parsed.map(migrateStory))
+    } catch {
+      setStories([])
+    }
+    setStoriesInitialized(true)
+  }, [user])
+
+  useEffect(() => {
+    if (!user || !storiesInitialized) return
+    localStorage.setItem(`lenslog_stories_${user.id}`, JSON.stringify(stories))
+  }, [stories, user, storiesInitialized])
+
+  const selectedStory = stories.find((story) => story.id === selectedStoryId)
+  const createStory = () => {
+    const name = window.prompt('故事集名稱')
+    if (!name?.trim()) return
+    const story: Story = { id: crypto.randomUUID(), name: name.trim(), photoIds: [], notes: {}, items: [] }
+    setStories((current) => [...current, story])
+    setSelectedStoryId(story.id)
+    setStoryEditing(true)
+  }
+  const updateSelectedStory = (update: (story: Story) => Story) => {
+    if (!selectedStoryId) return
+    setStories((current) => current.map((story) => story.id === selectedStoryId ? update(story) : story))
+  }
+
+  const insertTextNode = (afterItemId: string) => {
+    updateSelectedStory(story => {
+      const idx = story.items.findIndex(it => it.id === afterItemId)
+      if (idx < 0) return story
+      const next = [...story.items]
+      next.splice(idx + 1, 0, { id: crypto.randomUUID(), type: 'text' as const, content: '' })
+      return { ...story, items: next }
+    })
+  }
+
+  const insertTextNodeAtStart = () => {
+    updateSelectedStory(story => ({
+      ...story,
+      items: [{ id: crypto.randomUUID(), type: 'text' as const, content: '' }, ...story.items],
+    }))
+  }
+
+  const removeStoryItem = (itemId: string) => {
+    updateSelectedStory(story => ({ ...story, items: story.items.filter(item => item.id !== itemId) }))
+  }
+
+  const updateTextNodeContent = (itemId: string, content: string) => {
+    updateSelectedStory(story => ({
+      ...story,
+      items: story.items.map(item => item.id === itemId ? { ...item, content } : item),
+    }))
+  }
+
+  const updatePhotoCaption = (photoItemId: string, caption: string) => {
+    updateSelectedStory(story => ({
+      ...story,
+      items: story.items.map(item => item.id === photoItemId ? { ...item, caption } : item),
+    }))
+  }
 
   const { data: allPhotos = [] } = useQuery<Photo[]>({
     queryKey: ['photos', 'profile-all'],
@@ -993,6 +1144,17 @@ const Profile: React.FC = () => {
       api.patch(`/photos/${photo.id}`, { is_public: !photo.is_public }).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['photos', 'profile-all'] }),
   })
+
+  const bannerPosInitialized = useRef(false)
+  useEffect(() => {
+    if (!user || bannerPosInitialized.current) return
+    bannerPosInitialized.current = true
+    const x = user.banner_pos_x ?? 50
+    const y = user.banner_pos_y ?? 50
+    bannerPosRef.current = { x, y }
+    setBannerPosX(x)
+    setBannerPosY(y)
+  }, [user])
 
   useEffect(() => {
     if (allPhotos.length <= 1) return
@@ -1026,6 +1188,8 @@ const Profile: React.FC = () => {
     switch (sortBy) {
       case 'time-asc': return arr.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
       case 'time-desc': return arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      case 'taken-desc': return arr.sort((a, b) => new Date(b.taken_at ?? b.created_at).getTime() - new Date(a.taken_at ?? a.created_at).getTime())
+      case 'taken-asc': return arr.sort((a, b) => new Date(a.taken_at ?? a.created_at).getTime() - new Date(b.taken_at ?? b.created_at).getTime())
       case 'name-asc': return arr.sort((a, b) => (a.caption ?? '').localeCompare(b.caption ?? ''))
       case 'name-desc': return arr.sort((a, b) => (b.caption ?? '').localeCompare(a.caption ?? ''))
       default: return arr
@@ -1047,13 +1211,26 @@ const Profile: React.FC = () => {
   const topGear = gear.slice(0, 3)
   const maxLocCount = topLocations[0]?.photoCount || 1
 
-  const bannerBg = localBanner
-    ? undefined
-    : `linear-gradient(135deg, ${T.accentSoft} 0%, ${T.paperTwo} 55%, ${T.card} 100%)`
+  const activeBanner = localBanner ?? user?.banner_url ?? null
+  const bannerBg = activeBanner ? undefined : `linear-gradient(135deg, ${T.accentSoft} 0%, ${T.paperTwo} 55%, ${T.card} 100%)`
+
+  const mob: Record<string, React.CSSProperties> = isMobile ? {
+    page: { padding: '12px' },
+    bannerWrap: { height: '110px', borderRadius: '10px' },
+    profileHeader: { gap: '14px' },
+    avatar: { width: '72px', height: '72px', fontSize: '24px' },
+    displayName: { fontSize: '18px' },
+    statsBar: { overflowX: 'auto' as const },
+    statItem: { padding: '14px 16px', minWidth: '80px' },
+    statItemLast: { padding: '14px 16px', minWidth: '80px' },
+    statNumber: { fontSize: '20px' },
+    fab: { bottom: '20px', right: '16px', width: '46px', height: '46px', fontSize: '22px' },
+  } : {}
 
   // ─── Mobile branch ───────────────────────────────────────────────────────────
   if (isMobile) return (
     <div style={m.page}>
+      {/* Hidden file inputs (shared with desktop handlers) */}
       <input ref={bannerInputRef} type="file" accept="image/*" title="上傳橫幅" style={s.hiddenInput} onChange={handleBannerChange} />
       <input ref={avatarInputRef} type="file" accept="image/*" title="上傳頭像" style={s.hiddenInput} onChange={handleAvatarChange} />
 
@@ -1124,9 +1301,10 @@ const Profile: React.FC = () => {
               <span style={m.name}>{user?.username ?? '—'}</span>
               <span style={m.proBadge}>PRO</span>
             </div>
-            <div style={m.handle}>@{user?.username ?? '—'}</div>
+            <div style={m.handle}>@{user?.username ?? '—'} · 📍 台北</div>
             <div style={m.bio}>{user?.bio || '用影像記錄光線、地點與拍攝路線。'}</div>
           </div>
+          <button type="button" style={m.editBtn}>編輯</button>
         </div>
       </div>
 
@@ -1150,6 +1328,7 @@ const Profile: React.FC = () => {
           { key: 'photos', label: '照片' },
           { key: 'locations', label: '景點' },
           { key: 'gear', label: '器材' },
+          { key: 'favorites', label: '收藏' },
         ] as { key: TabKey; label: string }[]).map(({ key, label }) => (
           <div
             key={key}
@@ -1197,6 +1376,7 @@ const Profile: React.FC = () => {
                     {loc && <div style={s.overlayTop}>{loc.name} · {relativeTime(fp.created_at)}</div>}
                     <div style={s.overlayBottom}>
                       <span style={s.exifBadge}>{exifLabel || '—'}</span>
+                      <span style={s.likeBadge}>♡ 0</span>
                     </div>
                   </div>
                 )
@@ -1280,27 +1460,33 @@ const Profile: React.FC = () => {
         </div>
       )}
 
+      {/* ── Favorites tab ── */}
+      {activeTab === 'favorites' && (
+        <div style={m.listWrap}>
+          <div style={s.emptyNote}>尚無收藏</div>
+        </div>
+      )}
     </div>
   )
 
   return (
     <>
-      <div style={s.page}>
+      <div style={{ ...s.page, ...mob.page }}>
 
         {/* ── Banner ── */}
         <div
           ref={bannerWrapRef}
-          style={{ ...s.bannerWrap, background: bannerBg, backgroundImage: bannerBg }}
+          style={{ ...s.bannerWrap, ...mob.bannerWrap, background: bannerBg, backgroundImage: bannerBg }}
           onMouseEnter={() => setBannerHovered(true)}
           onMouseLeave={() => setBannerHovered(false)}
           onPointerDown={handleBannerPointerDown}
           onPointerMove={handleBannerPointerMove}
           onPointerUp={handleBannerPointerUp}
-          title={localBanner ? '拖曳調整位置 · 點擊更換圖片' : '點擊更換橫幅'}
+          title={activeBanner ? '拖曳調整位置 · 點擊更換圖片' : '點擊更換橫幅'}
         >
-          {localBanner && (
+          {activeBanner && (
             <img
-              src={localBanner}
+              src={activeBanner}
               alt="banner"
               style={{ ...s.bannerImg, objectPosition: `${bannerPosX}% ${bannerPosY}%` }}
             />
@@ -1308,7 +1494,7 @@ const Profile: React.FC = () => {
           {bannerHovered && (
             <div style={s.bannerOverlay}>
               <span>📷</span>
-              <span style={{ fontSize: '13px' }}>{localBanner ? '拖曳調整 · 點擊更換' : '更換橫幅'}</span>
+              <span style={{ fontSize: '13px' }}>{activeBanner ? '拖曳調整 · 點擊更換' : '更換橫幅'}</span>
             </div>
           )}
           {/* Bottom fade */}
@@ -1324,10 +1510,10 @@ const Profile: React.FC = () => {
         />
 
         {/* ── Profile header ── */}
-        <div style={s.profileHeader}>
+        <div style={{ ...s.profileHeader, ...mob.profileHeader }}>
           <div style={s.avatarWrap}>
             <div
-              style={s.avatar}
+              style={{ ...s.avatar, ...mob.avatar }}
               onMouseEnter={() => setAvatarHovered(true)}
               onMouseLeave={() => setAvatarHovered(false)}
               onClick={() => avatarInputRef.current?.click()}
@@ -1378,11 +1564,13 @@ const Profile: React.FC = () => {
           </div>
           <div style={s.profileInfo}>
             <div style={s.nameRow}>
-              <span style={s.displayName}>{user?.username ?? '—'}</span>
+              <span style={{ ...s.displayName, ...mob.displayName }}>{user?.username ?? '—'}</span>
               <span style={s.proBadge}>PRO</span>
             </div>
             <div style={s.metaRow}>
               <span>@{user?.username ?? '—'}</span>
+              <span style={s.metaDot}>·</span>
+              <span>📍 台北</span>
               <span style={s.metaDot}>·</span>
               <span>{user?.created_at ? formatJoinDate(user.created_at) : '—'}</span>
             </div>
@@ -1393,14 +1581,14 @@ const Profile: React.FC = () => {
         </div>
 
         {/* ── Stats bar ── */}
-        <div style={s.statsBar}>
+        <div style={{ ...s.statsBar, ...mob.statsBar }}>
           {[
             { n: allPhotos.length, label: '作品' },
             { n: locations.length, label: '路線' },
             { n: gear.length, label: '器材', last: true },
           ].map(({ n, label, last }) => (
-            <div key={label} style={last ? s.statItemLast : s.statItem}>
-              <div style={s.statNumber}>{n.toLocaleString()}</div>
+            <div key={label} style={last ? { ...s.statItemLast, ...mob.statItemLast } : { ...s.statItem, ...mob.statItem }}>
+              <div style={{ ...s.statNumber, ...mob.statNumber }}>{n.toLocaleString()}</div>
               <div style={s.statLabel}>{label}</div>
             </div>
           ))}
@@ -1410,6 +1598,7 @@ const Profile: React.FC = () => {
         <div style={s.tabBar}>
           {([
             { key: 'photos', label: '照片', count: allPhotos.length },
+            { key: 'albums', label: '故事集', count: stories.length },
             { key: 'locations', label: '景點', count: locations.length },
             { key: 'gear', label: '器材', count: gear.length },
           ] as { key: TabKey; label: string; count: number }[]).map(({ key, label, count }) => (
@@ -1448,8 +1637,10 @@ const Profile: React.FC = () => {
                   value={sortBy}
                   onChange={(e) => { setSortBy(e.target.value as typeof sortBy); setPhotoLimit(PAGE_SIZE) }}
                 >
-                  <option value="time-desc">最新優先</option>
-                  <option value="time-asc">最舊優先</option>
+                  <option value="time-desc">上傳（新→舊）</option>
+                  <option value="time-asc">上傳（舊→新）</option>
+                  <option value="taken-desc">拍攝（新→舊）</option>
+                  <option value="taken-asc">拍攝（舊→新）</option>
                   <option value="name-asc">名稱 A→Z</option>
                   <option value="name-desc">名稱 Z→A</option>
                 </select>
@@ -1491,6 +1682,14 @@ const Profile: React.FC = () => {
                           {photo.tags?.length ? ` · ${photo.tags.slice(0, 3).map((tag) => `#${tag}`).join(' ')}` : ''}
                         </div>
                       </div>
+                      <button
+                        type="button"
+                        style={{ background: 'none', border: `1px solid ${T.line}`, borderRadius: '6px', color: T.inkMute, fontSize: '12px', padding: '4px 10px', cursor: 'pointer', flexShrink: 0, marginRight: '6px' }}
+                        title="編輯照片"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/upload?edit=${photo.id}`) }}
+                      >
+                        ✎
+                      </button>
                       <button
                         type="button"
                         style={photo.is_public
@@ -1539,6 +1738,7 @@ const Profile: React.FC = () => {
                         )}
                         <div style={s.overlayBottom}>
                           <span style={s.exifBadge}>{exifLabel || '—'}</span>
+                          <span style={s.likeBadge}>♡ 0</span>
                         </div>
                         {/* 沒有鎖頭按鈕，純粹輪播顯示用 */}
                       </div>
@@ -1568,6 +1768,16 @@ const Profile: React.FC = () => {
                       {isHovered && p.caption && (
                         <div style={s.photoCaptionHover}>{p.caption}</div>
                       )}
+                      {isHovered && (
+                        <button
+                          type="button"
+                          style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '12px', padding: '4px 10px', cursor: 'pointer', zIndex: 3 }}
+                          title="編輯照片"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/upload?edit=${p.id}`) }}
+                        >
+                          ✎ 編輯
+                        </button>
+                      )}
                       <button
                         type="button"
                         style={p.is_public
@@ -1594,6 +1804,346 @@ const Profile: React.FC = () => {
             )}
           </>
         )}
+
+        {/* ── Stories tab ── */}
+        {activeTab === 'albums' && (() => {
+          if (!selectedStory) {
+            return (
+              <div>
+                <button type="button" style={s.loadMoreBtn} onClick={createStory}>＋ 新增故事集</button>
+                {stories.length === 0
+                  ? <div style={s.emptyNote}>尚無故事集。照片預設不會加入任何故事集。</div>
+                  : <div style={{ ...s.listWrap, marginTop: 16 }}>
+                      {stories.map((story) => (
+                        <div key={story.id} style={{ ...s.listRow, cursor: 'pointer', padding: '16px 0' }} onClick={() => setSelectedStoryId(story.id)}>
+                          <div style={s.listIcon}>▤</div>
+                          <div>
+                            <div style={s.listName}>{story.name}</div>
+                            <div style={s.listMeta}>{story.items.filter(i => i.type === 'photo').length} 張照片</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                }
+              </div>
+            )
+          }
+
+          // Group items by shooting date (photos define the date; text nodes attach to the current date bucket)
+          type DayBucket = { dateKey: string; label: string; entries: Array<{ item: StoryItem; photo: Photo | undefined; itemIdx: number }> }
+          type BucketEntry = DayBucket['entries'][number]
+          type RowEntry =
+            | { kind: 'photo'; entry: BucketEntry }
+            | { kind: 'note'; entry: BucketEntry }
+          const dayBuckets: DayBucket[] = []
+          let curBucket: DayBucket | null = null
+          let curDateKey = ''
+
+          // Sort items before bucketing so same-day photos always group together
+          const storyItemsSorted = storySortOrder === 'custom'
+            ? selectedStory.items
+            : [...selectedStory.items].sort((a, b) => {
+                const allItems = selectedStory.items
+                const getTime = (item: StoryItem): number => {
+                  if (item.type === 'photo') {
+                    const p = allPhotos.find(ph => ph.id === item.photoId)
+                    return new Date(p?.taken_at ?? p?.created_at ?? 0).getTime()
+                  }
+                  // Text notes inherit time from nearest preceding photo so they stay in place
+                  const selfIdx = allItems.indexOf(item)
+                  for (let i = selfIdx - 1; i >= 0; i--) {
+                    if (allItems[i].type === 'photo') {
+                      const p = allPhotos.find(ph => ph.id === allItems[i].photoId)
+                      return new Date(p?.taken_at ?? p?.created_at ?? 0).getTime() + 1
+                    }
+                  }
+                  for (let i = selfIdx + 1; i < allItems.length; i++) {
+                    if (allItems[i].type === 'photo') {
+                      const p = allPhotos.find(ph => ph.id === allItems[i].photoId)
+                      return new Date(p?.taken_at ?? p?.created_at ?? 0).getTime() - 1
+                    }
+                  }
+                  return storySortOrder === 'taken-asc' ? 0 : Infinity
+                }
+                const ta = getTime(a), tb = getTime(b)
+                return storySortOrder === 'taken-asc' ? ta - tb : tb - ta
+              })
+
+          storyItemsSorted.forEach((item, itemIdx) => {
+            if (item.type === 'photo') {
+              const photo = allPhotos.find(p => p.id === item.photoId)
+              if (!photo) return
+              const d = new Date(photo.taken_at ?? photo.created_at)
+              const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+              if (dk !== curDateKey) {
+                curDateKey = dk
+                curBucket = { dateKey: dk, label: new Date(dk + 'T12:00:00').toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' }), entries: [] }
+                dayBuckets.push(curBucket)
+              }
+              curBucket!.entries.push({ item, photo, itemIdx })
+            } else {
+              if (!curBucket) {
+                curBucket = { dateKey: '_top', label: '', entries: [] }
+                dayBuckets.push(curBucket)
+              }
+              curBucket.entries.push({ item, photo: undefined, itemIdx })
+            }
+          })
+
+          const PHOTO_INDENT = 24
+
+          const renderItemCard = (item: StoryItem, photo: Photo | undefined) => {
+            if (item.type === 'photo' && photo) {
+              const thumbSrc = photo.thumb_url || photo.url
+              return (
+                <div>
+                  <div style={{ display: 'inline-block', borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.line}`, cursor: 'pointer', background: T.card }} onClick={() => navigate(`/photos/${photo.id}`)}>
+                    {thumbSrc
+                      ? <img src={thumbSrc} alt="" style={{ display: 'block', maxWidth: '20vw', maxHeight: '20vw', width: 'auto', height: 'auto', imageOrientation: 'from-image' }} />
+                      : <div style={{ width: 100, height: 100, ...s.photoPlaceholder }}>{photo.id.slice(-4).toUpperCase()}</div>
+                    }
+                    {(photo.caption || photo.exif || (photo.tags?.length ?? 0) > 0) && (
+                      <div style={{ padding: '10px 14px' }}>
+                        {photo.caption && <div style={{ fontSize: 13, fontWeight: 500, color: T.ink, marginBottom: 4 }}>{photo.caption}</div>}
+                        {photo.exif && (
+                          <div style={{ fontSize: 11, color: T.inkMute }}>
+                            {[photo.exif.make, photo.exif.focal_length != null && `${photo.exif.focal_length}mm`, photo.exif.aperture != null && `f/${photo.exif.aperture}`].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                        {(photo.tags?.length ?? 0) > 0 && (
+                          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap' as const, gap: 4 }}>
+                            {photo.tags.slice(0, 3).map(t => <span key={t} style={{ fontSize: 10, color: T.accent, background: T.accentSoft, borderRadius: 10, padding: '1px 6px' }}>#{t}</span>)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {storyEditing && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                      <button type="button" style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: `1px solid ${T.line}`, background: 'none', color: T.inkMute, cursor: 'pointer' }} onClick={e => { e.stopPropagation(); navigate(`/upload?edit=${photo.id}`) }}>✎ 編輯照片</button>
+                      <button type="button" style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: `1px solid ${T.line}`, background: 'none', color: T.inkMute, cursor: 'pointer' }} onClick={() => removeStoryItem(item.id)}>× 移除</button>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+            if (item.type === 'text') {
+              return storyEditing ? (
+                <div style={{ position: 'relative' }}>
+                  <textarea
+                    value={item.content ?? ''}
+                    placeholder="在這裡輸入文字…"
+                    onChange={e => updateTextNodeContent(item.id, e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 72, border: `1px solid ${T.accent}`, borderRadius: 8, padding: '8px 28px 8px 10px', fontSize: 13, color: T.ink, background: T.paper, resize: 'vertical' as const, outline: 'none' }}
+                  />
+                  <button type="button" onClick={() => removeStoryItem(item.id)} style={{ position: 'absolute', top: 4, right: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: T.inkMute, lineHeight: 1 }}>×</button>
+                </div>
+              ) : item.content ? (
+                <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.8, whiteSpace: 'pre-wrap' as const }}>
+                  {item.content}
+                </div>
+              ) : null
+            }
+            return null
+          }
+
+          const hasItems = dayBuckets.some(b => b.entries.length > 0)
+
+          return (
+            <div>
+              {/* ── Header ── */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' as const }}>
+                <button type="button" style={s.loadMoreBtn} onClick={() => { setSelectedStoryId(null); setStoryEditing(false); setEditingStoryName(false) }}>← 故事集列表</button>
+                {editingStoryName ? (
+                  <>
+                    <input
+                      value={storyNameDraft}
+                      autoFocus
+                      title="故事集名稱"
+                      placeholder="故事集名稱"
+                      onChange={e => setStoryNameDraft(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { updateSelectedStory(st => ({ ...st, name: storyNameDraft })); setEditingStoryName(false) }
+                        if (e.key === 'Escape') setEditingStoryName(false)
+                      }}
+                      style={{ fontSize: 15, fontWeight: 600, padding: '4px 10px', border: `1px solid ${T.accent}`, borderRadius: 6, outline: 'none', color: T.ink, background: T.card }}
+                    />
+                    <button type="button" style={{ ...s.loadMoreBtn, borderColor: T.accent, color: T.accent }} onClick={() => { updateSelectedStory(st => ({ ...st, name: storyNameDraft })); setEditingStoryName(false) }}>確定</button>
+                    <button type="button" style={s.loadMoreBtn} onClick={() => setEditingStoryName(false)}>取消</button>
+                  </>
+                ) : (
+                  <>
+                    <strong style={{ fontSize: 16, color: T.ink }}>{selectedStory.name}</strong>
+                    <button type="button" style={{ ...s.loadMoreBtn, padding: '4px 10px' }} title="重新命名故事集" onClick={() => { setStoryNameDraft(selectedStory.name); setEditingStoryName(true) }}>✎</button>
+                  </>
+                )}
+                <button type="button" style={s.loadMoreBtn} onClick={() => setStoryEditing(e => !e)}>
+                  {storyEditing ? '完成編輯' : '編輯故事'}
+                </button>
+                <select
+                  value={storySortOrder}
+                  onChange={e => setStorySortOrder(e.target.value as typeof storySortOrder)}
+                  style={s.sortSelect}
+                  aria-label="故事排序"
+                >
+                  <option value="custom">自訂順序</option>
+                  <option value="taken-asc">拍攝時間（舊→新）</option>
+                  <option value="taken-desc">拍攝時間（新→舊）</option>
+                </select>
+              </div>
+
+              {/* ── Edit mode: photo grid selector ── */}
+              {storyEditing && (
+                <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, padding: 16, marginBottom: 24 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: T.ink }}>選擇要加入的照片</div>
+                  {allPhotos.length === 0
+                    ? <div style={s.emptyNote}>尚無照片可選擇</div>
+                    : <div style={{ display: 'flex', flexWrap: 'nowrap' as const, overflowX: 'auto' as const, gap: 8, paddingBottom: 4 }}>
+                        {allPhotos.map(photo => {
+                          const included = selectedStory.items.some(item => item.type === 'photo' && item.photoId === photo.id)
+                          const thumbSrc = photo.thumb_url || photo.url
+                          return (
+                            <div key={photo.id} style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+                              onClick={() => {
+                                if (included) {
+                                  updateSelectedStory(st => ({ ...st, items: st.items.filter(item => !(item.type === 'photo' && item.photoId === photo.id)) }))
+                                } else {
+                                  updateSelectedStory(st => ({ ...st, items: [...st.items, { id: `photo-${photo.id}`, type: 'photo' as const, photoId: photo.id }] }))
+                                }
+                              }}>
+                              <div style={{ width: 72, height: 54, borderRadius: 6, overflow: 'hidden', border: `2px solid ${included ? T.accent : 'transparent'}`, opacity: included ? 1 : 0.65 }}>
+                                {thumbSrc
+                                  ? <img src={thumbSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  : <div style={{ ...s.photoPlaceholder, fontSize: 10 }}>{photo.id.slice(-4)}</div>
+                                }
+                              </div>
+                              {included && <div style={{ position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: '50%', background: T.accent, color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</div>}
+                            </div>
+                          )
+                        })}
+                      </div>
+                  }
+                </div>
+              )}
+
+              {/* ── Timeline (left-1/3 line, content right, staggered by type) ── */}
+              {!hasItems
+                ? <div style={s.emptyNote}>此故事集尚無照片，請進入編輯模式加入照片。</div>
+                : <div style={{ position: 'relative', paddingTop: 8, paddingBottom: 48 }}>
+                    {/* Vertical line at left 1/3 (desktop only) */}
+                    {!isMobile && <div style={{ position: 'absolute', left: 'calc(33% - 1px)', top: 0, bottom: 0, width: 2, background: T.lineSoft, zIndex: 0 }} />}
+
+                    {/* Insert-at-start button (edit mode) */}
+                    {storyEditing && (
+                      <div style={{ marginBottom: 10 }}>
+                        <button type="button" onClick={insertTextNodeAtStart} style={{ background: T.card, border: `1px dashed ${T.line}`, borderRadius: 20, padding: '3px 14px', fontSize: 11, color: T.inkMute, cursor: 'pointer' }}>+ 在開頭加入文字</button>
+                      </div>
+                    )}
+
+                    {dayBuckets.map((bucket, bucketIdx, arr) => {
+                      const rows: RowEntry[] = bucket.entries.map(entry =>
+                        entry.item.type === 'photo'
+                          ? { kind: 'photo' as const, entry }
+                          : { kind: 'note' as const, entry }
+                      )
+
+                      return (
+                        <div key={bucket.dateKey} style={{ marginBottom: bucketIdx < arr.length - 1 ? 36 : 0 }}>
+                          {/* Date label row */}
+                          {bucket.label && (
+                            isMobile ? (
+                              <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, lineHeight: 1.4, marginBottom: 12, paddingBottom: 6, borderBottom: `2px solid ${T.accent}` }}>
+                                {bucket.label}
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', marginBottom: 12, position: 'relative' }}>
+                                <div style={{ width: '33%', paddingRight: '1.5rem', boxSizing: 'border-box' as const, textAlign: 'right' as const, flexShrink: 0, paddingTop: 2 }}>
+                                  <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>{bucket.label}</div>
+                                </div>
+                                <div style={{ position: 'absolute', left: 'calc(33% - 5.5px)', top: 4, width: 11, height: 11, borderRadius: '50%', background: T.accent, border: `2px solid ${T.paper}`, zIndex: 2 }} />
+                              </div>
+                            )
+                          )}
+
+                          {/* Items */}
+                          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 24 }}>
+                            {rows.map((row) => {
+                              if (row.kind === 'photo') {
+                                return (
+                                  <React.Fragment key={row.entry.item.id}>
+                                    {isMobile ? (
+                                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+                                        <div>{renderItemCard(row.entry.item, row.entry.photo)}</div>
+                                        {storyEditing ? (
+                                          <textarea
+                                            value={row.entry.item.caption ?? ''}
+                                            placeholder="在此輸入圖說…"
+                                            onChange={e => updatePhotoCaption(row.entry.item.id, e.target.value)}
+                                            style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 52, border: `1px solid ${T.accent}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, color: T.ink, background: T.paper, resize: 'vertical' as const, outline: 'none' }}
+                                          />
+                                        ) : row.entry.item.caption ? (
+                                          <div style={{ fontSize: 12, color: T.inkMute, lineHeight: 1.6, whiteSpace: 'pre-wrap' as const }}>
+                                            {row.entry.item.caption}
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                    ) : (
+                                      <div style={{ display: 'flex', position: 'relative' }}>
+                                        <div style={{ width: '33%', flexShrink: 0, paddingRight: '1.5rem', boxSizing: 'border-box' as const, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                          {storyEditing ? (
+                                            <textarea
+                                              value={row.entry.item.caption ?? ''}
+                                              placeholder="在此輸入圖說…"
+                                              onChange={e => updatePhotoCaption(row.entry.item.id, e.target.value)}
+                                              style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 64, border: `1px solid ${T.line}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, color: T.ink, background: T.paper, resize: 'vertical' as const, outline: 'none', textAlign: 'right' as const }}
+                                            />
+                                          ) : row.entry.item.caption ? (
+                                            <div style={{ fontSize: 12, color: T.inkMute, lineHeight: 1.6, whiteSpace: 'pre-wrap' as const, textAlign: 'right' as const }}>
+                                              {row.entry.item.caption}
+                                            </div>
+                                          ) : null}
+                                        </div>
+                                        <div style={{ position: 'absolute', left: 'calc(33% + 1px)', top: 22, width: PHOTO_INDENT - 2, height: 2, background: T.lineSoft, zIndex: 1 }} />
+                                        <div style={{ flex: 1, paddingLeft: PHOTO_INDENT }}>
+                                          {renderItemCard(row.entry.item, row.entry.photo)}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {storyEditing && (
+                                      <div style={{ marginTop: 4 }}>
+                                        <button type="button" onClick={() => insertTextNode(row.entry.item.id)} style={{ background: T.card, border: `1px dashed ${T.line}`, borderRadius: 20, padding: '2px 12px', fontSize: 10, color: T.inkMute, cursor: 'pointer' }}>+ 插入文字</button>
+                                      </div>
+                                    )}
+                                  </React.Fragment>
+                                )
+                              }
+                              return (
+                                <React.Fragment key={row.entry.item.id}>
+                                  {(storyEditing || !!row.entry.item.content) && (
+                                    <div style={{ position: 'relative', zIndex: 2, background: T.paper, borderTop: `1px solid ${T.lineSoft}`, borderBottom: `1px solid ${T.lineSoft}`, padding: '10px 16px' }}>
+                                      {!isMobile && (
+                                        <div style={{ position: 'absolute', left: 'calc(33% - 5px)', top: '50%', transform: 'translateY(-50%)', width: 10, height: 10, borderRadius: '50%', background: T.lineSoft, border: `2px solid ${T.paper}`, zIndex: 3 }} />
+                                      )}
+                                      {renderItemCard(row.entry.item, undefined)}
+                                    </div>
+                                  )}
+                                  {storyEditing && (
+                                    <div style={{ marginTop: 4 }}>
+                                      <button type="button" onClick={() => insertTextNode(row.entry.item.id)} style={{ background: T.card, border: `1px dashed ${T.line}`, borderRadius: 20, padding: '2px 12px', fontSize: 10, color: T.inkMute, cursor: 'pointer' }}>+ 插入文字</button>
+                                    </div>
+                                  )}
+                                </React.Fragment>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+              }
+            </div>
+          )
+        })()}
 
         {/* ── Locations tab ── */}
         {activeTab === 'locations' && (
@@ -1632,6 +2182,7 @@ const Profile: React.FC = () => {
             }
           </div>
         )}
+
 
         {/* ── Bottom stats ── */}
         <div style={s.bottomRow}>
@@ -1687,7 +2238,7 @@ const Profile: React.FC = () => {
       </div>
 
       {/* ── FAB: upload ── */}
-      <button type="button" style={s.fab} title="上傳照片" onClick={() => navigate('/upload')}>⊕</button>
+      <button type="button" style={{ ...s.fab, ...mob.fab }} title="上傳照片" onClick={() => navigate('/upload')}>⊕</button>
     </>
   )
 }

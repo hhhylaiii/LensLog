@@ -29,12 +29,24 @@ class UserResponse(BaseModel):
     username: str
     email: str
     avatar_url: Optional[str]
+    banner_url: Optional[str] = None
+    banner_pos_x: float = 50.0
+    banner_pos_y: float = 50.0
     bio: Optional[str]
     is_admin: bool = False
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class ProfileImageConfirm(BaseModel):
+    s3_key: str = Field(..., description="The s3_key returned by the presign endpoint")
+
+
+class BannerPositionUpdate(BaseModel):
+    pos_x: float = Field(..., ge=0, le=100, description="Horizontal focal point 0–100")
+    pos_y: float = Field(..., ge=0, le=100, description="Vertical focal point 0–100")
 
 
 # ─── Photo Schemas ────────────────────────────────────────────────────────────
@@ -82,6 +94,11 @@ class PhotoCreate(BaseModel):
         default=None,
         description="Link photo to a platform-maintained global location.",
         examples=["11111111-1111-1111-1111-111111111101"],
+    )
+    taken_at: Optional[datetime] = Field(
+        default=None,
+        description="Shooting timestamp from EXIF, in ISO 8601 format. Will be overridden by server-side EXIF extraction if not provided.",
+        examples=["2026-04-10T19:45:00"],
     )
     tags: list[str] = Field(
         default_factory=list,
