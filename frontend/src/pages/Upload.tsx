@@ -1,8 +1,8 @@
-import React, { startTransition, useCallback, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { startTransition, useCallback, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import T from '../styles/tokens'
-import type { FileItem } from '../lib/uploadTypes'
+import type { FileItem, LocationMatch, LocationSource, Visibility } from '../lib/uploadTypes'
 import { uploadOne } from '../lib/uploadService'
 import { parseExifData } from '../lib/exif'
 import { useBreakpoint } from '../hooks/useBreakpoint'
@@ -10,21 +10,27 @@ import Stepper from '../components/PhotoUpload/Stepper'
 import DropStep from '../components/PhotoUpload/DropStep'
 import ReviewStep from '../components/PhotoUpload/ReviewStep'
 
-const makeItem = async (file: File): Promise<FileItem> => ({
+interface UploadPreset {
+  visibility: Visibility
+  location?: LocationMatch
+}
+
+const makeItem = async (file: File, preset?: UploadPreset): Promise<FileItem> => ({
   file,
   preview: URL.createObjectURL(file),
   caption: '',
   tags: [],
-  visibility: 'public',
+  visibility: preset?.visibility ?? 'public',
   hidePreciseGps: false,
   exif: await parseExifData(file),
-  location: { status: 'pending' },
+  location: preset?.location ?? { status: 'pending' },
   status: 'pending',
   progress: 0,
 })
 
 const Upload: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
 
   const [step, setStep] = useState<1 | 2>(1)
@@ -33,19 +39,38 @@ const Upload: React.FC = () => {
   const [publishing, setPublishing] = useState(false)
   const [success, setSuccess] = useState(false)
 
+  const preset = useMemo<UploadPreset | null>(() => {
+    const source = searchParams.get('source')
+    const id = searchParams.get('locationId')
+    const name = searchParams.get('locationName')
+    if (!source || !id || !name) return null
+    if (source !== 'user' && source !== 'global') return null
+    return {
+      visibility: source === 'global' ? 'public' : 'private',
+      location: {
+        status: 'manual',
+        loc: {
+          id,
+          name,
+          source: source as LocationSource,
+        },
+      },
+    }
+  }, [searchParams])
+
   const updateItem = useCallback((index: number, patch: Partial<FileItem>) => {
     setItems(prev => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)))
   }, [])
 
   const addFiles = useCallback(async (files: File[]) => {
-    const nextItems = await Promise.all(files.map(makeItem))
+    const nextItems = await Promise.all(files.map((file) => makeItem(file, preset ?? undefined)))
     startTransition(() => {
       setItems(prev => [...prev, ...nextItems])
     })
-  }, [])
+  }, [preset])
 
   const addMore = useCallback(async (files: File[]) => {
-    const nextItems = await Promise.all(files.map(makeItem))
+    const nextItems = await Promise.all(files.map((file) => makeItem(file, preset ?? undefined)))
     startTransition(() => {
       setItems(prev => {
         const next = [...prev, ...nextItems]
@@ -53,7 +78,7 @@ const Upload: React.FC = () => {
         return next
       })
     })
-  }, [])
+  }, [preset])
 
   const handlePublish = async () => {
     const pending = items.filter(f => f.status === 'pending')
@@ -70,14 +95,19 @@ const Upload: React.FC = () => {
   const { isMobile } = useBreakpoint()
   const pendingCount = items.filter(f => f.status === 'pending').length
   const allDone = items.length > 0 && items.every(f => f.status === 'done' || f.status === 'error')
+  const presetNotice = preset?.location?.loc ? (
+    <div style={{ background: T.accentSoft, border: `1px solid ${T.accent}`, borderRadius: 10, padding: '12px 16px', color: T.accentInk, fontSize: 13, marginBottom: 16 }}>
+      這次上傳會預設綁定到 <strong>{preset.location.loc.name}</strong> · {preset.location.loc.source === 'global' ? '大家景點 / 公開照片' : '我的景點 / 私人照片'}
+    </div>
+  ) : null
 
   const successBanner = (
     <div style={{ background: T.okSoft, border: `1px solid ${T.ok}`, borderRadius: 10, padding: '16px 20px', color: T.ok, fontSize: 14, display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
       <span>✓</span>
       <span>
         照片上傳成功！{' '}
-        <button onClick={() => navigate('/')} style={{ color: T.accent, cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 14, padding: 0 }}>
-          前往 Dashboard →
+        <button onClick={() => navigate('/map')} style={{ color: T.accent, cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 14, padding: 0 }}>
+          前往地圖 →
         </button>
       </span>
     </div>
@@ -111,6 +141,7 @@ const Upload: React.FC = () => {
         <div style={{ flex: 1 }}>
           {step === 1 ? (
             <div style={{ padding: '0 16px 16px' }}>
+              {presetNotice}
               <DropStep files={items} onAddFiles={addFiles} onNext={() => { setSelectedIdx(0); setStep(2) }} />
             </div>
           ) : (
@@ -204,7 +235,10 @@ const Upload: React.FC = () => {
 
       {/* Step content */}
       {step === 1 ? (
-        <DropStep files={items} onAddFiles={addFiles} onNext={() => { setSelectedIdx(0); setStep(2) }} />
+        <>
+          {presetNotice}
+          <DropStep files={items} onAddFiles={addFiles} onNext={() => { setSelectedIdx(0); setStep(2) }} />
+        </>
       ) : (
         <ReviewStep items={items} selectedIdx={selectedIdx} onSelect={setSelectedIdx} onAddMore={addMore} onChangeItem={updateItem} />
       )}
