@@ -152,7 +152,7 @@ const LocationPanel: React.FC<LocationPanelProps> = ({ gpsLat, gpsLng, visibilit
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ok }}>{value.loc.name}</div>
             <div style={{ fontSize: 11.5, color: T.inkMute }}>
-              {value.loc.source === 'global' ? '全站景點' : '我的景點'}
+              {value.loc.source === 'global' ? '公開景點' : '我的景點'}
               {value.loc.distance != null ? ` · ${Math.round(value.loc.distance)}m` : ''}
             </div>
           </div>

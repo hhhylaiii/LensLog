@@ -235,7 +235,7 @@ async def update_photo(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """更新照片資訊，可切換照片綁定的私人景點或全站景點。"""
+    """更新照片資訊，可切換照片綁定的私人景點或公開景點。"""
     result = await db.execute(
         select(Photo).where(Photo.id == photo_id).options(_exif_opts())
     )

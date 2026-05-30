@@ -794,7 +794,7 @@ const PhotoView: React.FC = () => {
                     <option key={`user:${loc.id}`} value={`user:${loc.id}`}>我的景點 · {loc.name}</option>
                   ))}
                   {globalLocations.map((loc) => (
-                    <option key={`global:${loc.id}`} value={`global:${loc.id}`}>全站景點 · {loc.name}</option>
+                    <option key={`global:${loc.id}`} value={`global:${loc.id}`}>公開景點 · {loc.name}</option>
                   ))}
                 </select>
               </>
