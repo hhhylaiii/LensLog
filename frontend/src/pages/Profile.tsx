@@ -892,23 +892,6 @@ function migrateStory(raw: Partial<Story> & { id: string; name: string }): Story
   return { id: raw.id, name: raw.name, photoIds, notes, items }
 }
 
-function groupPhotosByDay(photos: Photo[]) {
-  const map: Record<string, Photo[]> = {}
-  for (const p of photos) {
-    const d = new Date(p.taken_at ?? p.created_at)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    if (!map[key]) map[key] = []
-    map[key].push(p)
-  }
-  return Object.entries(map)
-    .sort(([a], [b]) => b.localeCompare(a))
-    .map(([key, ps]) => ({
-      key,
-      label: new Date(key + 'T12:00:00').toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }),
-      photos: [...ps].sort((a, b) => new Date(b.taken_at ?? b.created_at).getTime() - new Date(a.taken_at ?? a.created_at).getTime()),
-    }))
-}
-
 function formatJoinDate(iso: string) {
   const d = new Date(iso)
   return `加入於 ${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`
