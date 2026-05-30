@@ -71,7 +71,7 @@ const MobileSpotsSheet: React.FC<MobileSpotsSheetProps> = ({
                 <div style={{ width: 42, height: 42, borderRadius: 8, flexShrink: 0, background: 'linear-gradient(160deg,#6b82a8,#1a2942)' }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.25 }}>{loc.name}</div>
-                  <div style={{ fontSize: 11, color: t.inkSoft, margin: '1px 0' }}>{loc.tags[0] || (loc.source === 'global' ? '全站景點' : '景點')} · ★ 4.{(loc.id.charCodeAt(0) % 9) + 1}</div>
+                  <div style={{ fontSize: 11, color: t.inkSoft, margin: '1px 0' }}>{loc.tags[0] || (loc.source === 'global' ? '公開景點' : '景點')}</div>
                   <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: t.inkMute }}>{Number(loc.latitude).toFixed(3)}, {Number(loc.longitude).toFixed(3)}</div>
                 </div>
               </div>

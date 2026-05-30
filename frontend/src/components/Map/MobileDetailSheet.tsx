@@ -54,9 +54,7 @@ const MobileDetailSheet: React.FC<MobileDetailSheetProps> = ({
           )}
           <h2 style={{ margin: '0 0 1px', fontSize: sheetState === 'peek' ? 16 : 17, fontWeight: 600, letterSpacing: '-0.015em', color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.3)' }}>{selected.name}</h2>
           <div style={{ fontSize: sheetState === 'peek' ? 10 : 10.5, color: 'rgba(255,255,255,0.85)', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span>{selected.tags[0] || (selected.source === 'global' ? '全站景點' : '景點')}</span>
-            <span style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'rgba(255,255,255,0.6)', display: 'inline-block' }} />
-            <span>★ 4.{(selected.id.charCodeAt(0) % 9) + 1}</span>
+            <span>{selected.tags[0] || (selected.source === 'global' ? '公開景點' : '景點')}</span>
             <span style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'rgba(255,255,255,0.6)', display: 'inline-block' }} />
             <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: sheetState === 'peek' ? 9 : 10 }}>{Number(selected.latitude).toFixed(3)}°N</span>
           </div>
@@ -138,8 +136,8 @@ const MobileDetailSheet: React.FC<MobileDetailSheetProps> = ({
 
             {/* Stats row */}
             <div style={{ display: 'flex', padding: '10px 0', borderTop: `1px solid ${t.lineSoft}`, borderBottom: `1px solid ${t.lineSoft}`, marginBottom: 10 }}>
-              {[['1,284', '作品'], ['428', '攝影師'], ['★ 4.8', '評分']].map(([n, l], i) => (
-                <div key={l} style={{ flex: 1, borderRight: i < 2 ? `1px solid ${t.lineSoft}` : 0, padding: '0 8px', paddingLeft: i === 0 ? 0 : undefined }}>
+              {[['1,284', '作品'], ['428', '攝影師']].map(([n, l], i, items) => (
+                <div key={l} style={{ flex: 1, borderRight: i < items.length - 1 ? `1px solid ${t.lineSoft}` : 0, padding: '0 8px', paddingLeft: i === 0 ? 0 : undefined }}>
                   <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.015em', lineHeight: 1.1 }}>{n}</div>
                   <div style={{ fontSize: 9, color: t.inkMute, fontFamily: "'IBM Plex Mono',monospace", textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 1 }}>{l}</div>
                 </div>

@@ -1028,7 +1028,7 @@ const MapExplore: React.FC = () => {
         longitude: loc.longitude,
         created_at: loc.created_at,
         source: 'global',
-        tags: ['全站景點'],
+        tags: ['公開景點'],
       })),
     [globalLocations]
   )
@@ -1189,9 +1189,7 @@ const MapExplore: React.FC = () => {
                       <div style={s.thumb} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={s.itemName}>{loc.name}</div>
-                        <div style={s.itemMeta}>
-                          {loc.tags[0] || (loc.source === 'global' ? '全站景點' : '景點')} · ★ 4.{(loc.id.charCodeAt(0) % 9) + 1}
-                        </div>
+                        <div style={s.itemMeta}>{loc.tags[0] || (loc.source === 'global' ? '公開景點' : '景點')}</div>
                         <div style={s.itemMono}>
                           {Number(loc.latitude).toFixed(3)}, {Number(loc.longitude).toFixed(3)}
                         </div>
