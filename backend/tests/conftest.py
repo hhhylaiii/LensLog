@@ -3,6 +3,7 @@ import os
 import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import text
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from app.main import app
@@ -45,11 +46,18 @@ class FakeRedis:
 
 
 def get_test_database_url() -> str:
-    return (
+    url = (
         os.getenv("TEST_DATABASE_URL")
         or os.getenv("DATABASE_URL")
         or "postgresql+asyncpg://postgres:password@localhost:5432/lenslog_test"
     )
+    database = make_url(url).database
+    if not database or not database.endswith("_test"):
+        raise RuntimeError(
+            f"Refusing to run tests against non-test database {database!r}. "
+            "Set TEST_DATABASE_URL to a database ending in '_test'."
+        )
+    return url
 
 
 @pytest.fixture(scope="function")

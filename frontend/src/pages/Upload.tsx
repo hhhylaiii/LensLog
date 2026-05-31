@@ -228,6 +228,7 @@ const Upload: React.FC = () => {
   const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const editPhotoId = searchParams.get('edit')
+  const { isMobile } = useBreakpoint()
 
   const [step, setStep] = useState<1 | 2>(1)
   const [items, setItems] = useState<FileItem[]>([])
@@ -383,7 +384,7 @@ const Upload: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: 24, fontFamily: "'Inter', 'Noto Sans TC', sans-serif", color: T.ink, background: T.paper, minHeight: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: isMobile ? 16 : 24, fontFamily: "'Inter', 'Noto Sans TC', sans-serif", color: T.ink, background: T.paper, minHeight: '100%', boxSizing: 'border-box' }}>
       {/* Topbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <div style={{ flex: 1 }}>
