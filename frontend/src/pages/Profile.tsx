@@ -917,7 +917,7 @@ function SafeImage({ src, alt, style }: { src: string; alt?: string; style?: Rea
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
-type TabKey = 'photos' | 'albums' | 'locations' | 'gear'
+type TabKey = 'photos' | 'albums' | 'locations' | 'gear' | 'favorites'
 const PAGE_SIZE = 8
 
 const Profile: React.FC = () => {
@@ -955,7 +955,6 @@ const Profile: React.FC = () => {
   const bannerPosRef = useRef({ x: 50, y: 50 })
   const [featuredIdx, setFeaturedIdx] = useState(0)
 
-  const { isMobile } = useBreakpoint()
   const BADGE_OPTIONS = ['◈', '◉', '◎', '⊕', '⬡', '★', '✦', '⬤', '🌙', '🔭', '📷', '🎞']
 
 

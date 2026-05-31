@@ -471,22 +471,6 @@ const s: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
 
-  // Tags
-  tagsRow: {
-    display: 'flex',
-    flexWrap: 'wrap' as const,
-    gap: '6px',
-    marginBottom: '12px',
-  },
-  tagChip: {
-    background: T.paperTwo,
-    border: `1px solid ${T.line}`,
-    borderRadius: '20px',
-    padding: '3px 10px',
-    fontSize: '12px',
-    color: T.inkSoft,
-  },
-
   // States
   spinner: {
     display: 'flex',
