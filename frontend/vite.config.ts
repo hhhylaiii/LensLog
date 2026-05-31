@@ -11,10 +11,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // @shared resolves to the shared package source directly,
-      // avoiding a build step during web development.
       '@shared': resolve(__dirname, '../shared/src'),
     },
+    dedupe: ['@tanstack/react-query', 'react', 'react-dom'],
   },
   server: {
     host: true,

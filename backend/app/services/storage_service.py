@@ -45,7 +45,7 @@ def _rewrite_presigned_url_host(url: str) -> str:
         (
             public.scheme or parsed.scheme,
             public.netloc,
-            parsed.path,
+            public.path.rstrip('/') + parsed.path,
             parsed.params,
             parsed.query,
             parsed.fragment,
