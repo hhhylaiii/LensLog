@@ -5,7 +5,6 @@ import T from '../styles/tokens'
 import type { FileItem, LocationMatch, LocationSource, Visibility } from '../lib/uploadTypes'
 import { uploadOne } from '../lib/uploadService'
 import { parseExifData } from '../lib/exif'
-import { useBreakpoint } from '../hooks/useBreakpoint'
 import Stepper from '../components/PhotoUpload/Stepper'
 import DropStep from '../components/PhotoUpload/DropStep'
 import ReviewStep from '../components/PhotoUpload/ReviewStep'
@@ -293,7 +292,6 @@ const Upload: React.FC = () => {
     setSuccess(true)
   }
 
-  const { isMobile } = useBreakpoint()
   const pendingCount = items.filter(f => f.status === 'pending').length
   const allDone = items.length > 0 && items.every(f => f.status === 'done' || f.status === 'error')
   const presetNotice = preset?.location?.loc ? (
