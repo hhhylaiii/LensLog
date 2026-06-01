@@ -1235,9 +1235,9 @@ const Profile: React.FC = () => {
         onPointerUp={handleBannerPointerUp}
         title={localBanner ? '拖曳調整位置 · 點擊更換圖片' : '點擊更換橫幅'}
       >
-        {localBanner && (
+        {activeBanner && (
           <img
-            src={localBanner}
+            src={activeBanner}
             alt="banner"
             style={{ ...m.bannerImg, objectPosition: `${bannerPosX}% ${bannerPosY}%` }}
           />

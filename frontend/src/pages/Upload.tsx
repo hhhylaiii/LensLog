@@ -205,6 +205,7 @@ const EditMode: React.FC<EditModeProps> = ({ photoId }) => {
             <LocationPanel
               gpsLat={item.exif?.gpsLat}
               gpsLng={item.exif?.gpsLng}
+              visibility={item.visibility as Visibility}
               value={item.location}
               onChange={(location: LocationMatch) => updateItem({ location })}
             />
