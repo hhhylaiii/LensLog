@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import admin, auth, gear, location_directory, locations, photos, stats
+from app.api.v1 import admin, auth, gear, location_directory, locations, photos, stats, users
 from app.core.config import settings
 
 
@@ -49,6 +49,7 @@ def create_app() -> FastAPI:
     app.include_router(gear.router, prefix=prefix)
     app.include_router(stats.router, prefix=prefix)
     app.include_router(admin.router, prefix=prefix)
+    app.include_router(users.router, prefix=prefix)
 
     @app.get("/health")
     async def health_check():

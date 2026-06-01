@@ -112,6 +112,9 @@ async def test_valid_token_not_in_blacklist_passes():
     fake_user.username = "testuser"
     fake_user.email = "test@example.com"
     fake_user.avatar_url = None
+    fake_user.banner_url = None
+    fake_user.banner_pos_x = 50.0
+    fake_user.banner_pos_y = 50.0
     fake_user.bio = None
     fake_user.is_admin = False
     fake_user.created_at = datetime.now(timezone.utc)

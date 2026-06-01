@@ -15,18 +15,21 @@ interface User {
 const styles: Record<string, React.CSSProperties> = {
   shell: {
     display: 'flex',
-    minHeight: '100vh',
+    height: '100vh',
+    overflow: 'hidden',
     background: '#0a0a0f',
     fontFamily: "'Inter', system-ui, sans-serif",
   },
   sidebar: {
     width: '220px',
+    height: '100vh',
     flexShrink: 0,
     background: T.sideBgTwo,
     borderRight: `1px solid ${T.sideLine}`,
     display: 'flex',
     flexDirection: 'column',
     padding: '0',
+    overflowY: 'auto' as const,
   },
   logoArea: {
     padding: '24px 20px 20px',
@@ -108,18 +111,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   content: {
     flex: 1,
+    height: '100vh',
     overflow: 'auto',
   },
 }
 
 const NAV_ITEMS = [
-  { to: '/upload', label: 'Upload', icon: '⊕', end: false },
-  { to: '/map', label: 'Map', icon: '◎', end: false },
-  { to: '/gear', label: 'Gear Vault', icon: '⬡', end: false },
-  { to: '/profile', label: 'Profile', icon: '◉', end: false },
+  { to: '/upload', label: '上傳', icon: '⊕', end: false },
+  { to: '/map', label: '地圖', icon: '◎', end: false },
+  { to: '/gear', label: '器材', icon: '⬡', end: false },
+  { to: '/profile', label: '個人檔案', icon: '◉', end: false },
 ]
 
-const ADMIN_NAV_ITEM = { to: '/admin', label: 'Admin', icon: '⚙', end: false }
+const ADMIN_NAV_ITEM = { to: '/admin', label: '管理', icon: '⚙', end: false }
 
 // Bottom tab bar items (mobile)
 const TAB_ITEMS = [
@@ -271,7 +275,7 @@ const Layout: React.FC = () => {
             </div>
           )}
           <button style={styles.logoutBtn} onClick={handleLogout}>
-            ⎋ Sign out
+            登出
           </button>
         </div>
       </aside>

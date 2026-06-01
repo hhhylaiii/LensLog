@@ -1,6 +1,6 @@
 import io
 import piexif
-from PIL import Image
+from PIL import Image, ImageOps
 from typing import Dict, Any
 
 def _convert_to_degrees(value) -> float:
@@ -74,7 +74,17 @@ def extract_exif(image_bytes: bytes) -> Dict[str, Any]:
         if piexif.ExifIFD.ISOSpeedRatings in exif_ifd:
             result["iso"] = exif_ifd[piexif.ExifIFD.ISOSpeedRatings]
 
-        # 4. 處理 GPS 定位資訊
+        # 4. 處理拍攝時間 DateTimeOriginal (0x9003) → 轉為 ISO datetime
+        date_raw = exif_ifd.get(piexif.ExifIFD.DateTimeOriginal) or ifd0.get(piexif.ImageIFD.DateTime)
+        if date_raw:
+            try:
+                from datetime import datetime as _dt
+                date_str = date_raw.decode("utf-8", errors="ignore").strip("\x00")
+                result["taken_at"] = _dt.strptime(date_str, "%Y:%m:%d %H:%M:%S").isoformat()
+            except Exception:
+                pass
+
+        # 5. 處理 GPS 定位資訊
         if gps_ifd:
             lat = gps_ifd.get(piexif.GPSIFD.GPSLatitude)
             lat_ref = gps_ifd.get(piexif.GPSIFD.GPSLatitudeRef) # N 或 S
@@ -100,6 +110,8 @@ def get_resized_image(image_bytes: bytes, max_size: int) -> bytes:
     縮圖工具函式：保持比例縮放並回傳 JPEG bytes。
     """
     img: Image.Image = Image.open(io.BytesIO(image_bytes))
+    # 依據 EXIF Orientation 標籤將像素物理旋轉，縮圖才不會方向錯誤
+    img = ImageOps.exif_transpose(img)
     # 統一轉成 RGB 以相容 JPEG 格式 (避免 RGBA 報錯)
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")

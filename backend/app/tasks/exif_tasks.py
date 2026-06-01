@@ -57,6 +57,7 @@ def process_exif_task(self, photo_id: str, object_key: str):
         "width": exif_data.get("width"),
         "height": exif_data.get("height"),
     }
+    taken_at_str = exif_data.get("taken_at")
 
     with _db_session() as db:
         photo = db.get(Photo, photo_uuid)
@@ -69,6 +70,13 @@ def process_exif_task(self, photo_id: str, object_key: str):
                 setattr(existing, key, value)
         else:
             db.add(ExifData(photo_id=photo_uuid, **payload))
+
+        if taken_at_str and photo.taken_at is None:
+            from datetime import datetime as _dt
+            try:
+                photo.taken_at = _dt.fromisoformat(taken_at_str)
+            except Exception:
+                pass
 
     return {"status": "ok", "photo_id": photo_id}
 

@@ -1,3 +1,3 @@
-from app.api.v1 import admin, auth, gear, location_directory, locations, photos, stats
+from app.api.v1 import admin, auth, gear, location_directory, locations, photos, stats, users
 
-__all__ = ["auth", "photos", "locations", "location_directory", "gear", "stats", "admin"]
+__all__ = ["auth", "photos", "locations", "location_directory", "gear", "stats", "admin", "users"]

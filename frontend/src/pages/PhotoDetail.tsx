@@ -396,6 +396,22 @@ const s: Record<string, React.CSSProperties> = {
   locationMeta: { fontSize: '11px', color: T.inkMute },
   locationArrow: { color: T.inkMute, fontSize: '14px', marginLeft: 'auto' },
 
+  // Tags
+  tagsRow: {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '6px',
+    marginBottom: '10px',
+  },
+  tagChip: {
+    background: T.paperTwo,
+    border: `1px solid ${T.line}`,
+    borderRadius: '20px',
+    color: T.inkSoft,
+    fontSize: '12px',
+    padding: '3px 10px',
+  },
+
   // GPS mini-map
   mapWrap: {
     height: '180px',
@@ -453,22 +469,6 @@ const s: Record<string, React.CSSProperties> = {
     color: T.inkSoft,
     fontSize: '13px',
     cursor: 'pointer',
-  },
-
-  // Tags
-  tagsRow: {
-    display: 'flex',
-    flexWrap: 'wrap' as const,
-    gap: '6px',
-    marginBottom: '12px',
-  },
-  tagChip: {
-    background: T.paperTwo,
-    border: `1px solid ${T.line}`,
-    borderRadius: '20px',
-    padding: '3px 10px',
-    fontSize: '12px',
-    color: T.inkSoft,
   },
 
   // States

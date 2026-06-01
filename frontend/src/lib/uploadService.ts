@@ -43,6 +43,7 @@ export async function uploadOne(
       caption: item.caption || undefined,
       tags: item.tags,
       is_public: isPublic,
+      taken_at: item.exif?.takenAtIso || undefined,
       ...(selectedLocation?.source === 'user'
         ? { user_location_id: selectedLocation.id }
         : {}),

@@ -129,10 +129,13 @@ function formatFocalLength(focalLength?: number): string | undefined {
   return `${focalLength % 1 === 0 ? focalLength.toFixed(0) : focalLength.toFixed(1)}mm`
 }
 
-function formatTakenAt(raw?: string): string | undefined {
+function formatTakenAt(raw?: string): { display: string; iso: string } | undefined {
   if (!raw) return undefined
   const normalized = raw.replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3')
-  return normalized.replace(' ', ' · ')
+  return {
+    display: normalized.replace(' ', ' · '),
+    iso: normalized.replace(' ', 'T'),
+  }
 }
 
 function gpsToDecimal(values?: number[], ref?: string): number | undefined {
@@ -185,7 +188,8 @@ export async function parseExifData(file: File): Promise<ExifData | undefined> {
         shutter: formatShutter(asNumber(exifIfd.get(0x829a))),
         iso: asNumber(exifIfd.get(0x8827))?.toString(),
         focalLength: formatFocalLength(asNumber(exifIfd.get(0x920a))),
-        takenAt: formatTakenAt(asString(exifIfd.get(0x9003)) ?? asString(ifd0.get(0x0132))),
+        takenAt: formatTakenAt(asString(exifIfd.get(0x9003)) ?? asString(ifd0.get(0x0132)))?.display,
+        takenAtIso: formatTakenAt(asString(exifIfd.get(0x9003)) ?? asString(ifd0.get(0x0132)))?.iso,
         width: asNumber(exifIfd.get(0xa002))?.toString(),
         height: asNumber(exifIfd.get(0xa003))?.toString(),
         gpsLat,
