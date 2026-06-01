@@ -1,7 +1,7 @@
 """Add banner_pos_x and banner_pos_y to users
 
-Revision ID: 008
-Revises: 007
+Revision ID: 009
+Revises: 008
 Create Date: 2026-05-30
 
 """
@@ -10,8 +10,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "008"
-down_revision = "007"
+revision = "009"
+down_revision = "008"
 branch_labels = None
 depends_on = None
 
