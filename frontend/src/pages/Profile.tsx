@@ -887,7 +887,7 @@ function SafeImage({ src, alt, style }: { src: string; alt?: string; style?: Rea
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
-type TabKey = 'photos' | 'albums' | 'locations' | 'gear' | 'favorites'
+type TabKey = 'photos' | 'locations' | 'gear'
 const PAGE_SIZE = 8
 
 const Profile: React.FC = () => {
@@ -900,13 +900,11 @@ const Profile: React.FC = () => {
   const [sortBy, setSortBy] = useState<'time-desc' | 'time-asc' | 'name-asc' | 'name-desc'>('time-desc')
   const [photoLimit, setPhotoLimit] = useState(PAGE_SIZE)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
-
   const [localAvatar, setLocalAvatar] = useState<string | null>(null)
   const [avatarHovered, setAvatarHovered] = useState(false)
   const [badgeEmoji, setBadgeEmoji] = useState('◈')
   const [showBadgePicker, setShowBadgePicker] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
-
   const [localBanner, setLocalBanner] = useState<string | null>(null)
   const [bannerHovered, setBannerHovered] = useState(false)
   const bannerInputRef = useRef<HTMLInputElement>(null)
@@ -914,11 +912,11 @@ const Profile: React.FC = () => {
   const bannerDragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null)
   const [bannerPosX, setBannerPosX] = useState(50)
   const [bannerPosY, setBannerPosY] = useState(50)
+
   const [featuredIdx, setFeaturedIdx] = useState(0)
 
   const { isMobile } = useBreakpoint()
   const BADGE_OPTIONS = ['◈', '◉', '◎', '⊕', '⬡', '★', '✦', '⬤', '🌙', '🔭', '📷', '🎞']
-
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -947,6 +945,7 @@ const Profile: React.FC = () => {
     e.currentTarget.setPointerCapture(e.pointerId)
     bannerDragRef.current = { x: e.clientX, y: e.clientY, px: bannerPosX, py: bannerPosY }
   }
+
   const handleBannerPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!bannerDragRef.current || !localBanner || !bannerWrapRef.current) return
     const rect = bannerWrapRef.current.getBoundingClientRect()
@@ -955,9 +954,11 @@ const Profile: React.FC = () => {
     setBannerPosX(Math.max(0, Math.min(100, bannerDragRef.current.px - dx)))
     setBannerPosY(Math.max(0, Math.min(100, bannerDragRef.current.py - dy)))
   }
+
   const handleBannerPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!bannerDragRef.current) return
-    const moved = Math.abs(e.clientX - bannerDragRef.current.x) > 3 ||
+    const moved =
+      Math.abs(e.clientX - bannerDragRef.current.x) > 3 ||
       Math.abs(e.clientY - bannerDragRef.current.y) > 3
     if (!moved) bannerInputRef.current?.click()
     bannerDragRef.current = null
@@ -1046,12 +1047,13 @@ const Profile: React.FC = () => {
   const topGear = gear.slice(0, 3)
   const maxLocCount = topLocations[0]?.photoCount || 1
 
-  const bannerBg = localBanner ? undefined : `linear-gradient(135deg, ${T.accentSoft} 0%, ${T.paperTwo} 55%, ${T.card} 100%)`
+  const bannerBg = localBanner
+    ? undefined
+    : `linear-gradient(135deg, ${T.accentSoft} 0%, ${T.paperTwo} 55%, ${T.card} 100%)`
 
   // ─── Mobile branch ───────────────────────────────────────────────────────────
   if (isMobile) return (
     <div style={m.page}>
-      {/* Hidden file inputs (shared with desktop handlers) */}
       <input ref={bannerInputRef} type="file" accept="image/*" title="上傳橫幅" style={s.hiddenInput} onChange={handleBannerChange} />
       <input ref={avatarInputRef} type="file" accept="image/*" title="上傳頭像" style={s.hiddenInput} onChange={handleAvatarChange} />
 
@@ -1122,10 +1124,9 @@ const Profile: React.FC = () => {
               <span style={m.name}>{user?.username ?? '—'}</span>
               <span style={m.proBadge}>PRO</span>
             </div>
-            <div style={m.handle}>@{user?.username ?? '—'} · 📍 台北</div>
+            <div style={m.handle}>@{user?.username ?? '—'}</div>
             <div style={m.bio}>{user?.bio || '用影像記錄光線、地點與拍攝路線。'}</div>
           </div>
-          <button type="button" style={m.editBtn}>編輯</button>
         </div>
       </div>
 
@@ -1149,7 +1150,6 @@ const Profile: React.FC = () => {
           { key: 'photos', label: '照片' },
           { key: 'locations', label: '景點' },
           { key: 'gear', label: '器材' },
-          { key: 'favorites', label: '收藏' },
         ] as { key: TabKey; label: string }[]).map(({ key, label }) => (
           <div
             key={key}
@@ -1197,7 +1197,6 @@ const Profile: React.FC = () => {
                     {loc && <div style={s.overlayTop}>{loc.name} · {relativeTime(fp.created_at)}</div>}
                     <div style={s.overlayBottom}>
                       <span style={s.exifBadge}>{exifLabel || '—'}</span>
-                      <span style={s.likeBadge}>♡ 0</span>
                     </div>
                   </div>
                 )
@@ -1281,12 +1280,6 @@ const Profile: React.FC = () => {
         </div>
       )}
 
-      {/* ── Favorites tab ── */}
-      {activeTab === 'favorites' && (
-        <div style={m.listWrap}>
-          <div style={s.emptyNote}>尚無收藏</div>
-        </div>
-      )}
     </div>
   )
 
@@ -1391,8 +1384,6 @@ const Profile: React.FC = () => {
             <div style={s.metaRow}>
               <span>@{user?.username ?? '—'}</span>
               <span style={s.metaDot}>·</span>
-              <span>📍 台北</span>
-              <span style={s.metaDot}>·</span>
               <span>{user?.created_at ? formatJoinDate(user.created_at) : '—'}</span>
             </div>
             <p style={s.bio}>
@@ -1419,10 +1410,8 @@ const Profile: React.FC = () => {
         <div style={s.tabBar}>
           {([
             { key: 'photos', label: '照片', count: allPhotos.length },
-            { key: 'albums', label: '專輯', count: 0 },
             { key: 'locations', label: '景點', count: locations.length },
             { key: 'gear', label: '器材', count: gear.length },
-            { key: 'favorites', label: '收藏', count: 0 },
           ] as { key: TabKey; label: string; count: number }[]).map(({ key, label, count }) => (
             <div
               key={key}
@@ -1550,7 +1539,6 @@ const Profile: React.FC = () => {
                         )}
                         <div style={s.overlayBottom}>
                           <span style={s.exifBadge}>{exifLabel || '—'}</span>
-                          <span style={s.likeBadge}>♡ 0</span>
                         </div>
                         {/* 沒有鎖頭按鈕，純粹輪播顯示用 */}
                       </div>
@@ -1607,13 +1595,6 @@ const Profile: React.FC = () => {
           </>
         )}
 
-        {/* ── Albums tab ── */}
-        {activeTab === 'albums' && (
-          <div style={s.listWrap}>
-            <div style={s.emptyNote}>尚無專輯</div>
-          </div>
-        )}
-
         {/* ── Locations tab ── */}
         {activeTab === 'locations' && (
           <div style={s.listWrap}>
@@ -1649,13 +1630,6 @@ const Profile: React.FC = () => {
                 </div>
               ))
             }
-          </div>
-        )}
-
-        {/* ── Favorites tab ── */}
-        {activeTab === 'favorites' && (
-          <div style={s.listWrap}>
-            <div style={s.emptyNote}>尚無收藏</div>
           </div>
         )}
 

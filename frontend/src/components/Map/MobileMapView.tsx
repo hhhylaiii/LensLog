@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer } from 'react-leaflet'
 import { ExploreLocation, MapSource, SheetState, WeatherForecast, t } from './types'
 import { PulseStyle, ClusterMarkers, MapController, MapRefSetter } from './MapHelpers'
@@ -6,6 +7,7 @@ import MobileSearchBar from './MobileSearchBar'
 import MobileSpotsSheet from './MobileSpotsSheet'
 import MobileDetailSheet from './MobileDetailSheet'
 import L from 'leaflet'
+import type { Photo } from '@shared/types'
 
 interface MobileMapViewProps {
   filtered: ExploreLocation[]
@@ -29,6 +31,8 @@ interface MobileMapViewProps {
   weatherLoading: boolean
   weatherError: boolean
   goldenMin: number | null
+  locationPhotos: Photo[]
+  locationPhotosLoading: boolean
 }
 
 const MobileMapView: React.FC<MobileMapViewProps> = ({
@@ -53,7 +57,19 @@ const MobileMapView: React.FC<MobileMapViewProps> = ({
   weatherLoading,
   weatherError,
   goldenMin,
+  locationPhotos,
+  locationPhotosLoading,
 }) => {
+  const navigate = useNavigate()
+  const openUploadForLocation = (loc: ExploreLocation) => {
+    const params = new URLSearchParams({
+      source: loc.source,
+      locationId: loc.id,
+      locationName: loc.name,
+    })
+    navigate(`/upload?${params.toString()}`)
+  }
+
   return (
     <div style={{ height: 'calc(100vh - 62px)', overflow: 'hidden', position: 'relative', background: t.paper2, fontFamily: "'Inter','Noto Sans TC',system-ui,sans-serif", color: t.ink, letterSpacing: '-0.005em' }}>
       <PulseStyle />
@@ -110,10 +126,13 @@ const MobileMapView: React.FC<MobileMapViewProps> = ({
           sheetState={sheetState}
           onClose={onCloseDetail}
           onAdvance={onAdvanceSheet}
+          onUploadHere={() => openUploadForLocation(selected)}
           weather={weather}
           weatherLoading={weatherLoading}
           weatherError={weatherError}
           goldenMin={goldenMin}
+          locationPhotos={locationPhotos}
+          locationPhotosLoading={locationPhotosLoading}
         />
       )}
     </div>

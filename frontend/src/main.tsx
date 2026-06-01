@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
 import MapExplore from './pages/MapExplore'
 import GearVault from './pages/GearVault'
 import Admin from './pages/Admin'
@@ -34,7 +33,7 @@ createRoot(document.getElementById('root')!).render(
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Navigate to="/map" replace />} />
             <Route path="/map" element={<MapExplore />} />
             <Route path="/gear" element={<GearVault />} />
             <Route path="/admin" element={<Admin />} />
@@ -45,7 +44,7 @@ createRoot(document.getElementById('root')!).render(
           </Route>
 
           {/* Default redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/map" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

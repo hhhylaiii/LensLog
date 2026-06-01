@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -15,6 +16,7 @@ import MobileMapView from '../components/Map/MobileMapView'
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
 import markerIconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
+import type { Photo } from '@shared/types'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -714,8 +716,6 @@ const Icon: React.FC<{ path: string; size?: number }> = ({ path, size = 16 }) =>
 )
 
 const ICON = {
-  heart:
-    'M21 8.25C21 5.76472 18.9013 3.75 16.3125 3.75C14.3769 3.75 12.7153 4.87628 12 6.48342C11.2847 4.87628 9.62312 3.75 7.6875 3.75C5.09867 3.75 3 5.76472 3 8.25C3 15.4706 12 20.25 12 20.25C12 20.25 21 15.4706 21 8.25Z',
   xmark: 'M6 18L18 6M6 6L18 18',
   sun:
     'M12 3V5.25M18.364 5.63604L16.773 7.22703M21 12H18.75M18.364 18.364L16.773 16.773M12 18.75V21M7.22703 16.773L5.63604 18.364M5.25 12H3M7.22703 7.22703L5.63604 5.63604M15.75 12C15.75 14.0711 14.0711 15.75 12 15.75C9.92893 15.75 8.25 14.0711 8.25 12C8.25 9.92893 9.92893 8.25 12 8.25C14.0711 8.25 15.75 9.92893 15.75 12Z',
@@ -731,8 +731,6 @@ const ICON = {
     'M2.03555 12.3224C1.96647 12.1151 1.9664 11.8907 2.03536 11.6834C3.42372 7.50972 7.36079 4.5 12.0008 4.5C16.6387 4.5 20.5742 7.50692 21.9643 11.6776C22.0334 11.8849 22.0335 12.1093 21.9645 12.3166C20.5761 16.4903 16.6391 19.5 11.9991 19.5C7.36119 19.5 3.42564 16.4931 2.03555 12.3224ZM15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z',
   mapPin:
     'M15 10.5C15 12.1569 13.6569 13.5 12 13.5C10.3431 13.5 9 12.1569 9 10.5C9 8.84315 10.3431 7.5 12 7.5C13.6569 7.5 15 8.84315 15 10.5ZM19.5 10.5C19.5 17.6421 12 21.75 12 21.75C12 21.75 4.5 17.6421 4.5 10.5C4.5 6.35786 7.85786 3 12 3C16.1421 3 19.5 6.35786 19.5 10.5Z',
-  bookmark:
-    'M17.5933 3.32241C18.6939 3.45014 19.5 4.399 19.5 5.50699V21L12 17.25L4.5 21V5.50699C4.5 4.399 5.30608 3.45014 6.40668 3.32241C8.24156 3.10947 10.108 3 12 3C13.892 3 15.7584 3.10947 17.5933 3.32241Z',
 }
 
 // ─── ClusterMarkers — renders all locations as a clustered layer ──────────────
@@ -956,6 +954,7 @@ const activePinIcon = L.divIcon({
 // ─── MapExplore ───────────────────────────────────────────────────────────────
 
 const MapExplore: React.FC = () => {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [target, setTarget] = useState<[number, number] | null>(null)
@@ -990,6 +989,24 @@ const MapExplore: React.FC = () => {
       retry: false,
     })
 
+  const {
+    data: locationPhotos = [],
+    isLoading: locationPhotosLoading,
+  } = useQuery<Photo[]>({
+    queryKey: ['map-location-photos', selected?.source, selected?.id],
+    queryFn: async () => {
+      if (!selected) return []
+      const params =
+        selected.source === 'global'
+          ? { global_location_id: selected.id, public_only: true, limit: 12 }
+          : { user_location_id: selected.id, limit: 12 }
+      const res = await api.get<Photo[]>('/photos', { params })
+      return res.data
+    },
+    enabled: !!selected,
+    staleTime: 60 * 1000,
+  })
+
   const currentForecast = weather?.forecasts?.[0]
 
   const mappedUserLocations = useMemo<ExploreLocation[]>(
@@ -1011,7 +1028,7 @@ const MapExplore: React.FC = () => {
         longitude: loc.longitude,
         created_at: loc.created_at,
         source: 'global',
-        tags: ['全站景點'],
+        tags: ['公開景點'],
       })),
     [globalLocations]
   )
@@ -1056,6 +1073,15 @@ const MapExplore: React.FC = () => {
     setSheetState(null)
   }
 
+  const openUploadForLocation = (loc: ExploreLocation) => {
+    const params = new URLSearchParams({
+      source: loc.source,
+      locationId: loc.id,
+      locationName: loc.name,
+    })
+    navigate(`/upload?${params.toString()}`)
+  }
+
   const goldenMin = goldenMinutesLeft(weather?.sunset ?? null)
 
   if (isMobile) {
@@ -1082,6 +1108,8 @@ const MapExplore: React.FC = () => {
         weatherLoading={weatherLoading}
         weatherError={weatherError}
         goldenMin={goldenMin}
+        locationPhotos={locationPhotos}
+        locationPhotosLoading={locationPhotosLoading}
       />
     )
   }
@@ -1161,9 +1189,7 @@ const MapExplore: React.FC = () => {
                       <div style={s.thumb} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={s.itemName}>{loc.name}</div>
-                        <div style={s.itemMeta}>
-                          {loc.tags[0] || (loc.source === 'global' ? '全站景點' : '景點')} · ★ 4.{(loc.id.charCodeAt(0) % 9) + 1}
-                        </div>
+                        <div style={s.itemMeta}>{loc.tags[0] || (loc.source === 'global' ? '公開景點' : '景點')}</div>
                         <div style={s.itemMono}>
                           {Number(loc.latitude).toFixed(3)}, {Number(loc.longitude).toFixed(3)}
                         </div>
@@ -1263,9 +1289,6 @@ const MapExplore: React.FC = () => {
               <div style={s.icHero}>
                 <div style={s.icHeroOverlay} />
                 <div style={s.icActions}>
-                  <button style={s.icActionBtn} aria-label="收藏" title="收藏">
-                    <Icon path={ICON.heart} />
-                  </button>
                   <button
                     style={s.icActionBtn}
                     aria-label="關閉"
@@ -1399,10 +1422,51 @@ const MapExplore: React.FC = () => {
                     {selected.description}
                   </div>
                 )}
+
+                <div style={{ marginBottom: '14px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px', color: t.ink }}>
+                    {selected.source === 'global' ? '這個景點的公開照片' : '這個景點的照片'}
+                  </div>
+                  {locationPhotosLoading ? (
+                    <div style={{ fontSize: '12px', color: t.inkMute }}>照片載入中…</div>
+                  ) : locationPhotos.length === 0 ? (
+                    <div style={{ fontSize: '12px', color: t.inkMute }}>目前還沒有照片</div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                      {locationPhotos.slice(0, 6).map((photo) => (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => navigate(`/photos/${photo.id}`)}
+                          style={{ aspectRatio: '1', border: `1px solid ${t.line}`, borderRadius: '8px', overflow: 'hidden', background: t.paper2, padding: 0, cursor: 'pointer' }}
+                          title={photo.caption || '查看照片'}
+                        >
+                          {photo.thumb_url || photo.url ? (
+                            <img
+                              src={photo.thumb_url || photo.url}
+                              alt={photo.caption || ''}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.inkMute, fontSize: '11px' }}>
+                              無預覽
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Actions */}
               <div style={s.icFoot}>
+                <button
+                  style={s.icBtn}
+                  onClick={() => openUploadForLocation(selected)}
+                >
+                  上傳到這裡
+                </button>
                 <button
                   style={{ ...s.icBtn, ...s.icBtnPrimary }}
                   onClick={() =>
@@ -1413,9 +1477,6 @@ const MapExplore: React.FC = () => {
                   }
                 >
                   <Icon path={ICON.mapPin} size={16} /> 導航
-                </button>
-                <button style={s.icBtn}>
-                  <Icon path={ICON.bookmark} size={16} /> 加入收藏
                 </button>
               </div>
             </div>

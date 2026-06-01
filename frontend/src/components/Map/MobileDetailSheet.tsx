@@ -1,15 +1,19 @@
 import React from 'react'
 import { ExploreLocation, SheetState, WeatherForecast, t, Icon, ICON, sharedStyles } from './types'
+import type { Photo } from '@shared/types'
 
 interface MobileDetailSheetProps {
   selected: ExploreLocation
   sheetState: Exclude<SheetState, null>
   onClose: () => void
   onAdvance: () => void
+  onUploadHere: () => void
   weather: WeatherForecast | undefined
   weatherLoading: boolean
   weatherError: boolean
   goldenMin: number | null
+  locationPhotos: Photo[]
+  locationPhotosLoading: boolean
 }
 
 const MobileDetailSheet: React.FC<MobileDetailSheetProps> = ({
@@ -17,10 +21,13 @@ const MobileDetailSheet: React.FC<MobileDetailSheetProps> = ({
   sheetState,
   onClose,
   onAdvance,
+  onUploadHere,
   weather,
   weatherLoading,
   weatherError,
   goldenMin,
+  locationPhotos,
+  locationPhotosLoading,
 }) => {
   const mPillIcon: React.CSSProperties = { width: 26, height: 26, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#fff' }
   const currentForecast = weather?.forecasts?.[0]
@@ -37,11 +44,6 @@ const MobileDetailSheet: React.FC<MobileDetailSheetProps> = ({
       <div style={{ position: 'relative', height: sheetState === 'peek' ? 88 : sheetState === 'half' ? 110 : 130, background: 'linear-gradient(160deg,#6b82a8 0%,#4c6590 28%,#334a75 52%,#22355b 78%,#1a2942 100%)', overflow: 'hidden', flexShrink: 0 }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(15,30,56,0) 50%,rgba(15,30,56,0.7) 100%)' }} />
         <div style={{ position: 'absolute', top: sheetState === 'peek' ? 7 : 10, right: sheetState === 'peek' ? 8 : 10, display: 'flex', gap: 6, zIndex: 2 }}>
-          {sheetState !== 'peek' && (
-            <button style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', backdropFilter: 'blur(8px)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-              <Icon path={ICON.heart} size={13} />
-            </button>
-          )}
           <button onClick={onClose} style={{ width: sheetState === 'peek' ? 26 : 28, height: sheetState === 'peek' ? 26 : 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', backdropFilter: 'blur(8px)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
             <Icon path={ICON.xmark} size={sheetState === 'peek' ? 12 : 13} />
           </button>
@@ -52,9 +54,7 @@ const MobileDetailSheet: React.FC<MobileDetailSheetProps> = ({
           )}
           <h2 style={{ margin: '0 0 1px', fontSize: sheetState === 'peek' ? 16 : 17, fontWeight: 600, letterSpacing: '-0.015em', color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.3)' }}>{selected.name}</h2>
           <div style={{ fontSize: sheetState === 'peek' ? 10 : 10.5, color: 'rgba(255,255,255,0.85)', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span>{selected.tags[0] || (selected.source === 'global' ? '全站景點' : '景點')}</span>
-            <span style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'rgba(255,255,255,0.6)', display: 'inline-block' }} />
-            <span>★ 4.{(selected.id.charCodeAt(0) % 9) + 1}</span>
+            <span>{selected.tags[0] || (selected.source === 'global' ? '公開景點' : '景點')}</span>
             <span style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'rgba(255,255,255,0.6)', display: 'inline-block' }} />
             <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: sheetState === 'peek' ? 9 : 10 }}>{Number(selected.latitude).toFixed(3)}°N</span>
           </div>
@@ -136,8 +136,8 @@ const MobileDetailSheet: React.FC<MobileDetailSheetProps> = ({
 
             {/* Stats row */}
             <div style={{ display: 'flex', padding: '10px 0', borderTop: `1px solid ${t.lineSoft}`, borderBottom: `1px solid ${t.lineSoft}`, marginBottom: 10 }}>
-              {[['1,284', '作品'], ['428', '攝影師'], ['★ 4.8', '評分']].map(([n, l], i) => (
-                <div key={l} style={{ flex: 1, borderRight: i < 2 ? `1px solid ${t.lineSoft}` : 0, padding: '0 8px', paddingLeft: i === 0 ? 0 : undefined }}>
+              {[['1,284', '作品'], ['428', '攝影師']].map(([n, l], i, items) => (
+                <div key={l} style={{ flex: 1, borderRight: i < items.length - 1 ? `1px solid ${t.lineSoft}` : 0, padding: '0 8px', paddingLeft: i === 0 ? 0 : undefined }}>
                   <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.015em', lineHeight: 1.1 }}>{n}</div>
                   <div style={{ fontSize: 9, color: t.inkMute, fontFamily: "'IBM Plex Mono',monospace", textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 1 }}>{l}</div>
                 </div>
@@ -151,25 +151,43 @@ const MobileDetailSheet: React.FC<MobileDetailSheetProps> = ({
             {/* Full: photo wall */}
             {sheetState === 'full' && (
               <div style={{ paddingTop: 12, borderTop: `1px solid ${t.lineSoft}` }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  社群作品 <span style={{ fontSize: 10.5, color: t.accent, fontWeight: 500 }}>查看全部 →</span>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+                  {selected.source === 'global' ? '這個景點的公開照片' : '這個景點的照片'}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 4 }}>
-                  {['linear-gradient(160deg,#6b82a8,#1a2942)', 'linear-gradient(160deg,#d9927d,#4a4670)', 'linear-gradient(160deg,#8fb4cc,#2a5878)', 'linear-gradient(160deg,#6b82a8,#334a75)', 'linear-gradient(160deg,#d99277,#6b5a7a)', 'linear-gradient(160deg,#4a7390,#1a3858)'].map((bg, i) => (
-                    <div key={i} style={{ aspectRatio: '1', borderRadius: 5, background: bg }} />
-                  ))}
-                </div>
+                {locationPhotosLoading ? (
+                  <div style={{ fontSize: 12, color: t.inkMute }}>照片載入中…</div>
+                ) : locationPhotos.length === 0 ? (
+                  <div style={{ fontSize: 12, color: t.inkMute }}>目前還沒有照片</div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 4 }}>
+                    {locationPhotos.slice(0, 9).map((photo) => (
+                      <div key={photo.id} style={{ aspectRatio: '1', borderRadius: 5, overflow: 'hidden', background: t.paper2, border: `1px solid ${t.line}` }}>
+                        {photo.thumb_url || photo.url ? (
+                          <img
+                            src={photo.thumb_url || photo.url}
+                            alt={photo.caption || ''}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.inkMute, fontSize: 10 }}>
+                            無預覽
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           {/* Footer */}
           <div style={{ borderTop: `1px solid ${t.lineSoft}`, padding: '10px 14px', display: 'flex', gap: 8, background: t.card, flexShrink: 0 }}>
+            <button style={{ ...sharedStyles.icBtn, flex: 1 }} onClick={onUploadHere}>
+              上傳到這裡
+            </button>
             <button style={{ ...sharedStyles.icBtn, ...sharedStyles.icBtnPrimary, flex: 1 }} onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${selected.latitude},${selected.longitude}`, '_blank')}>
               <Icon path={ICON.mapPin} size={14} /> 導航
-            </button>
-            <button style={{ ...sharedStyles.icBtn, width: 36, padding: 0, flexShrink: 0, flex: 'none' as const }}>
-              <Icon path={ICON.bookmark} size={14} />
             </button>
           </div>
         </>

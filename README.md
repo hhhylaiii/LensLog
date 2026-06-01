@@ -247,7 +247,7 @@ CREATE TABLE locations (
 );
 CREATE INDEX idx_locations_geom ON locations USING GIST(geom);
 
--- 全站景點目錄
+-- 公開景點目錄
 CREATE TABLE global_locations (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        VARCHAR(200) NOT NULL,
@@ -337,7 +337,7 @@ CREATE TABLE gear (
 |--------|----------|------|
 | GET | `/photos` | 取得公開照片列表（分頁）|
 | POST | `/photos/presign` | 取得 S3 Presigned URL |
-| POST | `/photos` | 建立照片 metadata，可綁定私人景點或全站景點 |
+| POST | `/photos` | 建立照片 metadata，可綁定私人景點或公開景點 |
 | GET | `/photos/{id}` | 取得單張照片詳情（含 EXIF）|
 | PATCH | `/photos/{id}` | 更新照片說明 / 地點來源 / 標籤 / 公開狀態 |
 | DELETE | `/photos/{id}` | 刪除照片 |
@@ -352,9 +352,9 @@ CREATE TABLE gear (
 | PATCH | `/locations/{id}` | 更新私人景點資訊 |
 | DELETE | `/locations/{id}` | 刪除私人景點 |
 | GET | `/locations/{id}/weather` | 取得私人景點 7 天天氣預報與日出日落時間 |
-| GET | `/global-locations` | 取得全站景點目錄，支援 `?query=&lat=&lng=&radius=` |
-| GET | `/global-locations/{id}/weather` | 取得全站景點 7 天天氣預報與日出日落時間 |
-| GET | `/location-directory` | 聚合搜尋私人景點 + 全站景點，供上傳配對使用 |
+| GET | `/global-locations` | 取得公開景點目錄，支援 `?query=&lat=&lng=&radius=` |
+| GET | `/global-locations/{id}/weather` | 取得公開景點 7 天天氣預報與日出日落時間 |
+| GET | `/location-directory` | 聚合搜尋私人景點 + 公開景點，供上傳配對使用 |
 
 ### 器材（Gear）
 
