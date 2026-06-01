@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { clearTokens } from '../lib/auth'
 import T from '../styles/tokens'
 import { useBreakpoint } from '../hooks/useBreakpoint'
 
@@ -928,6 +929,12 @@ const Profile: React.FC = () => {
   const qc = useQueryClient()
   const { isMobile } = useBreakpoint()
 
+  const handleSignOut = async () => {
+    try { await api.post('/auth/logout') } catch { /* ignore */ }
+    clearTokens()
+    navigate('/login')
+  }
+
   const [activeTab, setActiveTab] = useState<TabKey>('photos')
   const [activeTag, setActiveTag] = useState('全部')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -1289,7 +1296,13 @@ const Profile: React.FC = () => {
             <div style={m.handle}>@{user?.username ?? '—'} · 📍 台北</div>
             <div style={m.bio}>{user?.bio || '用影像記錄光線、地點與拍攝路線。'}</div>
           </div>
-          <button type="button" style={m.editBtn}>編輯</button>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            style={{ ...m.editBtn, color: T.inkMute }}
+          >
+            登出
+          </button>
         </div>
       </div>
 
@@ -1451,6 +1464,7 @@ const Profile: React.FC = () => {
           <div style={s.emptyNote}>尚無收藏</div>
         </div>
       )}
+
     </div>
   )
 

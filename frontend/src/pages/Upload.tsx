@@ -236,10 +236,6 @@ const Upload: React.FC = () => {
   const [publishing, setPublishing] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  if (editPhotoId) {
-    return <EditMode photoId={editPhotoId} />
-  }
-
   const preset = useMemo<UploadPreset | null>(() => {
     const source = searchParams.get('source')
     const id = searchParams.get('locationId')
@@ -292,6 +288,8 @@ const Upload: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['photos'] })
     setSuccess(true)
   }
+
+  if (editPhotoId) return <EditMode photoId={editPhotoId} />
 
   const pendingCount = items.filter(f => f.status === 'pending').length
   const allDone = items.length > 0 && items.every(f => f.status === 'done' || f.status === 'error')

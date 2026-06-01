@@ -117,13 +117,13 @@ const styles: Record<string, React.CSSProperties> = {
 }
 
 const NAV_ITEMS = [
-  { to: '/upload', label: 'Upload', icon: '⊕', end: false },
-  { to: '/map', label: 'Map', icon: '◎', end: false },
-  { to: '/gear', label: 'Gear Vault', icon: '⬡', end: false },
-  { to: '/profile', label: 'Profile', icon: '◉', end: false },
+  { to: '/upload', label: '上傳', icon: '⊕', end: false },
+  { to: '/map', label: '地圖', icon: '◎', end: false },
+  { to: '/gear', label: '器材', icon: '⬡', end: false },
+  { to: '/profile', label: '個人檔案', icon: '◉', end: false },
 ]
 
-const ADMIN_NAV_ITEM = { to: '/admin', label: 'Admin', icon: '⚙', end: false }
+const ADMIN_NAV_ITEM = { to: '/admin', label: '管理', icon: '⚙', end: false }
 
 // Bottom tab bar items (mobile)
 const TAB_ITEMS = [
@@ -275,7 +275,7 @@ const Layout: React.FC = () => {
             </div>
           )}
           <button style={styles.logoutBtn} onClick={handleLogout}>
-            ⎋ Sign out
+            登出
           </button>
         </div>
       </aside>
