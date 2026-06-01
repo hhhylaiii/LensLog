@@ -695,6 +695,7 @@ const m: Record<string, React.CSSProperties> = {
   },
   banner: {
     position: 'relative' as const,
+    zIndex: 0,
     width: '100%',
     height: '76px',
     overflow: 'hidden',
@@ -707,6 +708,8 @@ const m: Record<string, React.CSSProperties> = {
     objectFit: 'cover' as const,
   },
   avRowCard: {
+    position: 'relative' as const,
+    zIndex: 1,
     background: T.card,
     padding: '0 14px 10px',
   },
