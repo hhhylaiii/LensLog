@@ -15,18 +15,21 @@ interface User {
 const styles: Record<string, React.CSSProperties> = {
   shell: {
     display: 'flex',
-    minHeight: '100vh',
+    height: '100vh',
+    overflow: 'hidden',
     background: '#0a0a0f',
     fontFamily: "'Inter', system-ui, sans-serif",
   },
   sidebar: {
     width: '220px',
+    height: '100vh',
     flexShrink: 0,
     background: T.sideBgTwo,
     borderRight: `1px solid ${T.sideLine}`,
     display: 'flex',
     flexDirection: 'column',
     padding: '0',
+    overflowY: 'auto' as const,
   },
   logoArea: {
     padding: '24px 20px 20px',
@@ -108,6 +111,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   content: {
     flex: 1,
+    height: '100vh',
     overflow: 'auto',
   },
 }
