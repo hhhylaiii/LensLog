@@ -137,10 +137,10 @@ const s: Record<string, React.CSSProperties> = {
   // ── Banner ──
   bannerWrap: {
     position: 'relative',
-    width: '100%',
+    width: 'calc(100% + 48px)',
     height: '280px',
-    marginBottom: '24px',
-    borderRadius: '14px',
+    margin: '-24px -24px 24px',
+    borderRadius: 0,
     overflow: 'hidden',
     cursor: 'pointer',
     flexShrink: 0,
