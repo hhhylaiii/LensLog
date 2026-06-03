@@ -138,7 +138,7 @@ const s: Record<string, React.CSSProperties> = {
   bannerWrap: {
     position: 'relative',
     width: '100%',
-    height: '400px',
+    height: '280px',
     marginBottom: '24px',
     borderRadius: '14px',
     overflow: 'hidden',
@@ -698,7 +698,7 @@ const m: Record<string, React.CSSProperties> = {
     position: 'relative' as const,
     zIndex: 0,
     width: '100%',
-    height: '76px',
+    height: '160px',
     overflow: 'hidden',
     flexShrink: 0,
     borderRadius: 0,
