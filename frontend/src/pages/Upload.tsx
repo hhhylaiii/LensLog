@@ -48,7 +48,7 @@ interface UploadPreset {
 const makeItem = async (file: File, preset?: UploadPreset): Promise<FileItem> => {
   const needsCompression = file.size > 5 * 1024 * 1024
   const compressed = needsCompression
-    ? await imageCompression(file, { maxSizeMB: 5, useWebWorker: true })
+    ? await imageCompression(file, { maxSizeMB: 5, useWebWorker: true, preserveExif: true })
     : file
   if (needsCompression) {
     console.log(`[compress] ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressed.size / 1024 / 1024).toFixed(2)}MB`)
