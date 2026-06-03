@@ -138,7 +138,7 @@ const s: Record<string, React.CSSProperties> = {
   bannerWrap: {
     position: 'relative',
     width: '100%',
-    height: '160px',
+    height: '200px',
     marginBottom: '24px',
     borderRadius: '14px',
     overflow: 'hidden',
@@ -948,6 +948,8 @@ const Profile: React.FC = () => {
   const [editingStoryName, setEditingStoryName] = useState(false)
   const [storyNameDraft, setStoryNameDraft] = useState('')
   const [storySortOrder, setStorySortOrder] = useState<'custom' | 'taken-asc' | 'taken-desc'>('taken-asc')
+  const [showCreateStoryModal, setShowCreateStoryModal] = useState(false)
+  const [newStoryName, setNewStoryName] = useState('')
 
   const [localAvatar, setLocalAvatar] = useState<string | null>(null)
   const [avatarHovered, setAvatarHovered] = useState(false)
@@ -1065,12 +1067,17 @@ const Profile: React.FC = () => {
 
   const selectedStory = stories.find((story) => story.id === selectedStoryId)
   const createStory = () => {
-    const name = window.prompt('故事集名稱')
-    if (!name?.trim()) return
-    const story: Story = { id: crypto.randomUUID(), name: name.trim(), photoIds: [], notes: {}, items: [] }
+    setNewStoryName('')
+    setShowCreateStoryModal(true)
+  }
+  const confirmCreateStory = () => {
+    if (!newStoryName.trim()) return
+    const story: Story = { id: crypto.randomUUID(), name: newStoryName.trim(), photoIds: [], notes: {}, items: [] }
     setStories((current) => [...current, story])
     setSelectedStoryId(story.id)
     setStoryEditing(true)
+    setShowCreateStoryModal(false)
+    setNewStoryName('')
   }
   const updateSelectedStory = (update: (story: Story) => Story) => {
     if (!selectedStoryId) return
@@ -1208,7 +1215,7 @@ const Profile: React.FC = () => {
 
   const mob: Record<string, React.CSSProperties> = isMobile ? {
     page: { padding: '12px' },
-    bannerWrap: { height: '110px', borderRadius: '10px' },
+    bannerWrap: { height: '160px', borderRadius: '10px' },
     profileHeader: { gap: '14px' },
     avatar: { width: '72px', height: '72px', fontSize: '24px' },
     displayName: { fontSize: '18px' },
@@ -1218,6 +1225,54 @@ const Profile: React.FC = () => {
     statNumber: { fontSize: '20px' },
     fab: { bottom: '20px', right: '16px', width: '46px', height: '46px', fontSize: '22px' },
   } : {}
+
+  const createStoryModal = showCreateStoryModal && (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '0 24px',
+      }}
+      onClick={() => setShowCreateStoryModal(false)}
+    >
+      <div
+        style={{
+          background: T.paper, borderRadius: 14, padding: 24,
+          width: '100%', maxWidth: 360,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, marginBottom: 16 }}>新增故事集</div>
+        <input
+          autoFocus
+          value={newStoryName}
+          onChange={e => setNewStoryName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') confirmCreateStory(); if (e.key === 'Escape') setShowCreateStoryModal(false) }}
+          placeholder="故事集名稱"
+          style={{
+            width: '100%', boxSizing: 'border-box' as const,
+            height: 40, padding: '0 12px',
+            border: `1px solid ${T.accent}`, borderRadius: 8,
+            fontSize: 15, color: T.ink, background: T.card,
+            outline: 'none', marginBottom: 16,
+          }}
+        />
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button type="button"
+            onClick={() => setShowCreateStoryModal(false)}
+            style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${T.line}`, background: 'none', color: T.inkSoft, fontSize: 14, cursor: 'pointer' }}
+          >取消</button>
+          <button type="button"
+            onClick={confirmCreateStory}
+            disabled={!newStoryName.trim()}
+            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: newStoryName.trim() ? T.accent : T.paperTwo, color: newStoryName.trim() ? '#fff' : T.inkMute, fontSize: 14, fontWeight: 600, cursor: newStoryName.trim() ? 'pointer' : 'not-allowed' }}
+          >建立</button>
+        </div>
+      </div>
+    </div>
+  )
 
   const renderAlbums = (): React.ReactNode => {
     if (!selectedStory) {
@@ -1609,6 +1664,8 @@ const Profile: React.FC = () => {
   // ─── Mobile branch ───────────────────────────────────────────────────────────
   if (isMobile) return (
     <div style={m.page}>
+      {createStoryModal}
+
       {/* Hidden file inputs (shared with desktop handlers) */}
       <input ref={bannerInputRef} type="file" accept="image/*" title="上傳橫幅" style={s.hiddenInput} onChange={handleBannerChange} />
       <input ref={avatarInputRef} type="file" accept="image/*" title="上傳頭像" style={s.hiddenInput} onChange={handleAvatarChange} />
@@ -1908,6 +1965,7 @@ const Profile: React.FC = () => {
   return (
     <>
       <div style={{ ...s.page, ...mob.page }}>
+        {createStoryModal}
 
         {/* ── Banner ── */}
         <div
