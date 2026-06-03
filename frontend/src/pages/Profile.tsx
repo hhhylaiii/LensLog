@@ -138,7 +138,7 @@ const s: Record<string, React.CSSProperties> = {
   bannerWrap: {
     position: 'relative',
     width: '100%',
-    height: '200px',
+    height: '400px',
     marginBottom: '24px',
     borderRadius: '14px',
     overflow: 'hidden',
@@ -1215,7 +1215,7 @@ const Profile: React.FC = () => {
 
   const mob: Record<string, React.CSSProperties> = isMobile ? {
     page: { padding: '12px' },
-    bannerWrap: { height: '160px', borderRadius: '10px' },
+    bannerWrap: { height: '320px', borderRadius: '10px' },
     profileHeader: { gap: '14px' },
     avatar: { width: '72px', height: '72px', fontSize: '24px' },
     displayName: { fontSize: '18px' },
