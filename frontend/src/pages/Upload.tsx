@@ -1,4 +1,5 @@
 import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
+import imageCompression from 'browser-image-compression'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import T from '../styles/tokens'
@@ -44,18 +45,28 @@ interface UploadPreset {
   location?: LocationMatch
 }
 
-const makeItem = async (file: File, preset?: UploadPreset): Promise<FileItem> => ({
-  file,
-  preview: URL.createObjectURL(file),
-  caption: '',
-  tags: [],
-  visibility: preset?.visibility ?? 'public',
-  hidePreciseGps: false,
-  exif: await parseExifData(file),
-  location: preset?.location ?? { status: 'pending' },
-  status: 'pending',
-  progress: 0,
-})
+const makeItem = async (file: File, preset?: UploadPreset): Promise<FileItem> => {
+  const needsCompression = file.size > 5 * 1024 * 1024
+  const compressed = needsCompression
+    ? await imageCompression(file, { maxSizeMB: 5, useWebWorker: true, preserveExif: true })
+    : file
+  if (needsCompression) {
+    console.log(`[compress] ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressed.size / 1024 / 1024).toFixed(2)}MB`)
+  }
+
+  return {
+    file: compressed as File,
+    preview: URL.createObjectURL(compressed),
+    caption: '',
+    tags: [],
+    visibility: preset?.visibility ?? 'public',
+    hidePreciseGps: false,
+    exif: await parseExifData(file),
+    location: preset?.location ?? { status: 'pending' },
+    status: 'pending',
+    progress: 0,
+  }
+}
 
 function photoToFileItem(photo: ApiPhoto): FileItem {
   const location: LocationMatch = photo.location_id
@@ -236,6 +247,7 @@ const Upload: React.FC = () => {
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [publishing, setPublishing] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [fileError, setFileError] = useState<string | null>(null)
 
   const preset = useMemo<UploadPreset | null>(() => {
     const source = searchParams.get('source')
@@ -260,23 +272,47 @@ const Upload: React.FC = () => {
     setItems(prev => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)))
   }, [])
 
+  const removeFile = useCallback((index: number) => {
+    setItems(prev => {
+      const next = prev.filter((_, i) => i !== index)
+      setSelectedIdx(idx => Math.min(idx, Math.max(0, next.length - 1)))
+      return next
+    })
+  }, [])
+
   const addFiles = useCallback(async (files: File[]) => {
-    const nextItems = await Promise.all(files.map((file) => makeItem(file, preset ?? undefined)))
+    const total = items.length + files.length
+    const allowed = Math.max(0, 10 - items.length)
+    const acceptedFiles = total > 10 ? files.slice(0, allowed) : files
+    if (total > 10) {
+      setFileError(`一次最多上傳 10 張，已略去 ${files.length - allowed} 張`)
+    } else {
+      setFileError(null)
+    }
+    const nextItems = await Promise.all(acceptedFiles.map((file) => makeItem(file, preset ?? undefined)))
     startTransition(() => {
       setItems(prev => [...prev, ...nextItems])
     })
-  }, [preset])
+  }, [items.length, preset])
 
   const addMore = useCallback(async (files: File[]) => {
-    const nextItems = await Promise.all(files.map((file) => makeItem(file, preset ?? undefined)))
+    const total = items.length + files.length
+    const allowed = Math.max(0, 10 - items.length)
+    const acceptedFiles = total > 10 ? files.slice(0, allowed) : files
+    if (total > 10) {
+      setFileError(`一次最多上傳 10 張，已略去 ${files.length - allowed} 張`)
+    } else {
+      setFileError(null)
+    }
+    const nextItems = await Promise.all(acceptedFiles.map((file) => makeItem(file, preset ?? undefined)))
     startTransition(() => {
       setItems(prev => {
         const next = [...prev, ...nextItems]
-        setSelectedIdx(prev.length)
+        if (nextItems.length > 0) setSelectedIdx(prev.length)
         return next
       })
     })
-  }, [preset])
+  }, [items.length, preset])
 
   const handlePublish = async () => {
     const pending = items.filter(f => f.status === 'pending')
@@ -297,6 +333,11 @@ const Upload: React.FC = () => {
   const presetNotice = preset?.location?.loc ? (
     <div style={{ background: T.accentSoft, border: `1px solid ${T.accent}`, borderRadius: 10, padding: '12px 16px', color: T.accentInk, fontSize: 13, marginBottom: 16 }}>
       這次上傳會預設綁定到 <strong>{preset.location.loc.name}</strong> · {preset.location.loc.source === 'global' ? '大家景點 / 公開照片' : '我的景點 / 私人照片'}
+    </div>
+  ) : null
+  const fileErrorNotice = fileError ? (
+    <div style={{ background: '#fff0f0', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', color: '#dc2626', fontSize: 13, marginBottom: 8 }}>
+      {fileError}
     </div>
   ) : null
 
@@ -341,7 +382,8 @@ const Upload: React.FC = () => {
           {step === 1 ? (
             <div style={{ padding: '0 16px 16px' }}>
               {presetNotice}
-              <DropStep files={items} onAddFiles={addFiles} onNext={() => { setSelectedIdx(0); setStep(2) }} />
+              {fileErrorNotice}
+              <DropStep files={items} onAddFiles={addFiles} onRemove={removeFile} onNext={() => { setSelectedIdx(0); setStep(2) }} />
             </div>
           ) : (
             <ReviewStep items={items} selectedIdx={selectedIdx} onSelect={setSelectedIdx} onAddMore={addMore} onChangeItem={updateItem} />
@@ -436,7 +478,8 @@ const Upload: React.FC = () => {
       {step === 1 ? (
         <>
           {presetNotice}
-          <DropStep files={items} onAddFiles={addFiles} onNext={() => { setSelectedIdx(0); setStep(2) }} />
+          {fileErrorNotice}
+          <DropStep files={items} onAddFiles={addFiles} onRemove={removeFile} onNext={() => { setSelectedIdx(0); setStep(2) }} />
         </>
       ) : (
         <ReviewStep items={items} selectedIdx={selectedIdx} onSelect={setSelectedIdx} onAddMore={addMore} onChangeItem={updateItem} />
