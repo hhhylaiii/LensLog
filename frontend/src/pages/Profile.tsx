@@ -1464,13 +1464,13 @@ const Profile: React.FC = () => {
         {/* ── Header ── */}
         <div style={{ marginBottom: 12 }}>
           {/* Row 1: actions */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
             <button type="button"
-              style={{ background: 'none', border: 'none', padding: '0 2px', height: 28, fontSize: 13, color: T.inkSoft, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+              style={{ ...s.loadMoreBtn, height: 30, padding: '0 12px', fontSize: 13 }}
               onClick={() => { setSelectedStoryId(null); setStoryEditing(false); setEditingStoryName(false) }}
-            >← 故事集列表</button>
+            >故事集列表</button>
             <button type="button"
-              style={{ background: 'none', border: 'none', padding: '0 2px', height: 28, fontSize: 13, color: storyEditing ? T.accent : T.inkSoft, cursor: 'pointer' }}
+              style={{ ...s.loadMoreBtn, height: 30, padding: '0 12px', fontSize: 13, ...(storyEditing ? { borderColor: T.accent, color: T.accent } : {}) }}
               onClick={() => setStoryEditing(e => !e)}
             >{storyEditing ? '完成編輯' : '編輯故事'}</button>
             <select
