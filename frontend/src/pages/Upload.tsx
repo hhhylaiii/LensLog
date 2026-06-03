@@ -1,4 +1,5 @@
 import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
+import imageCompression from 'browser-image-compression'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import T from '../styles/tokens'
@@ -44,18 +45,24 @@ interface UploadPreset {
   location?: LocationMatch
 }
 
-const makeItem = async (file: File, preset?: UploadPreset): Promise<FileItem> => ({
-  file,
-  preview: URL.createObjectURL(file),
-  caption: '',
-  tags: [],
-  visibility: preset?.visibility ?? 'public',
-  hidePreciseGps: false,
-  exif: await parseExifData(file),
-  location: preset?.location ?? { status: 'pending' },
-  status: 'pending',
-  progress: 0,
-})
+const makeItem = async (file: File, preset?: UploadPreset): Promise<FileItem> => {
+  const compressed = file.size > 5 * 1024 * 1024
+    ? await imageCompression(file, { maxSizeMB: 5, useWebWorker: true })
+    : file
+
+  return {
+    file: compressed as File,
+    preview: URL.createObjectURL(compressed),
+    caption: '',
+    tags: [],
+    visibility: preset?.visibility ?? 'public',
+    hidePreciseGps: false,
+    exif: await parseExifData(file),
+    location: preset?.location ?? { status: 'pending' },
+    status: 'pending',
+    progress: 0,
+  }
+}
 
 function photoToFileItem(photo: ApiPhoto): FileItem {
   const location: LocationMatch = photo.location_id
