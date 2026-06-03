@@ -6,11 +6,12 @@ import type { FileItem } from '../../lib/uploadTypes'
 interface DropStepProps {
   files: FileItem[]
   onAddFiles: (files: File[]) => void
+  onRemove: (index: number) => void
   onNext: () => void
   disabled?: boolean
 }
 
-const DropStep: React.FC<DropStepProps> = ({ files, onAddFiles, onNext, disabled }) => {
+const DropStep: React.FC<DropStepProps> = ({ files, onAddFiles, onRemove, onNext, disabled }) => {
   const onDrop = useCallback((accepted: File[]) => onAddFiles(accepted), [onAddFiles])
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop, accept: { 'image/*': [] }, multiple: true,
@@ -44,6 +45,17 @@ const DropStep: React.FC<DropStepProps> = ({ files, onAddFiles, onNext, disabled
                 fontSize: 9, padding: '2px 4px',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>{f.file.name}</div>
+              <button
+                onClick={e => { e.stopPropagation(); onRemove(i) }}
+                style={{
+                  position: 'absolute', top: 3, right: 3,
+                  width: 18, height: 18, borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.6)', border: 'none',
+                  color: '#fff', fontSize: 11, lineHeight: '18px',
+                  textAlign: 'center', cursor: 'pointer', padding: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >✕</button>
             </div>
           ))}
         </div>
