@@ -12,7 +12,7 @@ interface PhotoPreviewProps {
 const PhotoPreview: React.FC<PhotoPreviewProps> = ({ item }) => {
   const { isMobile } = useBreakpoint()
   return (
-    <div style={{ position: 'relative', background: T.paperTwo, flexShrink: 0, borderRadius: isMobile ? 0 : 8, overflow: 'hidden' }}>
+    <div style={{ position: 'relative', background: T.paperTwo, flexShrink: 0, borderRadius: 10, overflow: 'hidden' }}>
       <img
         src={item.preview}
         alt=""
@@ -20,7 +20,7 @@ const PhotoPreview: React.FC<PhotoPreviewProps> = ({ item }) => {
       />
       {isMobile && (
         <span style={{ position: 'absolute', bottom: 8, left: 8, fontFamily: mono, fontSize: 9, background: 'rgba(255,255,255,0.9)', color: T.inkMute, padding: '2px 6px', borderRadius: 3 }}>
-          {item.file.name}
+          {item.file?.name}
         </span>
       )}
     </div>

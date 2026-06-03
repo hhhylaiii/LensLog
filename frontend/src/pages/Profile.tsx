@@ -1860,14 +1860,17 @@ const Profile: React.FC = () => {
                     }
                     <button
                       type="button"
-                      style={photo.is_public
-                        ? (isPending ? s.lockPublicPend : s.lockPublic)
-                        : (isPending ? s.lockPrivatePend : s.lockPrivate)}
+                      style={{ position: 'absolute', top: 6, right: 6, zIndex: 2, background: 'none', border: 'none', padding: 2, fontSize: 15, cursor: 'pointer', opacity: isPending ? 0.4 : 0.75, filter: 'grayscale(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
                       title={photo.is_public ? '點擊設為私人' : '點擊設為公開'}
                       onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(photo) }}
                     >
                       {photo.is_public ? '🔓' : '🔒'}
                     </button>
+                    <button
+                      type="button"
+                      style={{ position: 'absolute', bottom: 6, right: 6, zIndex: 2, background: 'none', border: 'none', padding: 2, fontSize: 15, cursor: 'pointer', color: 'rgba(255,255,255,0.8)', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))', lineHeight: 1 }}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/upload?edit=${photo.id}`) }}
+                    >✎</button>
                   </div>
                 )
               })}
@@ -2279,22 +2282,18 @@ const Profile: React.FC = () => {
                       {isHovered && (
                         <button
                           type="button"
-                          style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '12px', padding: '4px 10px', cursor: 'pointer', zIndex: 3 }}
+                          style={{ position: 'absolute', bottom: 6, right: 6, zIndex: 3, background: 'none', border: 'none', padding: 2, fontSize: 15, cursor: 'pointer', color: 'rgba(255,255,255,0.85)', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))', lineHeight: 1 }}
                           title="編輯照片"
                           onClick={(e) => { e.stopPropagation(); navigate(`/upload?edit=${p.id}`) }}
-                        >
-                          ✎ 編輯
-                        </button>
+                        >✎</button>
                       )}
                       <button
                         type="button"
-                        style={p.is_public
-                          ? (isPending ? s.lockPublicPend : s.lockPublic)
-                          : (isPending ? s.lockPrivatePend : s.lockPrivate)}
+                        style={{ position: 'absolute', top: 6, right: 6, zIndex: 2, background: 'none', border: 'none', padding: 2, fontSize: 15, cursor: 'pointer', opacity: isPending ? 0.4 : 0.75, filter: 'grayscale(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
                         title={p.is_public ? '點擊設為私人' : '點擊設為公開'}
                         onClick={(e) => { e.stopPropagation(); if (!isPending) toggleVisibility(p) }}
                       >
-                        {p.is_public ? '🔓 Shared' : '🔒 Private'}
+                        {p.is_public ? '🔓' : '🔒'}
                       </button>
                     </div>
                   )

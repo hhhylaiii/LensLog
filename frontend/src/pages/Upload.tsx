@@ -11,6 +11,7 @@ import Stepper from '../components/PhotoUpload/Stepper'
 import DropStep from '../components/PhotoUpload/DropStep'
 import ReviewStep from '../components/PhotoUpload/ReviewStep'
 import PreviewPane from '../components/PhotoUpload/PreviewPane'
+import PhotoPreview from '../components/PhotoUpload/PhotoPreview'
 import VisibilityPanel from '../components/PhotoUpload/VisibilityPanel'
 import LocationPanel from '../components/PhotoUpload/LocationPanel'
 import api from '../lib/api'
@@ -105,6 +106,7 @@ interface EditModeProps {
 const EditMode: React.FC<EditModeProps> = ({ photoId }) => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { isMobile } = useBreakpoint()
   const [item, setItem] = useState<FileItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -146,7 +148,7 @@ const EditMode: React.FC<EditModeProps> = ({ photoId }) => {
   }
 
   const containerStyle: React.CSSProperties = {
-    padding: 24,
+    padding: isMobile ? 16 : 24,
     fontFamily: "'Inter', 'Noto Sans TC', sans-serif",
     color: T.ink,
     background: T.paper,
@@ -210,7 +212,12 @@ const EditMode: React.FC<EditModeProps> = ({ photoId }) => {
       {loading || !item ? (
         <div style={{ color: T.inkMute, fontSize: 14, padding: '40px 0', textAlign: 'center' }}>載入中…</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, minHeight: 540 }}>
+        <div
+          style={isMobile
+            ? { display: 'flex', flexDirection: 'column', gap: 16 }
+            : { display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, minHeight: 540 }}
+        >
+          {isMobile && <PhotoPreview item={item} />}
           <PreviewPane item={item} onChange={updateItem} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <LocationPanel

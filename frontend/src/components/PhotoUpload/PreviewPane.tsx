@@ -50,7 +50,7 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({ item, onChange }) => {
   if (isMobile) {
     return (
       <>
-        <div style={{ margin: '8px 10px 0', background: T.card, border: `1px solid ${T.line}`, borderRadius: 8, padding: '8px 10px' }}>
+        <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, padding: '8px 10px' }}>
           <div style={{ fontFamily: mono, fontSize: 8.5, textTransform: 'uppercase', letterSpacing: '0.04em', color: T.inkMute, marginBottom: 4 }}>說明</div>
           <textarea
             value={item.caption}
@@ -59,7 +59,7 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({ item, onChange }) => {
             style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: T.ink, fontSize: 11, lineHeight: 1.45, minHeight: 48, resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
           />
         </div>
-        <div style={{ padding: '8px 10px', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+        <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, padding: '8px 10px', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
           {item.tags.map(tag => (
             <span key={tag} style={{ border: `1px solid ${T.line}`, borderRadius: 20, padding: '3px 10px', fontSize: 11, color: T.ink, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               #{tag}
