@@ -1951,44 +1951,50 @@ const Profile: React.FC = () => {
           return (
             <div>
               {/* ── Header ── */}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' as const }}>
-                <button type="button" style={s.loadMoreBtn} onClick={() => { setSelectedStoryId(null); setStoryEditing(false); setEditingStoryName(false) }}>← 故事集列表</button>
-                {editingStoryName ? (
-                  <>
-                    <input
-                      value={storyNameDraft}
-                      autoFocus
-                      title="故事集名稱"
-                      placeholder="故事集名稱"
-                      onChange={e => setStoryNameDraft(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') { updateSelectedStory(st => ({ ...st, name: storyNameDraft })); setEditingStoryName(false) }
-                        if (e.key === 'Escape') setEditingStoryName(false)
-                      }}
-                      style={{ fontSize: 15, fontWeight: 600, padding: '4px 10px', border: `1px solid ${T.accent}`, borderRadius: 6, outline: 'none', color: T.ink, background: T.card }}
-                    />
-                    <button type="button" style={{ ...s.loadMoreBtn, borderColor: T.accent, color: T.accent }} onClick={() => { updateSelectedStory(st => ({ ...st, name: storyNameDraft })); setEditingStoryName(false) }}>確定</button>
-                    <button type="button" style={s.loadMoreBtn} onClick={() => setEditingStoryName(false)}>取消</button>
-                  </>
-                ) : (
-                  <>
-                    <strong style={{ fontSize: 16, color: T.ink }}>{selectedStory.name}</strong>
-                    <button type="button" style={{ ...s.loadMoreBtn, padding: '4px 10px' }} title="重新命名故事集" onClick={() => { setStoryNameDraft(selectedStory.name); setEditingStoryName(true) }}>✎</button>
-                  </>
-                )}
-                <button type="button" style={s.loadMoreBtn} onClick={() => setStoryEditing(e => !e)}>
-                  {storyEditing ? '完成編輯' : '編輯故事'}
-                </button>
-                <select
-                  value={storySortOrder}
-                  onChange={e => setStorySortOrder(e.target.value as typeof storySortOrder)}
-                  style={s.sortSelect}
-                  aria-label="故事排序"
-                >
-                  <option value="custom">自訂順序</option>
-                  <option value="taken-asc">拍攝時間（舊→新）</option>
-                  <option value="taken-desc">拍攝時間（新→舊）</option>
-                </select>
+              <div style={{ marginBottom: 20 }}>
+                {/* Row 1: actions */}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                  <button type="button" style={{ ...s.loadMoreBtn, height: 32, padding: '0 14px' }} onClick={() => { setSelectedStoryId(null); setStoryEditing(false); setEditingStoryName(false) }}>← 故事集列表</button>
+                  <button type="button" style={{ ...s.loadMoreBtn, height: 32, padding: '0 14px' }} onClick={() => setStoryEditing(e => !e)}>
+                    {storyEditing ? '完成編輯' : '編輯故事'}
+                  </button>
+                  <select
+                    value={storySortOrder}
+                    onChange={e => setStorySortOrder(e.target.value as typeof storySortOrder)}
+                    style={{ ...s.sortSelect, marginLeft: 'auto' }}
+                    aria-label="故事排序"
+                  >
+                    <option value="custom">自訂順序</option>
+                    <option value="taken-asc">拍攝時間（舊→新）</option>
+                    <option value="taken-desc">拍攝時間（新→舊）</option>
+                  </select>
+                </div>
+                {/* Row 2: story name */}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {editingStoryName ? (
+                    <>
+                      <input
+                        value={storyNameDraft}
+                        autoFocus
+                        title="故事集名稱"
+                        placeholder="故事集名稱"
+                        onChange={e => setStoryNameDraft(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') { updateSelectedStory(st => ({ ...st, name: storyNameDraft })); setEditingStoryName(false) }
+                          if (e.key === 'Escape') setEditingStoryName(false)
+                        }}
+                        style={{ height: 32, fontSize: 15, fontWeight: 600, padding: '0 10px', border: `1px solid ${T.accent}`, borderRadius: 6, outline: 'none', color: T.ink, background: T.card, boxSizing: 'border-box' as const }}
+                      />
+                      <button type="button" style={{ ...s.loadMoreBtn, height: 32, padding: '0 14px', borderColor: T.accent, color: T.accent }} onClick={() => { updateSelectedStory(st => ({ ...st, name: storyNameDraft })); setEditingStoryName(false) }}>確定</button>
+                      <button type="button" style={{ ...s.loadMoreBtn, height: 32, padding: '0 14px' }} onClick={() => setEditingStoryName(false)}>取消</button>
+                    </>
+                  ) : (
+                    <>
+                      <strong style={{ fontSize: 16, color: T.ink, lineHeight: '32px' }}>{selectedStory.name}</strong>
+                      <button type="button" style={{ ...s.loadMoreBtn, height: 32, width: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="重新命名故事集" onClick={() => { setStoryNameDraft(selectedStory.name); setEditingStoryName(true) }}>✎</button>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* ── Edit mode: photo grid selector ── */}
