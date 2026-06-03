@@ -27,10 +27,10 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ items, selectedIdx, onSelect, o
       <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 8 }}>
         <PhotoPreview item={item} />
         <FileList items={items} selectedIdx={selectedIdx} onSelect={onSelect} onAddMore={onAddMore} />
-        <div style={{ margin: '8px 10px 0' }}><ExifPanel exif={item.exif} /></div>
-        <div style={{ margin: '8px 10px 0' }}><LocationPanel gpsLat={item.exif?.gpsLat} gpsLng={item.exif?.gpsLng} visibility={item.visibility} value={item.location} onChange={(location) => onChangeItem(selectedIdx, { location })} /></div>
-        <PreviewPane item={item} onChange={patch => onChangeItem(selectedIdx, patch)} />
-        <div style={{ margin: '8px 10px' }}>
+        <div style={{ margin: '8px 10px' }}><ExifPanel exif={item.exif} /></div>
+        <div style={{ margin: '8px 10px' }}><LocationPanel gpsLat={item.exif?.gpsLat} gpsLng={item.exif?.gpsLng} visibility={item.visibility} value={item.location} onChange={(location) => onChangeItem(selectedIdx, { location })} /></div>
+        <div style={{ margin: '0 10px 8px' }}><PreviewPane item={item} onChange={patch => onChangeItem(selectedIdx, patch)} /></div>
+        <div style={{ margin: '0 10px 8px' }}>
           <VisibilityPanel
             visibility={item.visibility}
             onChange={v => onChangeItem(selectedIdx, { visibility: v })}

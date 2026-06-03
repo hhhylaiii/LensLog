@@ -399,7 +399,7 @@ const Upload: React.FC = () => {
 
         {/* Footer buttons (step 2 only) */}
         {step === 2 && (
-          <div style={{ padding: '8px 12px', background: T.card, borderTop: `1px solid ${T.lineSoft}`, display: 'flex', gap: 6, flexShrink: 0 }}>
+          <div style={{ padding: '8px 10px', background: 'transparent', borderTop: 'none', display: 'flex', gap: 6, flexShrink: 0 }}>
             <button
               onClick={() => { setStep(1); setSuccess(false) }}
               style={{ flex: 1, height: 40, border: `1px solid ${T.line}`, borderRadius: 8, background: T.card, color: T.inkSoft, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
