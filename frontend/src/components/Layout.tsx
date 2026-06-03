@@ -186,7 +186,7 @@ const Layout: React.FC = () => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: T.paper, fontFamily: "'Inter', system-ui, sans-serif" }}>
         {/* Content */}
-        <main style={{ flex: 1, paddingBottom: 62, overflowY: 'scroll' }}>
+        <main style={{ flex: 1, paddingBottom: 62, overflow: 'auto' }}>
           <Outlet />
         </main>
 
@@ -213,7 +213,7 @@ const Layout: React.FC = () => {
                 color: isActive ? T.accent : T.inkMute,
                 textDecoration: 'none',
                 fontSize: 10,
-                fontWeight: 600,
+                fontWeight: isActive ? 600 : 400,
               })}
             >
               {icon}
