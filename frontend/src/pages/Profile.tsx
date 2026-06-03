@@ -961,6 +961,7 @@ const Profile: React.FC = () => {
   const [bannerHovered, setBannerHovered] = useState(false)
   const bannerInputRef = useRef<HTMLInputElement>(null)
   const bannerWrapRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const bannerDragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null)
   const [bannerPosX, setBannerPosX] = useState(50)
   const [bannerPosY, setBannerPosY] = useState(50)
@@ -1197,6 +1198,17 @@ const Profile: React.FC = () => {
 
   const visiblePhotos = filteredPhotos.slice(0, photoLimit)
   const remaining = filteredPhotos.length - photoLimit
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || remaining <= 0) return
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) setPhotoLimit(l => l + PAGE_SIZE) },
+      { threshold: 0.1 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [remaining])
 
   const topLocations = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -1862,13 +1874,7 @@ const Profile: React.FC = () => {
             </div>
           )}
 
-          {remaining > 0 && (
-            <div style={s.loadMoreWrap}>
-              <button type="button" style={s.loadMoreBtn} onClick={() => setPhotoLimit(l => l + PAGE_SIZE)}>
-                載入更多 · {remaining} 張
-              </button>
-            </div>
-          )}
+          {remaining > 0 && <div ref={sentinelRef} style={{ height: 20 }} />}
         </>
       )}
 
@@ -2297,13 +2303,7 @@ const Profile: React.FC = () => {
             )}
 
             {/* Load more */}
-            {remaining > 0 && (
-              <div style={s.loadMoreWrap}>
-                <button type="button" style={s.loadMoreBtn} onClick={() => setPhotoLimit((l) => l + PAGE_SIZE)}>
-                  載入更多 · {remaining} 張
-                </button>
-              </div>
-            )}
+            {remaining > 0 && <div ref={sentinelRef} style={{ height: 20 }} />}
           </>
         )}
 
