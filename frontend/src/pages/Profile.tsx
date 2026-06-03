@@ -1460,19 +1460,23 @@ const Profile: React.FC = () => {
     const hasItems = dayBuckets.some(b => b.entries.length > 0)
 
     return (
-      <div style={isMobile ? { padding: '20px 16px 0' } : undefined}>
+      <div style={isMobile ? { padding: '8px 16px 0' } : undefined}>
         {/* ── Header ── */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 12 }}>
           {/* Row 1: actions */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-            <button type="button" style={{ ...s.loadMoreBtn, height: 32, padding: '0 14px' }} onClick={() => { setSelectedStoryId(null); setStoryEditing(false); setEditingStoryName(false) }}>← 故事集列表</button>
-            <button type="button" style={{ ...s.loadMoreBtn, height: 32, padding: '0 14px' }} onClick={() => setStoryEditing(e => !e)}>
-              {storyEditing ? '完成編輯' : '編輯故事'}
-            </button>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 4 }}>
+            <button type="button"
+              style={{ background: 'none', border: 'none', padding: '0 2px', height: 28, fontSize: 13, color: T.inkSoft, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+              onClick={() => { setSelectedStoryId(null); setStoryEditing(false); setEditingStoryName(false) }}
+            >← 故事集列表</button>
+            <button type="button"
+              style={{ background: 'none', border: 'none', padding: '0 2px', height: 28, fontSize: 13, color: storyEditing ? T.accent : T.inkSoft, cursor: 'pointer' }}
+              onClick={() => setStoryEditing(e => !e)}
+            >{storyEditing ? '完成編輯' : '編輯故事'}</button>
             <select
               value={storySortOrder}
               onChange={e => setStorySortOrder(e.target.value as typeof storySortOrder)}
-              style={{ ...s.sortSelect, marginLeft: 'auto' }}
+              style={{ ...s.sortSelect, marginLeft: 'auto', fontSize: '12px', color: T.inkMute, border: `1px solid ${T.lineSoft}` }}
               aria-label="故事排序"
             >
               <option value="custom">自訂順序</option>
@@ -1481,7 +1485,7 @@ const Profile: React.FC = () => {
             </select>
           </div>
           {/* Row 2: story name */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             {editingStoryName ? (
               <>
                 <input
@@ -1496,13 +1500,17 @@ const Profile: React.FC = () => {
                   }}
                   style={{ height: 32, fontSize: 15, fontWeight: 600, padding: '0 10px', border: `1px solid ${T.accent}`, borderRadius: 6, outline: 'none', color: T.ink, background: T.card, boxSizing: 'border-box' as const }}
                 />
-                <button type="button" style={{ ...s.loadMoreBtn, height: 32, padding: '0 14px', borderColor: T.accent, color: T.accent }} onClick={() => { updateSelectedStory(st => ({ ...st, name: storyNameDraft })); setEditingStoryName(false) }}>確定</button>
-                <button type="button" style={{ ...s.loadMoreBtn, height: 32, padding: '0 14px' }} onClick={() => setEditingStoryName(false)}>取消</button>
+                <button type="button" style={{ ...s.loadMoreBtn, height: 28, padding: '0 12px', borderColor: T.accent, color: T.accent, fontSize: 13 }} onClick={() => { updateSelectedStory(st => ({ ...st, name: storyNameDraft })); setEditingStoryName(false) }}>確定</button>
+                <button type="button" style={{ background: 'none', border: 'none', padding: '0 4px', fontSize: 13, color: T.inkSoft, cursor: 'pointer' }} onClick={() => setEditingStoryName(false)}>取消</button>
               </>
             ) : (
               <>
-                <strong style={{ fontSize: 16, color: T.ink, lineHeight: '32px' }}>{selectedStory.name}</strong>
-                <button type="button" style={{ ...s.loadMoreBtn, height: 32, width: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="重新命名故事集" onClick={() => { setStoryNameDraft(selectedStory.name); setEditingStoryName(true) }}>✎</button>
+                <span style={{ fontSize: 18, fontWeight: 700, color: T.ink }}>{selectedStory.name}</span>
+                <button type="button"
+                  style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 14, color: T.inkMute, cursor: 'pointer', lineHeight: 1 }}
+                  title="重新命名故事集"
+                  onClick={() => { setStoryNameDraft(selectedStory.name); setEditingStoryName(true) }}
+                >✎</button>
               </>
             )}
           </div>
