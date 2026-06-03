@@ -1224,23 +1224,6 @@ const Profile: React.FC = () => {
       if (isMobile) {
         return (
           <div style={{ padding: '0 16px' }}>
-            <button
-              type="button"
-              onClick={createStory}
-              style={{
-                width: '100%',
-                height: 44,
-                background: T.accent,
-                color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: 'pointer',
-                marginBottom: 16,
-              }}
-            >＋ 新增故事集</button>
-
             {stories.length === 0
               ? <div style={s.emptyNote}>尚無故事集。照片預設不會加入任何故事集。</div>
               : (
@@ -1862,8 +1845,63 @@ const Profile: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'albums' && renderAlbums()}
+      {activeTab === 'albums' && <div style={{ paddingTop: 16 }}>{renderAlbums()}</div>}
 
+      {/* FAB */}
+      {activeTab === 'albums' && !selectedStory && (
+        <button
+          type="button"
+          onClick={createStory}
+          style={{
+            position: 'fixed',
+            bottom: 80,
+            right: 20,
+            width: 44,
+            height: 44,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.85)',
+            border: '1px solid rgba(0,0,0,0.12)',
+            color: '#8a9bb0',
+            fontSize: 24,
+            fontWeight: 300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.10)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 10,
+            lineHeight: 1,
+          }}
+        >+</button>
+      )}
+      {activeTab === 'photos' && (
+        <button
+          type="button"
+          onClick={() => navigate('/upload')}
+          style={{
+            position: 'fixed',
+            bottom: 80,
+            right: 20,
+            width: 44,
+            height: 44,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.85)',
+            border: '1px solid rgba(0,0,0,0.12)',
+            color: '#8a9bb0',
+            fontSize: 24,
+            fontWeight: 300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.10)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 10,
+            lineHeight: 1,
+          }}
+        >+</button>
+      )}
     </div>
   )
 
