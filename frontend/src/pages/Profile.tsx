@@ -1221,6 +1221,65 @@ const Profile: React.FC = () => {
 
   const renderAlbums = (): React.ReactNode => {
     if (!selectedStory) {
+      if (isMobile) {
+        return (
+          <div style={{ padding: '0 16px' }}>
+            <button
+              type="button"
+              onClick={createStory}
+              style={{
+                width: '100%',
+                height: 44,
+                background: T.accent,
+                color: '#fff',
+                border: 'none',
+                borderRadius: 10,
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginBottom: 16,
+              }}
+            >＋ 新增故事集</button>
+
+            {stories.length === 0
+              ? <div style={s.emptyNote}>尚無故事集。照片預設不會加入任何故事集。</div>
+              : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {stories.map((story) => {
+                    const firstPhotoItem = story.items.find(i => i.type === 'photo')
+                    const coverPhoto = firstPhotoItem && allPhotos.find(p => p.id === (firstPhotoItem as any).photoId)
+                    const coverSrc = coverPhoto?.thumb_url || coverPhoto?.url
+                    const photoCount = story.items.filter(i => i.type === 'photo').length
+                    return (
+                      <div
+                        key={story.id}
+                        onClick={() => setSelectedStoryId(story.id)}
+                        style={{ borderRadius: 10, overflow: 'hidden', cursor: 'pointer', background: T.paperTwo, position: 'relative', aspectRatio: '1 / 1' }}
+                      >
+                        {coverSrc
+                          ? <img src={coverSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: T.inkMute }}>▤</div>
+                        }
+                        <div style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+                          padding: '24px 10px 10px',
+                        }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', lineHeight: 1.3 }}>{story.name}</div>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>{photoCount} 張照片</div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            }
+          </div>
+        )
+      }
       return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMobile ? 'center' : undefined }}>
           <button type="button" style={s.loadMoreBtn} onClick={createStory}>＋ 新增故事集</button>
@@ -1310,9 +1369,9 @@ const Profile: React.FC = () => {
         const thumbSrc = photo.thumb_url || photo.url
         return (
           <div>
-            <div style={{ display: 'inline-block', borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.line}`, cursor: 'pointer', background: T.card }} onClick={() => navigate(`/photos/${photo.id}`)}>
+            <div style={{ display: isMobile ? 'block' : 'inline-block', borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.line}`, cursor: 'pointer', background: T.card }} onClick={() => navigate(`/photos/${photo.id}`)}>
               {thumbSrc
-                ? <img src={thumbSrc} alt="" style={{ display: 'block', maxWidth: '20vw', maxHeight: '20vw', width: 'auto', height: 'auto', imageOrientation: 'from-image' }} />
+                ? <img src={thumbSrc} alt="" style={{ display: 'block', width: '100%', height: 'auto', imageOrientation: 'from-image' }} />
                 : <div style={{ width: 100, height: 100, ...s.photoPlaceholder }}>{photo.id.slice(-4).toUpperCase()}</div>
               }
               {(photo.caption || photo.exif || (photo.tags?.length ?? 0) > 0) && (
@@ -1363,7 +1422,7 @@ const Profile: React.FC = () => {
     const hasItems = dayBuckets.some(b => b.entries.length > 0)
 
     return (
-      <div style={isMobile ? { padding: '0 16px', textAlign: 'center' as const } : undefined}>
+      <div style={isMobile ? { padding: '20px 16px 0' } : undefined}>
         {/* ── Header ── */}
         <div style={{ marginBottom: 20 }}>
           {/* Row 1: actions */}
@@ -1498,10 +1557,10 @@ const Profile: React.FC = () => {
                                       value={row.entry.item.caption ?? ''}
                                       placeholder="在此輸入圖說…"
                                       onChange={e => updatePhotoCaption(row.entry.item.id, e.target.value)}
-                                      style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 52, border: `1px solid ${T.accent}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, color: T.ink, background: T.paper, resize: 'vertical' as const, outline: 'none' }}
+                                      style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 80, border: `1px solid ${T.accent}`, borderRadius: 8, padding: '10px 12px', fontSize: 14, color: T.ink, background: T.paper, resize: 'vertical' as const, outline: 'none' }}
                                     />
                                   ) : row.entry.item.caption ? (
-                                    <div style={{ fontSize: 12, color: T.inkMute, lineHeight: 1.6, whiteSpace: 'pre-wrap' as const }}>
+                                    <div style={{ fontSize: 14, color: T.inkMute, lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}>
                                       {row.entry.item.caption}
                                     </div>
                                   ) : null}
