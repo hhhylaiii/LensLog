@@ -22,7 +22,7 @@ const VisibilityPanel: React.FC<VisibilityPanelProps> = ({ visibility, onChange,
 
   if (isMobile) {
     return (
-      <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 11, fontWeight: 500 }}>{current.icon} {current.label}</span>
         <span style={{ fontSize: 10, color: T.inkMute }}>{current.desc}</span>
         <span onClick={() => onChange(next.value)} style={{ fontSize: 10, color: T.accent, fontWeight: 500, cursor: 'pointer' }}>

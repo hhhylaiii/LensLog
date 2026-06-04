@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import api from '../lib/api'
 import { setTokens } from '../lib/auth'
+import { useBreakpoint } from '../hooks/useBreakpoint'
+import T from '../styles/tokens'
 
 interface LoginForm {
   email: string
@@ -12,43 +14,97 @@ interface LoginForm {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
-    background: '#0a0a0f',
+    background: T.paper,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontFamily: "'Inter', system-ui, sans-serif",
+    fontFamily: "'Inter', 'Noto Sans TC', system-ui, sans-serif",
+    boxSizing: 'border-box',
   },
-  card: {
-    background: '#13131a',
-    border: '1px solid #2a2a38',
-    borderRadius: '12px',
-    padding: '40px',
+  shell: {
     width: '100%',
-    maxWidth: '400px',
+    maxWidth: '900px',
+    background: T.card,
+    border: `1px solid ${T.line}`,
+    borderRadius: '8px',
+    boxShadow: '0 18px 45px rgba(26, 41, 66, 0.10)',
+    overflow: 'hidden',
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 0.9fr) minmax(380px, 1fr)',
+    minHeight: '540px',
+  },
+  brandPanel: {
+    background: T.sideBgTwo,
+    color: T.sideText,
+    padding: '40px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+  brandText: {
+    fontSize: '24px',
+    fontWeight: 700,
+    letterSpacing: '-0.5px',
+  },
+  brandAccent: {
+    color: T.accentNeon,
+  },
+  brandSub: {
+    color: T.sideMute,
+    fontSize: '12px',
+    marginTop: '4px',
+  },
+  brandHeading: {
+    color: T.sideText,
+    fontSize: '28px',
+    fontWeight: 650,
+    lineHeight: 1.18,
+    margin: 0,
+    maxWidth: '300px',
+  },
+  brandMeta: {
+    borderTop: `1px solid ${T.sideLine}`,
+    paddingTop: '18px',
+    color: T.sideMute,
+    fontSize: '13px',
+    lineHeight: 1.6,
+  },
+  formPanel: {
+    padding: '48px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
   },
   logo: {
     textAlign: 'center',
-    marginBottom: '32px',
+    marginBottom: '24px',
   },
   logoText: {
-    fontSize: '28px',
+    fontSize: '24px',
     fontWeight: 700,
-    color: '#e8e8f0',
+    color: T.ink,
     letterSpacing: '-0.5px',
   },
   logoAccent: {
-    color: '#6366f1',
+    color: T.accent,
   },
   logoSub: {
-    color: '#666',
-    fontSize: '13px',
+    color: T.inkMute,
+    fontSize: '12px',
     marginTop: '4px',
   },
   title: {
-    fontSize: '20px',
-    fontWeight: 600,
-    color: '#e8e8f0',
-    marginBottom: '24px',
+    fontSize: '26px',
+    fontWeight: 650,
+    color: T.ink,
+    margin: 0,
+    lineHeight: 1.2,
+  },
+  subtitle: {
+    color: T.inkMute,
+    fontSize: '14px',
+    lineHeight: 1.55,
+    margin: '8px 0 26px',
   },
   field: {
     marginBottom: '16px',
@@ -57,24 +113,24 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'block',
     fontSize: '13px',
     fontWeight: 500,
-    color: '#aaa',
+    color: T.inkSoft,
     marginBottom: '6px',
   },
   input: {
     width: '100%',
-    background: '#0a0a0f',
-    border: '1px solid #2a2a38',
+    background: T.card,
+    border: `1px solid ${T.line}`,
     borderRadius: '8px',
     padding: '10px 14px',
-    color: '#e8e8f0',
+    color: T.ink,
     fontSize: '14px',
     outline: 'none',
     boxSizing: 'border-box',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
   },
   button: {
     width: '100%',
-    background: '#6366f1',
+    background: T.accent,
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
@@ -86,33 +142,35 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'background 0.2s',
   },
   error: {
-    color: '#f87171',
+    color: '#dc2626',
     fontSize: '12px',
     marginTop: '4px',
   },
   apiError: {
-    background: '#2a1515',
-    border: '1px solid #7f1d1d',
+    background: '#fff0f0',
+    border: '1px solid #fca5a5',
     borderRadius: '8px',
     padding: '10px 14px',
-    color: '#f87171',
+    color: '#dc2626',
     fontSize: '13px',
     marginBottom: '16px',
   },
   footer: {
     textAlign: 'center',
-    marginTop: '20px',
-    color: '#666',
+    marginTop: '22px',
+    color: T.inkMute,
     fontSize: '13px',
   },
   link: {
-    color: '#6366f1',
+    color: T.accent,
     textDecoration: 'none',
+    fontWeight: 600,
   },
 }
 
 const Login: React.FC = () => {
   const navigate = useNavigate()
+  const { isMobile } = useBreakpoint()
   const [apiError, setApiError] = useState('')
   const [loading, setLoading] = useState(false)
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>()
@@ -132,51 +190,84 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.logo}>
-          <div style={styles.logoText}>
-            Lens<span style={styles.logoAccent}>Log</span>
-          </div>
-          <div style={styles.logoSub}>Photography Community Platform</div>
-        </div>
+    <div style={{ ...styles.page, padding: isMobile ? '16px' : '32px' }}>
+      <div
+        style={isMobile
+          ? { ...styles.shell, display: 'block', maxWidth: '420px', minHeight: 'auto' }
+          : styles.shell}
+      >
+        {!isMobile && (
+          <aside style={styles.brandPanel}>
+            <div>
+              <div style={styles.brandText}>
+                Lens<span style={styles.brandAccent}>Log</span>
+              </div>
+              <div style={styles.brandSub}>Photography Platform</div>
+            </div>
+            <h1 style={styles.brandHeading}>安靜整理你的攝影作品與日常紀錄。</h1>
+            <div style={styles.brandMeta}>為照片、地點、器材，以及每次拍攝之間的脈絡而設計。</div>
+          </aside>
+        )}
 
-        <div style={styles.title}>Sign in to your account</div>
+        <main style={{ ...styles.formPanel, padding: isMobile ? '30px 22px' : styles.formPanel.padding }}>
+          {isMobile && (
+            <div style={styles.logo}>
+              <div style={styles.logoText}>
+                Lens<span style={styles.logoAccent}>Log</span>
+              </div>
+              <div style={styles.logoSub}>Photography Platform</div>
+            </div>
+          )}
 
-        {apiError && <div style={styles.apiError}>{apiError}</div>}
-
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div style={styles.field}>
-            <label style={styles.label}>Email</label>
-            <input
-              style={styles.input}
-              type="email"
-              placeholder="you@example.com"
-              {...register('email', { required: 'Email is required' })}
-            />
-            {errors.email && <div style={styles.error}>{errors.email.message}</div>}
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
-            <input
-              style={styles.input}
-              type="password"
-              placeholder="••••••••"
-              {...register('password', { required: 'Password is required' })}
-            />
-            {errors.password && <div style={styles.error}>{errors.password.message}</div>}
+          <div>
+            <div style={styles.title}>歡迎回來</div>
+            <p style={styles.subtitle}>登入後繼續管理你的 LensLog 工作區。</p>
           </div>
 
-          <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
+          {apiError && <div style={styles.apiError}>{apiError}</div>}
 
-        <div style={styles.footer}>
-          Don't have an account?{' '}
-          <Link to="/register" style={styles.link}>Create one</Link>
-        </div>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div style={styles.field}>
+              <label style={styles.label}>Email</label>
+              <input
+                style={styles.input}
+                type="email"
+                placeholder="you@example.com"
+                {...register('email', { required: 'Email is required' })}
+              />
+              {errors.email && <div style={styles.error}>{errors.email.message}</div>}
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Password</label>
+              <input
+                style={styles.input}
+                type="password"
+                placeholder="••••••••"
+                {...register('password', { required: 'Password is required' })}
+              />
+              {errors.password && <div style={styles.error}>{errors.password.message}</div>}
+            </div>
+
+            <button
+              style={{
+                ...styles.button,
+                background: loading ? T.paperTwo : T.accent,
+                color: loading ? T.inkMute : '#fff',
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+
+          <div style={styles.footer}>
+            Don't have an account?{' '}
+            <Link to="/register" style={styles.link}>Create one</Link>
+          </div>
+        </main>
       </div>
     </div>
   )
